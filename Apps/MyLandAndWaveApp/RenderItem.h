@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../MyHelper/myd3dUtil.h"
-#include "../MyHelper/myMathHelper.h"
+#include "../../Common/myd3dUtil.h"
+#include "../../Common/myMathHelper.h"
 
 // Lightweight structure stores parameters to draw a shape.
 struct RenderItem

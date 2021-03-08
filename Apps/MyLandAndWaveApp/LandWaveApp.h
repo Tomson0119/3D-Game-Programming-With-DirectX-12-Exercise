@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../MyHelper/myd3dApp.h"
-#include "../MyHelper/myFrameResource.h"
-#include "../MyHelper/myGeometryGenerator.h"
+#include "../../Common/myd3dApp.h"
+#include "../../Common/myFrameResource.h"
+#include "../../Common/myGeometryGenerator.h"
 
 #include "RenderItem.h"
 #include "waves.h"
@@ -81,7 +81,6 @@ private:
 	std::vector<D3D12_INPUT_ELEMENT_DESC> mInputLayout;
 
 	RenderItem* mWavesRitem = nullptr;
-	RenderItem* mCylinderRitem = nullptr;
 
 	// List of all the render items.
 	std::vector<std::unique_ptr<RenderItem>> mAllRitems;
