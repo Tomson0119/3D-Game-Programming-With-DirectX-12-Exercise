@@ -26,7 +26,7 @@ bool MyLandWaveApp::Initialize()
 	BuildShadersAndInputLayout();
 	BuildLandGeometry();
 	BuildWavesGeometry();
-	BuildCylinderGeometry();
+	BuildBoxGeometry();
 	BuildMaterials();
 	BuildLandAndWavesRenderItems();
 	BuildFrameResources();
@@ -103,7 +103,8 @@ void MyLandWaveApp::Draw(const MyGameTimer& gt)
 
 	// Clear the back buffer and depth buffer.
 	mCommandList->ClearRenderTargetView(CurrentBackBufferView(), (float*)&mMainPassCB.FogColor, 0, nullptr);
-	mCommandList->ClearDepthStencilView(DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
+	mCommandList->ClearDepthStencilView(DepthStencilView(), 
+		D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 
 	// Specify the buffers we are going to render to.
 	mCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView());
@@ -116,13 +117,33 @@ void MyLandWaveApp::Draw(const MyGameTimer& gt)
 	auto passCB = mCurrFrameResource->PassCB->Resource();
 	mCommandList->SetGraphicsRootConstantBufferView(3, passCB->GetGPUVirtualAddress());
 
+	//
+	// Draw part
+	//
+
+	// Draw opaque render items.
 	DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::Opaque]);
 
+	// Draw alphaTested render items.
+	mCommandList->SetPipelineState(mPSOs["alphaTested"].Get());
+	DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::AlphaTested]);
+
+	// Draw transparent render items.
 	mCommandList->SetPipelineState(mPSOs["transparent"].Get());
 	DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::Transparent]);
 
-	mCommandList->SetPipelineState(mPSOs["alphaTested"].Get());
-	DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::AlphaTested]);
+	// Draw colored window screen.
+	mCommandList->SetPipelineState(mPSOs["color"].Get());
+	for (int i = 1; i <= 5; ++i)
+	{
+		mCommandList->OMSetStencilRef(i);
+		mCommandList->SetGraphicsRoot32BitConstant(4, i, 0);
+
+		DrawFullWindowQuad(mCommandList.Get());
+	}
+	//
+	// Draw part
+	//
 
 	// Indicate a state transition on the resource usage.
 	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
@@ -247,21 +268,6 @@ void MyLandWaveApp::AnimateMaterials(const MyGameTimer& gt)
 
 	// Material has changed, so need to update cbuffer.
 	waterMat->NumFramesDirty = gNumFrameResources;
-
-	static float t_base = 0.0f;
-	if (gt.TotalTime() - t_base >= 0.1f)
-	{
-		t_base += 0.1f;
-
-		int cylinderTexIndex = mCylinderRitem->Mat->DiffuseSrvHeapIndex;
-
-		cylinderTexIndex += 1;
-		if (cylinderTexIndex > 62 - 1)
-			cylinderTexIndex = 2;
-
-		mCylinderRitem->Mat->DiffuseSrvHeapIndex = cylinderTexIndex;
-		mCylinderRitem->NumFramesDirty = gNumFrameResources;
-	}
 }
 
 void MyLandWaveApp::UpdateObjectCBs(const MyGameTimer& gt)
@@ -398,42 +404,30 @@ void MyLandWaveApp::UpdateWaves(const MyGameTimer& gt)
 
 void MyLandWaveApp::LoadTextures()
 {
-	auto grassTex = std::make_unique<Texture>();
-	grassTex->Name = "grassTex";
-	grassTex->Filename = L"../../Textures/grass.dds";
-	ThrowIfFailed(CreateDDSTextureFromFile12(md3dDevice.Get(),
-		mCommandList.Get(), grassTex->Filename.c_str(),
-		grassTex->Resource, grassTex->UploadHeap));
-	mTextures[grassTex->Name] = std::move(grassTex);
-
-	auto waterTex = std::make_unique<Texture>();
-	waterTex->Name = "waterTex";
-	waterTex->Filename = L"../../Textures/water1.dds";
-	ThrowIfFailed(CreateDDSTextureFromFile12(md3dDevice.Get(),
-		mCommandList.Get(), waterTex->Filename.c_str(),
-		waterTex->Resource, waterTex->UploadHeap));
-	mTextures[waterTex->Name] = std::move(waterTex);
-
-	for (int i = 0; i < 60; ++i)
+	const std::vector<std::string> texNames =
 	{
-		auto boltAnimTex = std::make_unique<Texture>();
+		"grassTex",
+		"waterTex",
+		"wireFenceTex"
+	};
 
-		boltAnimTex->Name = "boltAnimTex";
-		boltAnimTex->Name.append(std::to_string(i));
+	const std::vector<std::wstring> texFileNames =
+	{
+		L"../../Textures/grass.dds",
+		L"../../Textures/water1.dds",
+		L"../../Textures/WireFence.dds"
+	};
 
-		boltAnimTex->Filename = L"../../Textures/BoltAnim/Bolt0";
-
-		if (i + 1 < 10)
-			boltAnimTex->Filename.append(L"0");
-
-		boltAnimTex->Filename.append(std::to_wstring(i+1));
-		boltAnimTex->Filename.append(L".dds");
-
+	for (size_t i = 0; i < texFileNames.size(); ++i)
+	{
+		auto tex = std::make_unique<Texture>();
+		tex->Name = texNames[i];
+		tex->Filename = texFileNames[i];
 		ThrowIfFailed(CreateDDSTextureFromFile12(md3dDevice.Get(),
-			mCommandList.Get(), boltAnimTex->Filename.c_str(),
-			boltAnimTex->Resource, boltAnimTex->UploadHeap));
+			mCommandList.Get(), tex->Filename.c_str(),
+			tex->Resource, tex->UploadHeap));
 
-		mTextures[boltAnimTex->Name] = std::move(boltAnimTex);
+		mTextures[tex->Name] = std::move(tex);
 	}
 }
 
@@ -443,13 +437,14 @@ void MyLandWaveApp::BuildRootSignature()
 	texTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
 
 	// Root parameter can be a table, root descriptor or root constants.
-	CD3DX12_ROOT_PARAMETER slotRootParameter[4];
+	CD3DX12_ROOT_PARAMETER slotRootParameter[5];
 
 	// Create root CBV.
-	slotRootParameter[0].InitAsDescriptorTable(1, &texTable, D3D12_SHADER_VISIBILITY_PIXEL);
-	slotRootParameter[1].InitAsConstantBufferView(0);
-	slotRootParameter[2].InitAsConstantBufferView(1);
-	slotRootParameter[3].InitAsConstantBufferView(2);
+	slotRootParameter[0].InitAsDescriptorTable(1, &texTable, D3D12_SHADER_VISIBILITY_PIXEL); // Texture Map
+	slotRootParameter[1].InitAsConstantBufferView(0);	// ObjectCB
+	slotRootParameter[2].InitAsConstantBufferView(1);	// MaterialCB
+	slotRootParameter[3].InitAsConstantBufferView(2);	// PassCB
+	slotRootParameter[4].InitAsConstants(1, 3, 0, D3D12_SHADER_VISIBILITY_PIXEL); // StencilRef
 
 	auto staticSamplers = GetStaticSamplers();
 
@@ -481,9 +476,17 @@ void MyLandWaveApp::BuildRootSignature()
 
 void MyLandWaveApp::BuildDescriptorHeaps()
 {
+	// Resources container.
+	const std::vector<ComPtr<ID3D12Resource>> texResources =
+	{
+		 mTextures["grassTex"]->Resource,
+		 mTextures["waterTex"]->Resource,
+		 mTextures["wireFenceTex"]->Resource
+	};
+
 	// Create the SRV heap.
 	D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
-	srvHeapDesc.NumDescriptors = 62;
+	srvHeapDesc.NumDescriptors = texResources.size();
 	srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(
@@ -492,32 +495,20 @@ void MyLandWaveApp::BuildDescriptorHeaps()
 	// Fill out the heap with actual descriptors.
 	CD3DX12_CPU_DESCRIPTOR_HANDLE hDescriptor(mSrvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 
-	auto grassTex = mTextures["grassTex"]->Resource;
-	auto waterTex = mTextures["waterTex"]->Resource;
-
 	// 0th descriptor.
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srvDesc.Format = grassTex->GetDesc().Format;
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	srvDesc.Texture2D.MostDetailedMip = 0;
-	srvDesc.Texture2D.MipLevels = -1;
-	md3dDevice->CreateShaderResourceView(grassTex.Get(), &srvDesc, hDescriptor);
+	srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
 
-	// 1st descriptor.
-	hDescriptor.Offset(1, mCbvSrvUavDescriptorSize);
-	srvDesc.Format = waterTex->GetDesc().Format;
-	md3dDevice->CreateShaderResourceView(waterTex.Get(), &srvDesc, hDescriptor);
-
-	// 2 + ith descriptor.
-	std::string name;
-	for (int i = 0; i < 60; ++i)
+	for (size_t i = 0; i < texResources.size(); ++i)
 	{
-		name = "boltAnimTex" + std::to_string(i);
-		auto boltAnimTex = mTextures[name]->Resource;
+		srvDesc.Format = texResources[i]->GetDesc().Format;
+		srvDesc.Texture2D.MipLevels = texResources[i]->GetDesc().MipLevels;
+
+		md3dDevice->CreateShaderResourceView(texResources[i].Get(), &srvDesc, hDescriptor);
 		hDescriptor.Offset(1, mCbvSrvUavDescriptorSize);
-		srvDesc.Format = boltAnimTex->GetDesc().Format;
-		md3dDevice->CreateShaderResourceView(boltAnimTex.Get(), &srvDesc, hDescriptor);
 	}
 }
 
@@ -540,6 +531,9 @@ void MyLandWaveApp::BuildShadersAndInputLayout()
 	mShaders["opaquePS"] = MyD3DUtil::CompileShader(L"Shaders\\default.hlsl", defines, "PS", "ps_5_0");
 	mShaders["alphaTestedPS"] = MyD3DUtil::CompileShader(L"Shaders\\default.hlsl", alphaTestDefines, "PS", "ps_5_0");
 	
+	mShaders["colorVS"] = MyD3DUtil::CompileShader(L"Shaders\\color.hlsl", nullptr, "VS", "vs_5_0");
+	mShaders["colorPS"] = MyD3DUtil::CompileShader(L"Shaders\\color.hlsl", nullptr, "PS", "ps_5_0");
+
 	mInputLayout =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
@@ -655,60 +649,81 @@ void MyLandWaveApp::BuildWavesGeometry()
 	mGeometries[geo->Name] = std::move(geo);
 }
 
-void MyLandWaveApp::BuildCylinderGeometry()
+void MyLandWaveApp::BuildBoxGeometry()
 {
 	MyGeometryGenerator geoGen;
-	MyGeometryGenerator::MeshData cylinder = geoGen.CreateCylinder(5.0f, 5.0f, 13.0f, 20, 20);
+	MyGeometryGenerator::MeshData box = geoGen.CreateBox(10.0f, 10.0f, 10.0f, 5);
 
-	std::vector<Vertex> vertices(cylinder.Vertices.size());
-	for (size_t i = 0; i < cylinder.Vertices.size(); ++i)
+	std::vector<Vertex> vertices(box.Vertices.size());
+	for (size_t i = 0; i < box.Vertices.size(); ++i)
 	{
-		vertices[i].Pos = cylinder.Vertices[i].Position;
-		vertices[i].Normal = cylinder.Vertices[i].Normal;
-		vertices[i].TexC = cylinder.Vertices[i].TexC;
+		vertices[i].Pos = box.Vertices[i].Position;
+		vertices[i].Normal = box.Vertices[i].Normal;
+		vertices[i].TexC = box.Vertices[i].TexC;
 	}
 
 	const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
 
-	std::vector<std::uint16_t> indices = cylinder.GetIndices16();
+	std::vector<std::uint16_t> indices = box.GetIndices16();
 	const UINT ibByteSize = (UINT)indices.size() * sizeof(std::uint16_t);
 
-	auto cylinderGeo = std::make_unique<MeshGeometry>();
-	cylinderGeo->Name = "cylinderGeo";
+	auto boxGeo = std::make_unique<MeshGeometry>();
+	boxGeo->Name = "boxGeo";
 
-	ThrowIfFailed(D3DCreateBlob(vbByteSize, &cylinderGeo->VertexBufferCPU));
-	CopyMemory(cylinderGeo->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
+	ThrowIfFailed(D3DCreateBlob(vbByteSize, &boxGeo->VertexBufferCPU));
+	CopyMemory(boxGeo->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
 
-	ThrowIfFailed(D3DCreateBlob(ibByteSize, &cylinderGeo->IndexBufferCPU));
-	CopyMemory(cylinderGeo->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
+	ThrowIfFailed(D3DCreateBlob(ibByteSize, &boxGeo->IndexBufferCPU));
+	CopyMemory(boxGeo->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
 
-	cylinderGeo->VertexBufferGPU = MyD3DUtil::CreateDefaultBuffer(md3dDevice.Get(),
-		mCommandList.Get(), vertices.data(), vbByteSize, cylinderGeo->VertexBufferUploader);
+	boxGeo->VertexBufferGPU = MyD3DUtil::CreateDefaultBuffer(md3dDevice.Get(),
+		mCommandList.Get(), vertices.data(), vbByteSize, boxGeo->VertexBufferUploader);
 
-	cylinderGeo->IndexBufferGPU = MyD3DUtil::CreateDefaultBuffer(md3dDevice.Get(),
-		mCommandList.Get(), indices.data(), ibByteSize, cylinderGeo->IndexBufferUploader);
+	boxGeo->IndexBufferGPU = MyD3DUtil::CreateDefaultBuffer(md3dDevice.Get(),
+		mCommandList.Get(), indices.data(), ibByteSize, boxGeo->IndexBufferUploader);
 
-	cylinderGeo->VertexByteStride = sizeof(Vertex);
-	cylinderGeo->VertexBufferByteSize = vbByteSize;
-	cylinderGeo->IndexFormat = DXGI_FORMAT_R16_UINT;
-	cylinderGeo->IndexBufferByteSize = ibByteSize;
+	boxGeo->VertexByteStride = sizeof(Vertex);
+	boxGeo->VertexBufferByteSize = vbByteSize;
+	boxGeo->IndexFormat = DXGI_FORMAT_R16_UINT;
+	boxGeo->IndexBufferByteSize = ibByteSize;
 
 	SubmeshGeometry submesh;
 	submesh.IndexCount = (UINT)indices.size();
 	submesh.BaseVertexLocation = 0;
 	submesh.StartIndexLocation = 0;
 
-	cylinderGeo->DrawArgs["cylinder"] = submesh;
+	boxGeo->DrawArgs["box"] = submesh;
 
-	mGeometries[cylinderGeo->Name] = std::move(cylinderGeo);
+	mGeometries[boxGeo->Name] = std::move(boxGeo);
 }
 
 void MyLandWaveApp::BuildPSOs()
 {
-	D3D12_GRAPHICS_PIPELINE_STATE_DESC opaquePsoDesc;
+	//
+	// Ex 11-8
+	D3D12_DEPTH_STENCIL_DESC markStencilDesc;
+	markStencilDesc.DepthEnable = true;
+	markStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+	markStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
+	markStencilDesc.StencilEnable = true;
+	markStencilDesc.StencilReadMask = 0xff;
+	markStencilDesc.StencilWriteMask = 0xff;
 
+	markStencilDesc.FrontFace.StencilFailOp = D3D12_STENCIL_OP_KEEP;
+	markStencilDesc.FrontFace.StencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
+	markStencilDesc.FrontFace.StencilPassOp = D3D12_STENCIL_OP_INCR;
+	markStencilDesc.FrontFace.StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+
+	markStencilDesc.BackFace.StencilFailOp = D3D12_STENCIL_OP_KEEP;
+	markStencilDesc.BackFace.StencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
+	markStencilDesc.BackFace.StencilPassOp = D3D12_STENCIL_OP_INCR;
+	markStencilDesc.BackFace.StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+	//
+	//
 
 	// PSO for opaque objects.
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC opaquePsoDesc;
+	
 	ZeroMemory(&opaquePsoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
 	opaquePsoDesc.InputLayout = { mInputLayout.data(), (UINT)mInputLayout.size() };
 	opaquePsoDesc.pRootSignature = mRootSignature.Get();
@@ -724,14 +739,14 @@ void MyLandWaveApp::BuildPSOs()
 	};
 	opaquePsoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 	opaquePsoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-	opaquePsoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+	opaquePsoDesc.DepthStencilState = markStencilDesc;
 	opaquePsoDesc.SampleMask = UINT_MAX;
 	opaquePsoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 	opaquePsoDesc.NumRenderTargets = 1;
 	opaquePsoDesc.RTVFormats[0] = mBackBufferFormat;
 	opaquePsoDesc.SampleDesc.Count = m4xMsaaState ? 4 : 1;
 	opaquePsoDesc.SampleDesc.Quality = m4xMsaaState ? (m4xMsaaQuality - 1) : 0;
-	opaquePsoDesc.DSVFormat = mDepthStencilFormat;
+	opaquePsoDesc.DSVFormat = mDepthStencilFormat; 
 	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(
 		&opaquePsoDesc, IID_PPV_ARGS(&mPSOs["opaque"])));
 
@@ -758,28 +773,52 @@ void MyLandWaveApp::BuildPSOs()
 
 	// PSO for alpha test.
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC alphaTestedPsoDesc = transparentPsoDesc;
-	/*alphaTestedPsoDesc.PS =
+	alphaTestedPsoDesc.PS =
 	{
 		reinterpret_cast<BYTE*>(mShaders["alphaTestedPS"]->GetBufferPointer()),
 		mShaders["alphaTestedPS"]->GetBufferSize()
-	};*/
+	};
 	alphaTestedPsoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
 
-	/*D3D12_RENDER_TARGET_BLEND_DESC alphaTestedBlendDesc;
-	alphaTestedBlendDesc.BlendEnable = true;
-	alphaTestedBlendDesc.LogicOpEnable = false;
-	alphaTestedBlendDesc.SrcBlend = D3D12_BLEND_ONE;
-	alphaTestedBlendDesc.DestBlend = D3D12_BLEND_ONE;
-	alphaTestedBlendDesc.BlendOp = D3D12_BLEND_OP_ADD;
-	alphaTestedBlendDesc.SrcBlendAlpha = D3D12_BLEND_ONE;
-	alphaTestedBlendDesc.DestBlendAlpha = D3D12_BLEND_ZERO;
-	alphaTestedBlendDesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;
-	alphaTestedBlendDesc.LogicOp = D3D12_LOGIC_OP_NOOP;
-	alphaTestedBlendDesc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;*/
-
-	//alphaTestedPsoDesc.BlendState.RenderTarget[0] = alphaTestedBlendDesc;
 	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(
 		&alphaTestedPsoDesc, IID_PPV_ARGS(&mPSOs["alphaTested"])));
+
+	//
+	// Ex 11-8
+	D3D12_DEPTH_STENCIL_DESC colorDesc;
+	colorDesc.DepthEnable = true;
+	colorDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+	colorDesc.DepthFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+	colorDesc.StencilEnable = true;
+	colorDesc.StencilReadMask = 0xff;
+	colorDesc.StencilWriteMask = 0xff;
+
+	colorDesc.FrontFace.StencilFailOp = D3D12_STENCIL_OP_KEEP;
+	colorDesc.FrontFace.StencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
+	colorDesc.FrontFace.StencilPassOp = D3D12_STENCIL_OP_KEEP;
+	colorDesc.FrontFace.StencilFunc = D3D12_COMPARISON_FUNC_EQUAL;
+
+	colorDesc.BackFace.StencilFailOp = D3D12_STENCIL_OP_KEEP;
+	colorDesc.BackFace.StencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
+	colorDesc.BackFace.StencilPassOp = D3D12_STENCIL_OP_KEEP;
+	colorDesc.BackFace.StencilFunc = D3D12_COMPARISON_FUNC_EQUAL;
+
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC colorPsoDesc = opaquePsoDesc;
+	colorPsoDesc.VS =
+	{
+		reinterpret_cast<BYTE*>(mShaders["colorVS"]->GetBufferPointer()),
+		mShaders["colorVS"]->GetBufferSize()
+	};
+	colorPsoDesc.PS =
+	{
+		reinterpret_cast<BYTE*>(mShaders["colorPS"]->GetBufferPointer()),
+		mShaders["colorPS"]->GetBufferSize()
+	};
+	colorPsoDesc.DepthStencilState = colorDesc;
+	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(
+		&colorPsoDesc, IID_PPV_ARGS(&mPSOs["color"])));
+	//
+	//
 }
 
 void MyLandWaveApp::BuildFrameResources()
@@ -811,14 +850,14 @@ void MyLandWaveApp::BuildMaterials()
 	water->Roughness = 0.0f;
 	mMaterials[water->Name] = std::move(water);
 
-	auto cylinder = std::make_unique<Material>();
-	cylinder->Name = "cylinder";
-	cylinder->MatCBIndex = 2;
-	cylinder->DiffuseSrvHeapIndex = 2;
-	cylinder->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 0.5f);
-	cylinder->FresnelR0 = XMFLOAT3(0.1f, 0.1f, 0.1f);
-	cylinder->Roughness = 0.25f;
-	mMaterials[cylinder->Name] = std::move(cylinder);
+	auto box = std::make_unique<Material>();
+	box->Name = "box";
+	box->MatCBIndex = 2;
+	box->DiffuseSrvHeapIndex = 2;
+	box->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	box->FresnelR0 = XMFLOAT3(0.1f, 0.1f, 0.1f);
+	box->Roughness = 0.25f;
+	mMaterials[box->Name] = std::move(box);
 }
 
 void MyLandWaveApp::BuildLandAndWavesRenderItems()
@@ -833,9 +872,7 @@ void MyLandWaveApp::BuildLandAndWavesRenderItems()
 	wavesRitem->IndexCount = wavesRitem->Geo->DrawArgs["grid"].IndexCount;
 	wavesRitem->StartIndexLocation = wavesRitem->Geo->DrawArgs["grid"].StartIndexLocation;
 	wavesRitem->BaseVertexLocation = wavesRitem->Geo->DrawArgs["grid"].BaseVertexLocation;
-
 	mWavesRitem = wavesRitem.get();
-
 	mRitemLayer[(int)RenderLayer::Transparent].push_back(wavesRitem.get());
 
 	auto gridRitem = std::make_unique<RenderItem>();
@@ -848,24 +885,22 @@ void MyLandWaveApp::BuildLandAndWavesRenderItems()
 	gridRitem->IndexCount = gridRitem->Geo->DrawArgs["grid"].IndexCount;
 	gridRitem->StartIndexLocation = gridRitem->Geo->DrawArgs["grid"].StartIndexLocation;
 	gridRitem->BaseVertexLocation = gridRitem->Geo->DrawArgs["grid"].BaseVertexLocation;
-
 	mRitemLayer[(int)RenderLayer::Opaque].push_back(gridRitem.get());
 
-	auto cylinderRitem = std::make_unique<RenderItem>();
-	XMStoreFloat4x4(&cylinderRitem->World, XMMatrixTranslation(3.0f, 7.0f, -9.0f));
-	cylinderRitem->ObjCBIndex = 2;
-	cylinderRitem->Mat = mMaterials["cylinder"].get();
-	cylinderRitem->Geo = mGeometries["cylinderGeo"].get();
-	cylinderRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	cylinderRitem->IndexCount = cylinderRitem->Geo->DrawArgs["cylinder"].IndexCount;
-	cylinderRitem->StartIndexLocation = cylinderRitem->Geo->DrawArgs["cylinder"].StartIndexLocation;
-	cylinderRitem->BaseVertexLocation = cylinderRitem->Geo->DrawArgs["cylinder"].BaseVertexLocation;
-	mCylinderRitem = cylinderRitem.get();
-	mRitemLayer[(int)RenderLayer::AlphaTested].push_back(cylinderRitem.get());
+	auto boxRitem = std::make_unique<RenderItem>();
+	XMStoreFloat4x4(&boxRitem->World, XMMatrixTranslation(3.0f, 5.0f, -9.0f));
+	boxRitem->ObjCBIndex = 2;
+	boxRitem->Mat = mMaterials["box"].get();
+	boxRitem->Geo = mGeometries["boxGeo"].get();
+	boxRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+	boxRitem->IndexCount = boxRitem->Geo->DrawArgs["box"].IndexCount;
+	boxRitem->StartIndexLocation = boxRitem->Geo->DrawArgs["box"].StartIndexLocation;
+	boxRitem->BaseVertexLocation = boxRitem->Geo->DrawArgs["box"].BaseVertexLocation;
+	mRitemLayer[(int)RenderLayer::AlphaTested].push_back(boxRitem.get());
 
 	mAllRitems.push_back(std::move(wavesRitem));
 	mAllRitems.push_back(std::move(gridRitem));
-	mAllRitems.push_back(std::move(cylinderRitem));
+	mAllRitems.push_back(std::move(boxRitem));
 }
 
 void MyLandWaveApp::DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::vector<RenderItem*>& ritems)
@@ -899,6 +934,16 @@ void MyLandWaveApp::DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const st
 
 		cmdList->DrawIndexedInstanced(ri->IndexCount, 1, ri->StartIndexLocation, ri->BaseVertexLocation, 0);
 	}
+}
+
+void MyLandWaveApp::DrawFullWindowQuad(ID3D12GraphicsCommandList* cmdList)
+{
+	// Ex 11-8
+	cmdList->IASetVertexBuffers(0, 1, nullptr);
+	cmdList->IASetIndexBuffer(nullptr);
+	cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	cmdList->DrawInstanced(6, 1, 0, 0);
 }
 
 std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> MyLandWaveApp::GetStaticSamplers()

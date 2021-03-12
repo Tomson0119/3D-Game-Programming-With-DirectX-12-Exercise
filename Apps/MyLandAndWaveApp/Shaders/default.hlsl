@@ -69,6 +69,12 @@ cbuffer cbPass : register(b2)
 	Light gLights[MaxLights];
 };
 
+// For Ex 11-8.
+cbuffer gStencilConstants : register(b3)
+{
+	uint gStencil;
+};
+
 struct VertexIn
 {
 	float3 PosL : POSITION;
