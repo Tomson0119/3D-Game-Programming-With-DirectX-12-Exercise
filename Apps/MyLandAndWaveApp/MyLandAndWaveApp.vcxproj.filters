@@ -54,9 +54,6 @@
     <ClCompile Include="..\..\Common\myFrameResource.cpp">
       <Filter>소스 파일\Helper</Filter>
     </ClCompile>
-    <ClCompile Include="Ex 11-8.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="LandWaveApp.h">
@@ -101,9 +98,6 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="Shaders\default.hlsl">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\color.hlsl">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

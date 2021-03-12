@@ -132,15 +132,6 @@ void MyLandWaveApp::Draw(const MyGameTimer& gt)
 	mCommandList->SetPipelineState(mPSOs["transparent"].Get());
 	DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::Transparent]);
 
-	// Draw colored window screen.
-	mCommandList->SetPipelineState(mPSOs["color"].Get());
-	for (int i = 1; i <= 5; ++i)
-	{
-		mCommandList->OMSetStencilRef(i);
-		mCommandList->SetGraphicsRoot32BitConstant(4, i, 0);
-
-		DrawFullWindowQuad(mCommandList.Get());
-	}
 	//
 	// Draw part
 	//
@@ -437,14 +428,13 @@ void MyLandWaveApp::BuildRootSignature()
 	texTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
 
 	// Root parameter can be a table, root descriptor or root constants.
-	CD3DX12_ROOT_PARAMETER slotRootParameter[5];
+	CD3DX12_ROOT_PARAMETER slotRootParameter[4];
 
 	// Create root CBV.
 	slotRootParameter[0].InitAsDescriptorTable(1, &texTable, D3D12_SHADER_VISIBILITY_PIXEL); // Texture Map
 	slotRootParameter[1].InitAsConstantBufferView(0);	// ObjectCB
 	slotRootParameter[2].InitAsConstantBufferView(1);	// MaterialCB
 	slotRootParameter[3].InitAsConstantBufferView(2);	// PassCB
-	slotRootParameter[4].InitAsConstants(1, 3, 0, D3D12_SHADER_VISIBILITY_PIXEL); // StencilRef
 
 	auto staticSamplers = GetStaticSamplers();
 
@@ -486,7 +476,7 @@ void MyLandWaveApp::BuildDescriptorHeaps()
 
 	// Create the SRV heap.
 	D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
-	srvHeapDesc.NumDescriptors = texResources.size();
+	srvHeapDesc.NumDescriptors = (UINT)texResources.size();
 	srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(
@@ -530,9 +520,6 @@ void MyLandWaveApp::BuildShadersAndInputLayout()
 	mShaders["standardVS"] = MyD3DUtil::CompileShader(L"Shaders\\default.hlsl", nullptr, "VS", "vs_5_0");
 	mShaders["opaquePS"] = MyD3DUtil::CompileShader(L"Shaders\\default.hlsl", defines, "PS", "ps_5_0");
 	mShaders["alphaTestedPS"] = MyD3DUtil::CompileShader(L"Shaders\\default.hlsl", alphaTestDefines, "PS", "ps_5_0");
-	
-	mShaders["colorVS"] = MyD3DUtil::CompileShader(L"Shaders\\color.hlsl", nullptr, "VS", "vs_5_0");
-	mShaders["colorPS"] = MyD3DUtil::CompileShader(L"Shaders\\color.hlsl", nullptr, "PS", "ps_5_0");
 
 	mInputLayout =
 	{
@@ -699,26 +686,18 @@ void MyLandWaveApp::BuildBoxGeometry()
 
 void MyLandWaveApp::BuildPSOs()
 {
-	//
-	// Ex 11-8
-	D3D12_DEPTH_STENCIL_DESC markStencilDesc;
-	markStencilDesc.DepthEnable = true;
-	markStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
-	markStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
-	markStencilDesc.StencilEnable = true;
-	markStencilDesc.StencilReadMask = 0xff;
-	markStencilDesc.StencilWriteMask = 0xff;
-
-	markStencilDesc.FrontFace.StencilFailOp = D3D12_STENCIL_OP_KEEP;
-	markStencilDesc.FrontFace.StencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
-	markStencilDesc.FrontFace.StencilPassOp = D3D12_STENCIL_OP_INCR;
-	markStencilDesc.FrontFace.StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS;
-
-	markStencilDesc.BackFace.StencilFailOp = D3D12_STENCIL_OP_KEEP;
-	markStencilDesc.BackFace.StencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
-	markStencilDesc.BackFace.StencilPassOp = D3D12_STENCIL_OP_INCR;
-	markStencilDesc.BackFace.StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS;
-	//
+	// Ex 11-9
+	D3D12_RENDER_TARGET_BLEND_DESC blendDesc;
+	blendDesc.BlendEnable = true;
+	blendDesc.LogicOpEnable = false;
+	blendDesc.SrcBlend = D3D12_BLEND_ONE;
+	blendDesc.DestBlend = D3D12_BLEND_ONE;
+	blendDesc.BlendOp = D3D12_BLEND_OP_ADD;
+	blendDesc.SrcBlendAlpha = D3D12_BLEND_ONE;
+	blendDesc.DestBlendAlpha = D3D12_BLEND_ZERO;
+	blendDesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;
+	blendDesc.LogicOp = D3D12_LOGIC_OP_NOOP;
+	blendDesc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 	//
 
 	// PSO for opaque objects.
@@ -738,35 +717,22 @@ void MyLandWaveApp::BuildPSOs()
 		mShaders["opaquePS"]->GetBufferSize()
 	};
 	opaquePsoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-	opaquePsoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-	opaquePsoDesc.DepthStencilState = markStencilDesc;
+	opaquePsoDesc.BlendState.RenderTarget[0] = blendDesc; // Ex 11-9
+	opaquePsoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
 	opaquePsoDesc.SampleMask = UINT_MAX;
 	opaquePsoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 	opaquePsoDesc.NumRenderTargets = 1;
 	opaquePsoDesc.RTVFormats[0] = mBackBufferFormat;
 	opaquePsoDesc.SampleDesc.Count = m4xMsaaState ? 4 : 1;
 	opaquePsoDesc.SampleDesc.Quality = m4xMsaaState ? (m4xMsaaQuality - 1) : 0;
-	opaquePsoDesc.DSVFormat = mDepthStencilFormat; 
+	opaquePsoDesc.DSVFormat = mDepthStencilFormat;
 	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(
 		&opaquePsoDesc, IID_PPV_ARGS(&mPSOs["opaque"])));
 
 
 	// PSO for transparency blend objects.
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC transparentPsoDesc = opaquePsoDesc;
-
-	D3D12_RENDER_TARGET_BLEND_DESC transparencyBlendDesc;
-	transparencyBlendDesc.BlendEnable = true;
-	transparencyBlendDesc.LogicOpEnable = false;
-	transparencyBlendDesc.SrcBlend = D3D12_BLEND_SRC_ALPHA;
-	transparencyBlendDesc.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
-	transparencyBlendDesc.BlendOp = D3D12_BLEND_OP_ADD;
-	transparencyBlendDesc.SrcBlendAlpha = D3D12_BLEND_ONE;
-	transparencyBlendDesc.DestBlendAlpha = D3D12_BLEND_ZERO;
-	transparencyBlendDesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;
-	transparencyBlendDesc.LogicOp = D3D12_LOGIC_OP_NOOP;
-	transparencyBlendDesc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-
-	transparentPsoDesc.BlendState.RenderTarget[0] = transparencyBlendDesc;
+	//transparentPsoDesc.BlendState.RenderTarget[0] = transparencyBlendDesc;
 	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(
 		&transparentPsoDesc, IID_PPV_ARGS(&mPSOs["transparent"])));
 
@@ -782,43 +748,6 @@ void MyLandWaveApp::BuildPSOs()
 
 	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(
 		&alphaTestedPsoDesc, IID_PPV_ARGS(&mPSOs["alphaTested"])));
-
-	//
-	// Ex 11-8
-	D3D12_DEPTH_STENCIL_DESC colorDesc;
-	colorDesc.DepthEnable = true;
-	colorDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
-	colorDesc.DepthFunc = D3D12_COMPARISON_FUNC_ALWAYS;
-	colorDesc.StencilEnable = true;
-	colorDesc.StencilReadMask = 0xff;
-	colorDesc.StencilWriteMask = 0xff;
-
-	colorDesc.FrontFace.StencilFailOp = D3D12_STENCIL_OP_KEEP;
-	colorDesc.FrontFace.StencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
-	colorDesc.FrontFace.StencilPassOp = D3D12_STENCIL_OP_KEEP;
-	colorDesc.FrontFace.StencilFunc = D3D12_COMPARISON_FUNC_EQUAL;
-
-	colorDesc.BackFace.StencilFailOp = D3D12_STENCIL_OP_KEEP;
-	colorDesc.BackFace.StencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
-	colorDesc.BackFace.StencilPassOp = D3D12_STENCIL_OP_KEEP;
-	colorDesc.BackFace.StencilFunc = D3D12_COMPARISON_FUNC_EQUAL;
-
-	D3D12_GRAPHICS_PIPELINE_STATE_DESC colorPsoDesc = opaquePsoDesc;
-	colorPsoDesc.VS =
-	{
-		reinterpret_cast<BYTE*>(mShaders["colorVS"]->GetBufferPointer()),
-		mShaders["colorVS"]->GetBufferSize()
-	};
-	colorPsoDesc.PS =
-	{
-		reinterpret_cast<BYTE*>(mShaders["colorPS"]->GetBufferPointer()),
-		mShaders["colorPS"]->GetBufferSize()
-	};
-	colorPsoDesc.DepthStencilState = colorDesc;
-	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(
-		&colorPsoDesc, IID_PPV_ARGS(&mPSOs["color"])));
-	//
-	//
 }
 
 void MyLandWaveApp::BuildFrameResources()
@@ -934,16 +863,6 @@ void MyLandWaveApp::DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const st
 
 		cmdList->DrawIndexedInstanced(ri->IndexCount, 1, ri->StartIndexLocation, ri->BaseVertexLocation, 0);
 	}
-}
-
-void MyLandWaveApp::DrawFullWindowQuad(ID3D12GraphicsCommandList* cmdList)
-{
-	// Ex 11-8
-	cmdList->IASetVertexBuffers(0, 1, nullptr);
-	cmdList->IASetIndexBuffer(nullptr);
-	cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	cmdList->DrawInstanced(6, 1, 0, 0);
 }
 
 std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> MyLandWaveApp::GetStaticSamplers()

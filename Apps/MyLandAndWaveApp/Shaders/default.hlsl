@@ -69,12 +69,6 @@ cbuffer cbPass : register(b2)
 	Light gLights[MaxLights];
 };
 
-// For Ex 11-8.
-cbuffer gStencilConstants : register(b3)
-{
-	uint gStencil;
-};
-
 struct VertexIn
 {
 	float3 PosL : POSITION;
@@ -150,5 +144,5 @@ float4 PS(VertexOut pin) : SV_Target
 	// Common convention to take alpha from  diffuse material.
 	litColor.a = diffuseAlbedo.a;
 
-	return litColor;
+	return float4(0.05f, 0.05f, 0.05f, 0.05f);
 }

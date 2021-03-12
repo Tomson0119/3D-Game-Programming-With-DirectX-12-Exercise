@@ -57,12 +57,6 @@ private:
 	void DrawRenderItems(ID3D12GraphicsCommandList* cmdList,
 		const std::vector<RenderItem*>& ritems);
 
-	//
-	// Ex 11-8.
-	void DrawFullWindowQuad(ID3D12GraphicsCommandList* cmdList);
-	// 
-	//
-
 	std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> GetStaticSamplers();
 
 	float GetHillsHeight(float x, float z) const;
