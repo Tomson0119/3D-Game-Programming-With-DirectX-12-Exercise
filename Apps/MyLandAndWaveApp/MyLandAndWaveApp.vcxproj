@@ -146,6 +146,7 @@
     <ClCompile Include="..\..\Common\myGameTimer.cpp" />
     <ClCompile Include="..\..\Common\myGeometryGenerator.cpp" />
     <ClCompile Include="..\..\Common\myMathHelper.cpp" />
+    <ClCompile Include="Ex 11-8.cpp" />
     <ClCompile Include="LandWaveApp.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="waves.cpp" />
@@ -163,6 +164,23 @@
     <ClInclude Include="LandWaveApp.h" />
     <ClInclude Include="RenderItem.h" />
     <ClInclude Include="waves.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\default.hlsl">
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">PS</EntryPointName>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Shaders\lightingUtil.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ExcludedFromBuild>
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\color.hlsl">
+      <FileType>Document</FileType>
+    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

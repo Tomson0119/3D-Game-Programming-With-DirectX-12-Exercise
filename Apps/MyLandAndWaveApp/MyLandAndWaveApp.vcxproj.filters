@@ -19,6 +19,9 @@
     <Filter Include="소스 파일\Helper">
       <UniqueIdentifier>{802420b6-6809-4fa7-b230-0b2e3aa5bfa2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{433ad613-743a-4900-a95a-0cc46e006eb2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -50,6 +53,9 @@
     </ClCompile>
     <ClCompile Include="..\..\Common\myFrameResource.cpp">
       <Filter>소스 파일\Helper</Filter>
+    </ClCompile>
+    <ClCompile Include="Ex 11-8.cpp">
+      <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -89,5 +95,16 @@
     <ClInclude Include="..\..\Common\myUploadBuffer.h">
       <Filter>헤더 파일\Helper</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\lightingUtil.hlsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\default.hlsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\color.hlsl">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>
