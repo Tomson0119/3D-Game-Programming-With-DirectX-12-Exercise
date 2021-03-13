@@ -357,7 +357,7 @@ void MyShapeApp::LoadTextures()
 
 	auto whiteTex = std::make_unique<Texture>();
 	whiteTex->Name = "whiteTex";
-	whiteTex->Filename = L"../../Textures/white512.dds";
+	whiteTex->Filename = L"../../Textures/white1x1.dds";
 	ThrowIfFailed(CreateDDSTextureFromFile12(md3dDevice.Get(),
 		mCommandList.Get(), whiteTex->Filename.c_str(),
 		whiteTex->Resource, whiteTex->UploadHeap));
@@ -415,7 +415,7 @@ void MyShapeApp::BuildDescriptorHeaps()
 {
 	// Create the SRV heap.
 	D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
-	srvHeapDesc.NumDescriptors = 3;
+	srvHeapDesc.NumDescriptors = 5;
 	srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(
