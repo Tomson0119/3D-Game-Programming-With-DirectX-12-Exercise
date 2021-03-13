@@ -1,4 +1,4 @@
-#include "StencilDemo.h"
+#include "Ex 11-11.h"
 #include "../../Common/DDSTextureLoader.h"
 
 MyStencilDemo::MyStencilDemo()
@@ -399,38 +399,33 @@ void MyStencilDemo::UpdateReflectedPassCB(const MyGameTimer& gt)
 
 void MyStencilDemo::LoadTextures()
 {
-	auto bricksTex = std::make_unique<Texture>();
-	bricksTex->Name = "bricksTex";
-	bricksTex->Filename = L"../../Textures/bricks3.dds";
-	ThrowIfFailed(CreateDDSTextureFromFile12(md3dDevice.Get(),
-		mCommandList.Get(), bricksTex->Filename.c_str(),
-		bricksTex->Resource, bricksTex->UploadHeap));
+	const std::vector<std::string> texName =
+	{
+		"bricksTex",
+		"checkboardTex",
+		"iceTex",
+		"whiteTex"
+	};
 
-	auto checkboardTex = std::make_unique<Texture>();
-	checkboardTex->Name = "checkboardTex";
-	checkboardTex->Filename = L"../../Textures/checkboard.dds";
-	ThrowIfFailed(CreateDDSTextureFromFile12(md3dDevice.Get(),
-		mCommandList.Get(), checkboardTex->Filename.c_str(),
-		checkboardTex->Resource, checkboardTex->UploadHeap));
+	const std::vector<std::wstring> texFileName =
+	{
+		L"../../Textures/bricks3.dds",
+		L"../../Textures/checkboard.dds",
+		L"../../Textures/ice.dds",
+		L"../../Textures/white1x1.dds"
+	};
 
-	auto iceTex = std::make_unique<Texture>();
-	iceTex->Name = "iceTex";
-	iceTex->Filename = L"../../Textures/ice.dds";
-	ThrowIfFailed(CreateDDSTextureFromFile12(md3dDevice.Get(),
-		mCommandList.Get(), iceTex->Filename.c_str(),
-		iceTex->Resource, iceTex->UploadHeap));
+	for (size_t i = 0; i < texFileName.size(); ++i)
+	{
+		auto tex = std::make_unique<Texture>();
+		tex->Name = texName[i];
+		tex->Filename = texFileName[i];
+		ThrowIfFailed(CreateDDSTextureFromFile12(md3dDevice.Get(),
+			mCommandList.Get(), tex->Filename.c_str(),
+			tex->Resource, tex->UploadHeap));
 
-	auto whiteTex = std::make_unique<Texture>();
-	whiteTex->Name = "whiteTex";
-	whiteTex->Filename = L"../../Textures/white1x1.dds";
-	ThrowIfFailed(CreateDDSTextureFromFile12(md3dDevice.Get(),
-		mCommandList.Get(), whiteTex->Filename.c_str(),
-		whiteTex->Resource, whiteTex->UploadHeap));
-
-	mTextures[bricksTex->Name] = std::move(bricksTex);
-	mTextures[checkboardTex->Name] = std::move(checkboardTex);
-	mTextures[iceTex->Name] = std::move(iceTex);
-	mTextures[whiteTex->Name] = std::move(whiteTex);
+		mTextures[tex->Name] = std::move(tex);
+	}
 }
 
 void MyStencilDemo::BuildRootSignature()
@@ -450,7 +445,7 @@ void MyStencilDemo::BuildRootSignature()
 	auto staticSamplers = GetStaticSamplers();
 
 	// A root signature is an array of root parameters.
-	CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(4, slotRootParameter,
+	CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(_countof(slotRootParameter), slotRootParameter,
 		(UINT)staticSamplers.size(), staticSamplers.data(),
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
@@ -477,9 +472,17 @@ void MyStencilDemo::BuildRootSignature()
 
 void MyStencilDemo::BuildDescriptorHeaps()
 {
+	const std::vector<ComPtr<ID3D12Resource>> resources =
+	{
+		mTextures["bricksTex"]->Resource,		// 0
+		mTextures["checkboardTex"]->Resource,	// 1
+		mTextures["iceTex"]->Resource,			// 2
+		mTextures["whiteTex"]->Resource			// 3
+	};
+
 	// Create the SRV heap.
 	D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
-	srvHeapDesc.NumDescriptors = 4;
+	srvHeapDesc.NumDescriptors = resources.size();
 	srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(
@@ -488,34 +491,21 @@ void MyStencilDemo::BuildDescriptorHeaps()
 	// Fill out the heap with actual descriptors.
 	CD3DX12_CPU_DESCRIPTOR_HANDLE hDescriptor(mSrvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 
-	auto bricksTex = mTextures["bricksTex"]->Resource;
-	auto checkboardTex = mTextures["checkboardTex"]->Resource;
-	auto iceTex = mTextures["iceTex"]->Resource;
-	auto whiteTex = mTextures["whiteTex"]->Resource;
-
 	// 0th descriptor.
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srvDesc.Format = bricksTex->GetDesc().Format;
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	srvDesc.Texture2D.MostDetailedMip = 0;
-	srvDesc.Texture2D.MipLevels = -1;
-	md3dDevice->CreateShaderResourceView(bricksTex.Get(), &srvDesc, hDescriptor);
+	srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
 
-	// 1st descriptor.
-	hDescriptor.Offset(1, mCbvSrvUavDescriptorSize);
-	srvDesc.Format = checkboardTex->GetDesc().Format;
-	md3dDevice->CreateShaderResourceView(checkboardTex.Get(), &srvDesc, hDescriptor);
+	for (auto e : resources)
+	{
+		srvDesc.Format = e->GetDesc().Format;
+		srvDesc.Texture2D.MipLevels = e->GetDesc().MipLevels;
 
-	// 2nd descriptor.
-	hDescriptor.Offset(1, mCbvSrvUavDescriptorSize);
-	srvDesc.Format = iceTex->GetDesc().Format;
-	md3dDevice->CreateShaderResourceView(iceTex.Get(), &srvDesc, hDescriptor);
-
-	// 3rd descriptor.
-	hDescriptor.Offset(1, mCbvSrvUavDescriptorSize);
-	srvDesc.Format = whiteTex->GetDesc().Format;
-	md3dDevice->CreateShaderResourceView(whiteTex.Get(), &srvDesc, hDescriptor);
+		md3dDevice->CreateShaderResourceView(e.Get(), &srvDesc, hDescriptor);
+		hDescriptor.Offset(1, mCbvSrvUavDescriptorSize);
+	}
 }
 
 void MyStencilDemo::BuildShadersAndInputLayout()
@@ -930,7 +920,7 @@ void MyStencilDemo::BuildRenderItems()
 	floorRitem->BaseVertexLocation = floorRitem->Geo->DrawArgs["floor"].BaseVertexLocation;
 	floorRitem->StartIndexLocation = floorRitem->Geo->DrawArgs["floor"].StartIndexLocation;
 	mRitemLayer[(int)RenderLayer::Opaque].push_back(floorRitem.get());
-	
+
 	auto wallRitem = std::make_unique<RenderItem>();
 	wallRitem->ObjCBIndex = 1;
 	wallRitem->Mat = mMaterials["bricks"].get();
@@ -960,17 +950,29 @@ void MyStencilDemo::BuildRenderItems()
 	mReflectedSkullRitem = reflectedSkullRitem.get();
 	mRitemLayer[(int)RenderLayer::Reflected].push_back(reflectedSkullRitem.get());
 
+	// Ex 11-11
+	// Reflected floor will have different world matrix.
+	// so it needs to be its own render item.
+	auto reflectedFloorRitem = std::make_unique<RenderItem>();	
+	*reflectedFloorRitem = *floorRitem;
+	XMMATRIX R = XMMatrixReflect(XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f)); // xy plane
+	XMStoreFloat4x4(&reflectedFloorRitem->World, XMLoadFloat4x4(&floorRitem->World) * R);
+	reflectedFloorRitem->ObjCBIndex = 4;
+	mRitemLayer[(int)RenderLayer::Reflected].push_back(reflectedFloorRitem.get());
+	//
+	//
+
 	// Shadowed skull will have different world matrix.
 	// so it needs to be its own render item.
 	auto shadowedSkullRitem = std::make_unique<RenderItem>();
 	*shadowedSkullRitem = *skullRitem;
-	shadowedSkullRitem->ObjCBIndex = 4;
+	shadowedSkullRitem->ObjCBIndex = 5;
 	shadowedSkullRitem->Mat = mMaterials["shadow"].get();
 	mShadowedSkullRitem = shadowedSkullRitem.get();
 	mRitemLayer[(int)RenderLayer::Shadow].push_back(shadowedSkullRitem.get());
 
 	auto mirrorRitem = std::make_unique<RenderItem>();
-	mirrorRitem->ObjCBIndex = 5;
+	mirrorRitem->ObjCBIndex = 6;
 	mirrorRitem->Mat = mMaterials["iceMirror"].get();
 	mirrorRitem->Geo = mGeometries["roomGeo"].get();
 	mirrorRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
@@ -984,6 +986,7 @@ void MyStencilDemo::BuildRenderItems()
 	mAllRitems.push_back(std::move(wallRitem));
 	mAllRitems.push_back(std::move(skullRitem));
 	mAllRitems.push_back(std::move(reflectedSkullRitem));
+	mAllRitems.push_back(std::move(reflectedFloorRitem)); // Ex 11-11
 	mAllRitems.push_back(std::move(shadowedSkullRitem));
 	mAllRitems.push_back(std::move(mirrorRitem));
 }

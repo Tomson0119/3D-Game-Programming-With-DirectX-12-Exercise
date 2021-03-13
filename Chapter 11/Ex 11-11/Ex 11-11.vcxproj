@@ -26,7 +26,7 @@
     <ClCompile Include="..\..\Common\myGameTimer.cpp" />
     <ClCompile Include="..\..\Common\myGeometryGenerator.cpp" />
     <ClCompile Include="..\..\Common\myMathHelper.cpp" />
-    <ClCompile Include="StencilDemo.cpp" />
+    <ClCompile Include="Ex 11-11.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\Common\DDSTextureLoader.h" />
@@ -38,7 +38,7 @@
     <ClInclude Include="..\..\Common\myGeometryGenerator.h" />
     <ClInclude Include="..\..\Common\myMathHelper.h" />
     <ClInclude Include="..\..\Common\myUploadBuffer.h" />
-    <ClInclude Include="StencilDemo.h" />
+    <ClInclude Include="Ex 11-11.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

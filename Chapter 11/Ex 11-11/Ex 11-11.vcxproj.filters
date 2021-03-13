@@ -21,9 +21,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="StencilDemo.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Common\DDSTextureLoader.cpp">
       <Filter>소스 파일\Helper</Filter>
     </ClCompile>
@@ -45,11 +42,11 @@
     <ClCompile Include="..\..\Common\myMathHelper.cpp">
       <Filter>소스 파일\Helper</Filter>
     </ClCompile>
+    <ClCompile Include="Ex 11-11.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="StencilDemo.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Common\DDSTextureLoader.h">
       <Filter>헤더 파일\Helper</Filter>
     </ClInclude>
@@ -76,6 +73,9 @@
     </ClInclude>
     <ClInclude Include="..\..\Common\myUploadBuffer.h">
       <Filter>헤더 파일\Helper</Filter>
+    </ClInclude>
+    <ClInclude Include="Ex 11-11.h">
+      <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
