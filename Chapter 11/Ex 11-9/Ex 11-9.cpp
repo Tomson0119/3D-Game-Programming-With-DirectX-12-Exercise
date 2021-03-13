@@ -1,4 +1,4 @@
-#include "LandWaveApp.h"
+#include "Ex 11-9.h"
 #include "../../Common/DDSTextureLoader.h"
 
 MyLandWaveApp::MyLandWaveApp()
