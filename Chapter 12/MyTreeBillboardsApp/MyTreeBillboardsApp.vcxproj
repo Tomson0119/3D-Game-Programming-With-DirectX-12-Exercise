@@ -164,10 +164,15 @@
     <ClInclude Include="waves.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Shaders\lightingUtil.hlsl">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
     <None Include="Shaders\default.hlsl">
       <FileType>Document</FileType>
     </None>
-    <None Include="Shaders\lightingUtil.hlsl">
+    <None Include="Shaders\treeSprite.hlsl">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>

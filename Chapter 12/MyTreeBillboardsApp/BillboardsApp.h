@@ -15,14 +15,14 @@ using namespace DirectX;
 
 const int gNumFrameResources = 3;
 
-class MyLandWaveApp : public MyD3DApp
+class MyBillboardsApp : public MyD3DApp
 {
 public:
 
-	MyLandWaveApp();
-	MyLandWaveApp(const MyLandWaveApp& rhs) = delete;
-	MyLandWaveApp& operator=(const MyLandWaveApp& rhs) = delete;
-	~MyLandWaveApp();
+	MyBillboardsApp();
+	MyBillboardsApp(const MyBillboardsApp& rhs) = delete;
+	MyBillboardsApp& operator=(const MyBillboardsApp& rhs) = delete;
+	~MyBillboardsApp();
 
 	virtual bool Initialize() override;
 
@@ -51,6 +51,7 @@ private:
 	void BuildLandGeometry();
 	void BuildWavesGeometry();
 	void BuildBoxGeometry();
+	void BuildTreeSpritesGeometry();
 	void BuildPSOs();
 	void BuildFrameResources();
 	void BuildMaterials();
@@ -81,6 +82,7 @@ private:
 	std::unordered_map<std::string, ComPtr<ID3D12PipelineState>> mPSOs;
 
 	std::vector<D3D12_INPUT_ELEMENT_DESC> mInputLayout;
+	std::vector<D3D12_INPUT_ELEMENT_DESC> mTreeSpriteInputLayout;
 
 	RenderItem* mWavesRitem = nullptr;
 
@@ -117,7 +119,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, PSTR, int showCmd)
 
 	try
 	{
-		MyLandWaveApp app;
+		MyBillboardsApp app;
 		if (!app.Initialize())
 			return 0;
 

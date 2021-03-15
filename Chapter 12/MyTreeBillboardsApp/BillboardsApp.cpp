@@ -1,18 +1,18 @@
 #include "BillboardsApp.h"
 #include "../../Common/DDSTextureLoader.h"
 
-MyLandWaveApp::MyLandWaveApp()
+MyBillboardsApp::MyBillboardsApp()
 	: MyD3DApp()
 {
 }
 
-MyLandWaveApp::~MyLandWaveApp()
+MyBillboardsApp::~MyBillboardsApp()
 {
 	if (md3dDevice != nullptr)
 		FlushCommandQueue();
 }
 
-bool MyLandWaveApp::Initialize()
+bool MyBillboardsApp::Initialize()
 {
 	if (!MyD3DApp::Initialize())
 		return false;
@@ -27,6 +27,7 @@ bool MyLandWaveApp::Initialize()
 	BuildLandGeometry();
 	BuildWavesGeometry();
 	BuildBoxGeometry();
+	BuildTreeSpritesGeometry();
 	BuildMaterials();
 	BuildLandAndWavesRenderItems();
 	BuildFrameResources();
@@ -43,7 +44,7 @@ bool MyLandWaveApp::Initialize()
 	return true;
 }
 
-void MyLandWaveApp::OnResize()
+void MyBillboardsApp::OnResize()
 {
 	MyD3DApp::OnResize();
 
@@ -53,7 +54,7 @@ void MyLandWaveApp::OnResize()
 	XMStoreFloat4x4(&mProj, P);
 }
 
-void MyLandWaveApp::Update(const MyGameTimer& gt)
+void MyBillboardsApp::Update(const MyGameTimer& gt)
 {
 	OnKeyboardInput(gt);
 	UpdateCamera(gt);
@@ -81,7 +82,7 @@ void MyLandWaveApp::Update(const MyGameTimer& gt)
 	UpdateWaves(gt);
 }
 
-void MyLandWaveApp::Draw(const MyGameTimer& gt)
+void MyBillboardsApp::Draw(const MyGameTimer& gt)
 {
 	auto cmdListAlloc = mCurrFrameResource->CmdListAlloc;
 
@@ -128,6 +129,10 @@ void MyLandWaveApp::Draw(const MyGameTimer& gt)
 	mCommandList->SetPipelineState(mPSOs["alphaTested"].Get());
 	DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::AlphaTested]);
 
+	// Draw alphaTested tree sprites render items.
+	mCommandList->SetPipelineState(mPSOs["treeSprites"].Get());
+	DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::AlphaTestedTreeSprites]);
+
 	// Draw transparent render items.
 	mCommandList->SetPipelineState(mPSOs["transparent"].Get());
 	DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::Transparent]);
@@ -160,7 +165,7 @@ void MyLandWaveApp::Draw(const MyGameTimer& gt)
 	mCommandQueue->Signal(mFence.Get(), mCurrentFence);
 }
 
-void MyLandWaveApp::OnMouseDown(WPARAM btnState, int x, int y)
+void MyBillboardsApp::OnMouseDown(WPARAM btnState, int x, int y)
 {
 	mLastMousePos.x = x;
 	mLastMousePos.y = y;
@@ -168,12 +173,12 @@ void MyLandWaveApp::OnMouseDown(WPARAM btnState, int x, int y)
 	SetCapture(m_hwnd);
 }
 
-void MyLandWaveApp::OnMouseUp(WPARAM btnState, int x, int y)
+void MyBillboardsApp::OnMouseUp(WPARAM btnState, int x, int y)
 {
 	ReleaseCapture();
 }
 
-void MyLandWaveApp::OnMouseMove(WPARAM btnState, int x, int y)
+void MyBillboardsApp::OnMouseMove(WPARAM btnState, int x, int y)
 {
 	if ((btnState & MK_LBUTTON) != 0)
 	{
@@ -205,7 +210,7 @@ void MyLandWaveApp::OnMouseMove(WPARAM btnState, int x, int y)
 	mLastMousePos.y = y;
 }
 
-void MyLandWaveApp::OnKeyboardInput(const MyGameTimer& gt)
+void MyBillboardsApp::OnKeyboardInput(const MyGameTimer& gt)
 {
 	const float dt = gt.DeltaTime();
 
@@ -221,7 +226,7 @@ void MyLandWaveApp::OnKeyboardInput(const MyGameTimer& gt)
 	mSunPhi = MyMathHelper::Clamp(mSunPhi, 0.1f, XM_PIDIV2);
 }
 
-void MyLandWaveApp::UpdateCamera(const MyGameTimer& gt)
+void MyBillboardsApp::UpdateCamera(const MyGameTimer& gt)
 {
 	// Convert Spherical to Cartesian coordinates.
 	mEyePos.x = mRadius * sinf(mPhi) * cosf(mTheta);
@@ -237,7 +242,7 @@ void MyLandWaveApp::UpdateCamera(const MyGameTimer& gt)
 	XMStoreFloat4x4(&mView, view);
 }
 
-void MyLandWaveApp::AnimateMaterials(const MyGameTimer& gt)
+void MyBillboardsApp::AnimateMaterials(const MyGameTimer& gt)
 {
 	// Scroll the water material texture coordinates.
 	auto waterMat = mMaterials["water"].get();
@@ -261,7 +266,7 @@ void MyLandWaveApp::AnimateMaterials(const MyGameTimer& gt)
 	waterMat->NumFramesDirty = gNumFrameResources;
 }
 
-void MyLandWaveApp::UpdateObjectCBs(const MyGameTimer& gt)
+void MyBillboardsApp::UpdateObjectCBs(const MyGameTimer& gt)
 {
 	auto currObjectCB = mCurrFrameResource->ObjectCB.get();
 	for (auto& e : mAllRitems)
@@ -285,7 +290,7 @@ void MyLandWaveApp::UpdateObjectCBs(const MyGameTimer& gt)
 	}
 }
 
-void MyLandWaveApp::UpdateMaterialCBs(const MyGameTimer& gt)
+void MyBillboardsApp::UpdateMaterialCBs(const MyGameTimer& gt)
 {
 	auto currMaterialCB = mCurrFrameResource->MaterialCB.get();
 	for (auto& e : mMaterials)
@@ -310,7 +315,7 @@ void MyLandWaveApp::UpdateMaterialCBs(const MyGameTimer& gt)
 	}
 }
 
-void MyLandWaveApp::UpdateMainPassCB(const MyGameTimer& gt)
+void MyBillboardsApp::UpdateMainPassCB(const MyGameTimer& gt)
 {
 	XMMATRIX view = XMLoadFloat4x4(&mView);
 	XMMATRIX proj = XMLoadFloat4x4(&mProj);
@@ -353,7 +358,7 @@ void MyLandWaveApp::UpdateMainPassCB(const MyGameTimer& gt)
 	currPassCB->CopyData(0, mMainPassCB);
 }
 
-void MyLandWaveApp::UpdateWaves(const MyGameTimer& gt)
+void MyBillboardsApp::UpdateWaves(const MyGameTimer& gt)
 {
 	// Every quarter second, generate a random wave.
 	static float t_base = 0.0f;
@@ -393,20 +398,22 @@ void MyLandWaveApp::UpdateWaves(const MyGameTimer& gt)
 	mWavesRitem->Geo->VertexBufferGPU = currWavesVB->Resource();
 }
 
-void MyLandWaveApp::LoadTextures()
+void MyBillboardsApp::LoadTextures()
 {
 	const std::vector<std::string> texNames =
 	{
 		"grassTex",
 		"waterTex",
-		"wireFenceTex"
+		"wireFenceTex",
+		"treeArrayTex"
 	};
 
 	const std::vector<std::wstring> texFileNames =
 	{
 		L"../../Textures/grass.dds",
 		L"../../Textures/water1.dds",
-		L"../../Textures/WireFence.dds"
+		L"../../Textures/WireFence.dds",
+		L"../../Textures/treeArray2.dds"
 	};
 
 	for (size_t i = 0; i < texFileNames.size(); ++i)
@@ -422,7 +429,7 @@ void MyLandWaveApp::LoadTextures()
 	}
 }
 
-void MyLandWaveApp::BuildRootSignature()
+void MyBillboardsApp::BuildRootSignature()
 {
 	CD3DX12_DESCRIPTOR_RANGE texTable;
 	texTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
@@ -464,7 +471,7 @@ void MyLandWaveApp::BuildRootSignature()
 		IID_PPV_ARGS(mRootSignature.GetAddressOf())));
 }
 
-void MyLandWaveApp::BuildDescriptorHeaps()
+void MyBillboardsApp::BuildDescriptorHeaps()
 {
 	// Resources container.
 	const std::vector<ComPtr<ID3D12Resource>> texResources =
@@ -476,7 +483,7 @@ void MyLandWaveApp::BuildDescriptorHeaps()
 
 	// Create the SRV heap.
 	D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
-	srvHeapDesc.NumDescriptors = (UINT)texResources.size();
+	srvHeapDesc.NumDescriptors = (UINT)texResources.size() + 1;
 	srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(
@@ -500,9 +507,18 @@ void MyLandWaveApp::BuildDescriptorHeaps()
 		md3dDevice->CreateShaderResourceView(texResources[i].Get(), &srvDesc, hDescriptor);
 		hDescriptor.Offset(1, mCbvSrvUavDescriptorSize);
 	}
+
+	auto treeArrayTex = mTextures["treeArrayTex"]->Resource;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
+	srvDesc.Format = treeArrayTex->GetDesc().Format;
+	srvDesc.Texture2DArray.MostDetailedMip = 0;
+	srvDesc.Texture2DArray.MipLevels = -1;
+	srvDesc.Texture2DArray.FirstArraySlice = 0;
+	srvDesc.Texture2DArray.ArraySize = treeArrayTex->GetDesc().DepthOrArraySize;
+	md3dDevice->CreateShaderResourceView(treeArrayTex.Get(), &srvDesc, hDescriptor);
 }
 
-void MyLandWaveApp::BuildShadersAndInputLayout()
+void MyBillboardsApp::BuildShadersAndInputLayout()
 {
 	const D3D_SHADER_MACRO defines[] =
 	{
@@ -517,19 +533,43 @@ void MyLandWaveApp::BuildShadersAndInputLayout()
 		NULL, NULL
 	};
 
-	mShaders["standardVS"] = MyD3DUtil::CompileShader(L"Shaders\\default.hlsl", nullptr, "VS", "vs_5_0");
-	mShaders["opaquePS"] = MyD3DUtil::CompileShader(L"Shaders\\default.hlsl", defines, "PS", "ps_5_0");
-	mShaders["alphaTestedPS"] = MyD3DUtil::CompileShader(L"Shaders\\default.hlsl", alphaTestDefines, "PS", "ps_5_0");
+	const std::wstring defaultShaderPath = L"Shaders\\default.hlsl";
+	const std::wstring treeSpriteShaderPath = L"Shaders\\treeSprite.hlsl";
+
+	mShaders["standardVS"] = MyD3DUtil::CompileShader(
+		defaultShaderPath, nullptr, "VS", "vs_5_0");
+	mShaders["opaquePS"] = MyD3DUtil::CompileShader(
+		defaultShaderPath, defines, "PS", "ps_5_0");
+	mShaders["alphaTestedPS"] = MyD3DUtil::CompileShader(
+		defaultShaderPath, alphaTestDefines, "PS", "ps_5_0");
+
+	mShaders["treeSpriteVS"] = MyD3DUtil::CompileShader(
+		treeSpriteShaderPath, nullptr, "VS", "vs_5_0");
+	mShaders["treeSpriteGS"] = MyD3DUtil::CompileShader(
+		treeSpriteShaderPath, nullptr, "GS", "gs_5_0");
+	mShaders["treeSpritePS"] = MyD3DUtil::CompileShader(
+		treeSpriteShaderPath, alphaTestDefines, "PS", "ps_5_0");
 
 	mInputLayout =
 	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, 
+			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, 
+			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, 
+			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+	};
+
+	mTreeSpriteInputLayout =
+	{
+		{"POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, 
+			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+		{"SIZE", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12,
+			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
 	};
 }
 
-void MyLandWaveApp::BuildLandGeometry()
+void MyBillboardsApp::BuildLandGeometry()
 {
 	MyGeometryGenerator geoGen;
 	MyGeometryGenerator::MeshData grid = geoGen.CreateGrid(160.0f, 160.0f, 50, 50);
@@ -579,7 +619,7 @@ void MyLandWaveApp::BuildLandGeometry()
 	mGeometries["landGeo"] = std::move(geo);
 }
 
-void MyLandWaveApp::BuildWavesGeometry()
+void MyBillboardsApp::BuildWavesGeometry()
 {
 	mWaves = std::make_unique<Waves>(128, 128, 1.0f, 0.03f, 4.0f, 0.2f);
 	std::vector<std::uint16_t> indices(3 * (size_t)mWaves->TriangleCount()); // 3 indices per face
@@ -636,7 +676,7 @@ void MyLandWaveApp::BuildWavesGeometry()
 	mGeometries[geo->Name] = std::move(geo);
 }
 
-void MyLandWaveApp::BuildBoxGeometry()
+void MyBillboardsApp::BuildBoxGeometry()
 {
 	MyGeometryGenerator geoGen;
 	MyGeometryGenerator::MeshData box = geoGen.CreateBox(10.0f, 10.0f, 10.0f, 5);
@@ -684,7 +724,68 @@ void MyLandWaveApp::BuildBoxGeometry()
 	mGeometries[boxGeo->Name] = std::move(boxGeo);
 }
 
-void MyLandWaveApp::BuildPSOs()
+void MyBillboardsApp::BuildTreeSpritesGeometry()
+{
+	struct TreeSpriteVertex
+	{
+		XMFLOAT3 Pos;
+		XMFLOAT2 Size;
+	};
+
+	static const int treeCount = 16;
+	std::array<TreeSpriteVertex, treeCount> vertices;
+	for (UINT i = 0; i < treeCount; ++i)
+	{
+		float x = MyMathHelper::RandF(-45.0f, 45.0f);
+		float z = MyMathHelper::RandF(-45.0f, 45.0f);
+		float y = GetHillsHeight(x, z);
+
+		y += 8.0f; // Move tree slightly above land height.
+
+		vertices[i].Pos = XMFLOAT3(x, y, z);
+		vertices[i].Size = XMFLOAT2(20.0f, 20.0f);
+	}
+
+	std::array<std::uint16_t, 16> indices =
+	{
+		0, 1, 2, 3, 4, 5, 6, 7, 8,
+		9, 10, 11, 12, 13, 14, 15
+	};
+
+	const UINT vbByteSize = (UINT)vertices.size() * sizeof(TreeSpriteVertex);
+	const UINT ibByteSize = (UINT)indices.size() * sizeof(std::uint16_t);
+
+	auto geo = std::make_unique<MeshGeometry>();
+	geo->Name = "treeSpritesGeo";
+
+	ThrowIfFailed(D3DCreateBlob(vbByteSize, &geo->VertexBufferCPU));
+	CopyMemory(geo->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
+
+	ThrowIfFailed(D3DCreateBlob(ibByteSize, &geo->IndexBufferCPU));
+	CopyMemory(geo->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
+
+	geo->VertexBufferGPU = MyD3DUtil::CreateDefaultBuffer(md3dDevice.Get(),
+		mCommandList.Get(), vertices.data(), vbByteSize, geo->VertexBufferUploader);
+
+	geo->IndexBufferGPU = MyD3DUtil::CreateDefaultBuffer(md3dDevice.Get(),
+		mCommandList.Get(), indices.data(), ibByteSize, geo->IndexBufferUploader);
+
+	geo->VertexBufferByteSize = vbByteSize;
+	geo->IndexBufferByteSize = ibByteSize;
+	geo->VertexByteStride = sizeof(TreeSpriteVertex);
+	geo->IndexFormat = DXGI_FORMAT_R16_UINT;
+
+	SubmeshGeometry submesh;
+	submesh.BaseVertexLocation = 0;
+	submesh.StartIndexLocation = 0;
+	submesh.IndexCount = (UINT)indices.size();
+
+	geo->DrawArgs["points"] = submesh;
+
+	mGeometries[geo->Name] = std::move(geo);
+}
+
+void MyBillboardsApp::BuildPSOs()
 {
 	// PSO for opaque objects.
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC opaquePsoDesc;
@@ -747,9 +848,34 @@ void MyLandWaveApp::BuildPSOs()
 
 	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(
 		&alphaTestedPsoDesc, IID_PPV_ARGS(&mPSOs["alphaTested"])));
+
+	
+	// PSO for tree sprites.
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC treeSpritePsoDesc = opaquePsoDesc;
+	treeSpritePsoDesc.VS =
+	{
+		reinterpret_cast<BYTE*>(mShaders["treeSpriteVS"]->GetBufferPointer()),
+		mShaders["treeSpriteVS"]->GetBufferSize()
+	};
+	treeSpritePsoDesc.GS =
+	{
+		reinterpret_cast<BYTE*>(mShaders["treeSpriteGS"]->GetBufferPointer()),
+		mShaders["treeSpriteGS"]->GetBufferSize()
+	};
+	treeSpritePsoDesc.PS =
+	{
+		reinterpret_cast<BYTE*>(mShaders["treeSpritePS"]->GetBufferPointer()),
+		mShaders["treeSpritePS"]->GetBufferSize()
+	};
+	treeSpritePsoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
+	treeSpritePsoDesc.InputLayout = { mTreeSpriteInputLayout.data(), (UINT)mTreeSpriteInputLayout.size() };
+	treeSpritePsoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+
+	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(
+		&treeSpritePsoDesc,	IID_PPV_ARGS(&mPSOs["treeSprites"])));
 }
 
-void MyLandWaveApp::BuildFrameResources()
+void MyBillboardsApp::BuildFrameResources()
 {
 	for (int i = 0; i < gNumFrameResources; ++i)
 	{
@@ -758,7 +884,7 @@ void MyLandWaveApp::BuildFrameResources()
 	}
 }
 
-void MyLandWaveApp::BuildMaterials()
+void MyBillboardsApp::BuildMaterials()
 {
 	auto grass = std::make_unique<Material>();
 	grass->Name = "grass";
@@ -786,9 +912,18 @@ void MyLandWaveApp::BuildMaterials()
 	box->FresnelR0 = XMFLOAT3(0.1f, 0.1f, 0.1f);
 	box->Roughness = 0.25f;
 	mMaterials[box->Name] = std::move(box);
+
+	auto treeSprites = std::make_unique<Material>();
+	treeSprites->Name = "treeSprites";
+	treeSprites->MatCBIndex = 3;
+	treeSprites->DiffuseSrvHeapIndex = 3;
+	treeSprites->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	treeSprites->FresnelR0 = XMFLOAT3(0.01f, 0.01f, 0.01f);
+	treeSprites->Roughness = 0.125f;
+	mMaterials[treeSprites->Name] = std::move(treeSprites);
 }
 
-void MyLandWaveApp::BuildLandAndWavesRenderItems()
+void MyBillboardsApp::BuildLandAndWavesRenderItems()
 {
 	auto wavesRitem = std::make_unique<RenderItem>();
 	wavesRitem->World = MyMathHelper::Identity4x4();
@@ -826,12 +961,24 @@ void MyLandWaveApp::BuildLandAndWavesRenderItems()
 	boxRitem->BaseVertexLocation = boxRitem->Geo->DrawArgs["box"].BaseVertexLocation;
 	mRitemLayer[(int)RenderLayer::AlphaTested].push_back(boxRitem.get());
 
+	auto treeSpritesRitem = std::make_unique<RenderItem>();
+	treeSpritesRitem->World = MyMathHelper::Identity4x4();
+	treeSpritesRitem->ObjCBIndex = 3;
+	treeSpritesRitem->Mat = mMaterials["treeSprites"].get();
+	treeSpritesRitem->Geo = mGeometries["treeSpritesGeo"].get();
+	treeSpritesRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_POINTLIST;
+	treeSpritesRitem->IndexCount = treeSpritesRitem->Geo->DrawArgs["points"].IndexCount;
+	treeSpritesRitem->StartIndexLocation = treeSpritesRitem->Geo->DrawArgs["points"].StartIndexLocation;
+	treeSpritesRitem->BaseVertexLocation = treeSpritesRitem->Geo->DrawArgs["points"].BaseVertexLocation;
+	mRitemLayer[(int)RenderLayer::AlphaTestedTreeSprites].push_back(treeSpritesRitem.get());
+
 	mAllRitems.push_back(std::move(wavesRitem));
 	mAllRitems.push_back(std::move(gridRitem));
 	mAllRitems.push_back(std::move(boxRitem));
+	mAllRitems.push_back(std::move(treeSpritesRitem));
 }
 
-void MyLandWaveApp::DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::vector<RenderItem*>& ritems)
+void MyBillboardsApp::DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::vector<RenderItem*>& ritems)
 {
 	UINT objCBByteSize = MyD3DUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants));
 	UINT matCBByteSize = MyD3DUtil::CalcConstantBufferByteSize(sizeof(MaterialConstants));
@@ -864,7 +1011,7 @@ void MyLandWaveApp::DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const st
 	}
 }
 
-std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> MyLandWaveApp::GetStaticSamplers()
+std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> MyBillboardsApp::GetStaticSamplers()
 {
 	// Applications usually only need a handful of samplers. So just define them
 	// all up front and keep them available as part of the root signature.
@@ -921,12 +1068,12 @@ std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> MyLandWaveApp::GetStaticSampler
 		anisotropicWrap, anisotropicClamp };
 }
 
-float MyLandWaveApp::GetHillsHeight(float x, float z) const
+float MyBillboardsApp::GetHillsHeight(float x, float z) const
 {
 	return 0.3f * (z * sinf(0.1f * x) + x * cosf(0.1f * z));
 }
 
-XMFLOAT3 MyLandWaveApp::GetHillsNormal(float x, float z) const
+XMFLOAT3 MyBillboardsApp::GetHillsNormal(float x, float z) const
 {
 	// n = (-df/dx, 1, -df/dz)
 	XMFLOAT3 n(
