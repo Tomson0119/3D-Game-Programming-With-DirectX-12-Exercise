@@ -5,7 +5,6 @@
 #include "../../Common/myGeometryGenerator.h"
 
 #include "RenderItem.h"
-#include "waves.h"
 
 #include <DirectXColors.h>
 #include <array>
@@ -15,14 +14,14 @@ using namespace DirectX;
 
 const int gNumFrameResources = 3;
 
-class MyBillboardsApp : public MyD3DApp
+class MyCylinderApp : public MyD3DApp
 {
 public:
 
-	MyBillboardsApp();
-	MyBillboardsApp(const MyBillboardsApp& rhs) = delete;
-	MyBillboardsApp& operator=(const MyBillboardsApp& rhs) = delete;
-	~MyBillboardsApp();
+	MyCylinderApp();
+	MyCylinderApp(const MyCylinderApp& rhs) = delete;
+	MyCylinderApp& operator=(const MyCylinderApp& rhs) = delete;
+	~MyCylinderApp();
 
 	virtual bool Initialize() override;
 
@@ -42,28 +41,21 @@ private:
 	void UpdateObjectCBs(const MyGameTimer& gt);
 	void UpdateMaterialCBs(const MyGameTimer& gt);
 	void UpdateMainPassCB(const MyGameTimer& gt);
-	void UpdateWaves(const MyGameTimer& gt);
 
 	void LoadTextures();
 	void BuildRootSignature();
 	void BuildDescriptorHeaps();
 	void BuildShadersAndInputLayout();
-	void BuildLandGeometry();
-	void BuildWavesGeometry();
-	void BuildBoxGeometry();
-	void BuildTreeSpritesGeometry();
+	void BuildCirclesGeometry(); // ex 12-1
 	void BuildPSOs();
 	void BuildFrameResources();
 	void BuildMaterials();
-	void BuildLandAndWavesRenderItems();
+	void BuildRenderItems();
 
 	void DrawRenderItems(ID3D12GraphicsCommandList* cmdList,
 		const std::vector<RenderItem*>& ritems);
 
 	std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> GetStaticSamplers();
-
-	float GetHillsHeight(float x, float z) const;
-	XMFLOAT3 GetHillsNormal(float x, float z) const;
 
 private:
 
@@ -82,17 +74,12 @@ private:
 	std::unordered_map<std::string, ComPtr<ID3D12PipelineState>> mPSOs;
 
 	std::vector<D3D12_INPUT_ELEMENT_DESC> mInputLayout;
-	std::vector<D3D12_INPUT_ELEMENT_DESC> mTreeSpriteInputLayout;
-
-	RenderItem* mWavesRitem = nullptr;
 
 	// List of all the render items.
 	std::vector<std::unique_ptr<RenderItem>> mAllRitems;
 
 	// Render items divided by PSO.
 	std::vector<RenderItem*> mRitemLayer[(int)RenderLayer::Count];
-
-	std::unique_ptr<Waves> mWaves;
 
 	PassConstants mMainPassCB;
 
@@ -101,8 +88,8 @@ private:
 	XMFLOAT4X4 mProj = MyMathHelper::Identity4x4();
 
 	float mTheta = 1.5f * XM_PI;
-	float mPhi = XM_PIDIV2 - 0.1f;
-	float mRadius = 60.0f;
+	float mPhi = XM_PIDIV2 - 0.4f;
+	float mRadius = 40.0f;
 
 	float mSunTheta = 1.25f * XM_PI;
 	float mSunPhi = XM_PIDIV4;
@@ -119,7 +106,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, PSTR, int showCmd)
 
 	try
 	{
-		MyBillboardsApp app;
+		MyCylinderApp app;
 		if (!app.Initialize())
 			return 0;
 

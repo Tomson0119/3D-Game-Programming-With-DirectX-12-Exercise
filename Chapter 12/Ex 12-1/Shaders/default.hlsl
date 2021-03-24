@@ -72,41 +72,66 @@ cbuffer cbPass : register(b2)
 struct VertexIn
 {
 	float3 PosL : POSITION;
-	float3 NormalL : NORMAL;
-	float2 TexC : TEXCOORD;
+	float2 Size : SIZE;
 };
 
 struct VertexOut
 {
-	float4 PosH : SV_POSITION;
 	float3 PosW : POSITION;
+	float2 Size : SIZE;
+};
+
+struct GeoOut
+{
+	float4 PosH    : SV_POSITION;
+	float3 PosW	   : POSITION;
 	float3 NormalW : NORMAL;
-	float2 TexC : TEXCOORD;
+	float2 TexC    : TEXCOORD;
 };
 
 VertexOut VS(VertexIn vin)
 {
-	VertexOut vout = (VertexOut)0.0f;
+	VertexOut vout;
 
-	// Transform to world space.
+	// Just pass data over geometry shader.
 	float4 posW = mul(float4(vin.PosL, 1.0f), gWorld);
 	vout.PosW = posW.xyz;
-	
-	// Assumes nonuniform scaling; otherwise, need to use 
-	// inverse-transpose of world matrix.
-	vout.NormalW = mul(vin.NormalL, (float3x3)gWorld);
+	vout.Size = vin.Size;
 
-	// Transform to homogeneous clip space.
-	vout.PosH = mul(posW, gViewProj);
-
-	// Output vertex attributes for interpolation across triangle.
-	float4 texC = mul(float4(vin.TexC, 0.0f, 1.0f), gTexTransform);
-	vout.TexC = mul(texC, gMatTransform).xy;
-
-	return vout;
+	return vout;	
 }
 
-float4 PS(VertexOut pin) : SV_Target
+// Expand two vertices in line into a quad (4 vertices).
+[maxvertexcount(4)]
+void GS(line VertexOut gin[2], inout LineStream<GeoOut> lineStream)
+{
+	float height = gin[0].Size.y;
+
+	float4 vertices[4];
+	vertices[0] = float4(gin[0].PosW, 1.0f);
+	vertices[1] = float4(gin[1].PosW, 1.0f);
+	vertices[2] = float4(gin[1].PosW.x, gin[1].PosW.y + height, gin[1].PosW.z, 1.0f);
+	vertices[3] = float4(gin[0].PosW.x, gin[0].PosW.y + height, gin[0].PosW.z, 1.0f);
+
+	// Calculate normal vector facing outside.
+	float3 right = (vertices[0] - vertices[1]).xyz;
+	float3 up = (vertices[1] - vertices[2]).xyz;
+	float3 normal = normalize(cross(up, right));
+	
+	GeoOut gout;
+	[unroll]
+	for (int i = 0; i < 4; ++i)
+	{
+		gout.PosH = mul(vertices[i], gViewProj);
+		gout.PosW = vertices[i].xyz;
+		gout.NormalW = normal;
+		gout.TexC = float2(1.0f, 1.0f); // Since polygon is line strip, 
+										// the texture coordinates are pointless..
+		lineStream.Append(gout);
+	}
+}
+
+float4 PS(GeoOut pin) : SV_Target
 {
 	float4 diffuseAlbedo = gDiffuseMap.Sample(gsamAnisotropicWrap, pin.TexC) * gDiffuseAlbedo;
 

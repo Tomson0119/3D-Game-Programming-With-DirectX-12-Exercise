@@ -1,18 +1,18 @@
 #include "ex 12-1.h"
 #include "../../Common/DDSTextureLoader.h"
 
-MyBillboardsApp::MyBillboardsApp()
+MyCylinderApp::MyCylinderApp()
 	: MyD3DApp()
 {
 }
 
-MyBillboardsApp::~MyBillboardsApp()
+MyCylinderApp::~MyCylinderApp()
 {
 	if (md3dDevice != nullptr)
 		FlushCommandQueue();
 }
 
-bool MyBillboardsApp::Initialize()
+bool MyCylinderApp::Initialize()
 {
 	if (!MyD3DApp::Initialize())
 		return false;
@@ -24,12 +24,9 @@ bool MyBillboardsApp::Initialize()
 	BuildRootSignature();
 	BuildDescriptorHeaps();
 	BuildShadersAndInputLayout();
-	BuildLandGeometry();
-	BuildWavesGeometry();
-	BuildBoxGeometry();
-	BuildTreeSpritesGeometry();
+	BuildCirclesGeometry();
 	BuildMaterials();
-	BuildLandAndWavesRenderItems();
+	BuildRenderItems();
 	BuildFrameResources();
 	BuildPSOs();
 
@@ -44,7 +41,7 @@ bool MyBillboardsApp::Initialize()
 	return true;
 }
 
-void MyBillboardsApp::OnResize()
+void MyCylinderApp::OnResize()
 {
 	MyD3DApp::OnResize();
 
@@ -54,7 +51,7 @@ void MyBillboardsApp::OnResize()
 	XMStoreFloat4x4(&mProj, P);
 }
 
-void MyBillboardsApp::Update(const MyGameTimer& gt)
+void MyCylinderApp::Update(const MyGameTimer& gt)
 {
 	OnKeyboardInput(gt);
 	UpdateCamera(gt);
@@ -79,10 +76,9 @@ void MyBillboardsApp::Update(const MyGameTimer& gt)
 	UpdateObjectCBs(gt);
 	UpdateMaterialCBs(gt);
 	UpdateMainPassCB(gt);
-	UpdateWaves(gt);
 }
 
-void MyBillboardsApp::Draw(const MyGameTimer& gt)
+void MyCylinderApp::Draw(const MyGameTimer& gt)
 {
 	auto cmdListAlloc = mCurrFrameResource->CmdListAlloc;
 
@@ -103,7 +99,7 @@ void MyBillboardsApp::Draw(const MyGameTimer& gt)
 		D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
 
 	// Clear the back buffer and depth buffer.
-	mCommandList->ClearRenderTargetView(CurrentBackBufferView(), (float*)&mMainPassCB.FogColor, 0, nullptr);
+	mCommandList->ClearRenderTargetView(CurrentBackBufferView(), DirectX::Colors::White, 0, nullptr);
 	mCommandList->ClearDepthStencilView(DepthStencilView(), 
 		D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 
@@ -124,18 +120,6 @@ void MyBillboardsApp::Draw(const MyGameTimer& gt)
 
 	// Draw opaque render items.
 	DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::Opaque]);
-
-	// Draw alphaTested render items.
-	mCommandList->SetPipelineState(mPSOs["alphaTested"].Get());
-	DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::AlphaTested]);
-
-	// Draw alphaTested tree sprites render items.
-	mCommandList->SetPipelineState(mPSOs["treeSprites"].Get());
-	DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::AlphaTestedTreeSprites]);
-
-	// Draw transparent render items.
-	mCommandList->SetPipelineState(mPSOs["transparent"].Get());
-	DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::Transparent]);
 
 	//
 	// Draw part
@@ -165,7 +149,7 @@ void MyBillboardsApp::Draw(const MyGameTimer& gt)
 	mCommandQueue->Signal(mFence.Get(), mCurrentFence);
 }
 
-void MyBillboardsApp::OnMouseDown(WPARAM btnState, int x, int y)
+void MyCylinderApp::OnMouseDown(WPARAM btnState, int x, int y)
 {
 	mLastMousePos.x = x;
 	mLastMousePos.y = y;
@@ -173,12 +157,12 @@ void MyBillboardsApp::OnMouseDown(WPARAM btnState, int x, int y)
 	SetCapture(m_hwnd);
 }
 
-void MyBillboardsApp::OnMouseUp(WPARAM btnState, int x, int y)
+void MyCylinderApp::OnMouseUp(WPARAM btnState, int x, int y)
 {
 	ReleaseCapture();
 }
 
-void MyBillboardsApp::OnMouseMove(WPARAM btnState, int x, int y)
+void MyCylinderApp::OnMouseMove(WPARAM btnState, int x, int y)
 {
 	if ((btnState & MK_LBUTTON) != 0)
 	{
@@ -210,7 +194,7 @@ void MyBillboardsApp::OnMouseMove(WPARAM btnState, int x, int y)
 	mLastMousePos.y = y;
 }
 
-void MyBillboardsApp::OnKeyboardInput(const MyGameTimer& gt)
+void MyCylinderApp::OnKeyboardInput(const MyGameTimer& gt)
 {
 	const float dt = gt.DeltaTime();
 
@@ -226,7 +210,7 @@ void MyBillboardsApp::OnKeyboardInput(const MyGameTimer& gt)
 	mSunPhi = MyMathHelper::Clamp(mSunPhi, 0.1f, XM_PIDIV2);
 }
 
-void MyBillboardsApp::UpdateCamera(const MyGameTimer& gt)
+void MyCylinderApp::UpdateCamera(const MyGameTimer& gt)
 {
 	// Convert Spherical to Cartesian coordinates.
 	mEyePos.x = mRadius * sinf(mPhi) * cosf(mTheta);
@@ -242,31 +226,12 @@ void MyBillboardsApp::UpdateCamera(const MyGameTimer& gt)
 	XMStoreFloat4x4(&mView, view);
 }
 
-void MyBillboardsApp::AnimateMaterials(const MyGameTimer& gt)
+void MyCylinderApp::AnimateMaterials(const MyGameTimer& gt)
 {
-	// Scroll the water material texture coordinates.
-	auto waterMat = mMaterials["water"].get();
-
-	float& tu = waterMat->MatTransform(3, 0);
-	float& tv = waterMat->MatTransform(3, 1);
-
-	tu += 0.1f * gt.DeltaTime();
-	tv += 0.02f * gt.DeltaTime();
-
-	if (tu >= 1.0f)
-		tu -= 1.0f;
-
-	if (tv >= 1.0f)
-		tv -= 1.0f;
-
-	waterMat->MatTransform(3, 0) = tu;
-	waterMat->MatTransform(3, 1) = tv;
-
-	// Material has changed, so need to update cbuffer.
-	waterMat->NumFramesDirty = gNumFrameResources;
+	
 }
 
-void MyBillboardsApp::UpdateObjectCBs(const MyGameTimer& gt)
+void MyCylinderApp::UpdateObjectCBs(const MyGameTimer& gt)
 {
 	auto currObjectCB = mCurrFrameResource->ObjectCB.get();
 	for (auto& e : mAllRitems)
@@ -290,7 +255,7 @@ void MyBillboardsApp::UpdateObjectCBs(const MyGameTimer& gt)
 	}
 }
 
-void MyBillboardsApp::UpdateMaterialCBs(const MyGameTimer& gt)
+void MyCylinderApp::UpdateMaterialCBs(const MyGameTimer& gt)
 {
 	auto currMaterialCB = mCurrFrameResource->MaterialCB.get();
 	for (auto& e : mMaterials)
@@ -315,7 +280,7 @@ void MyBillboardsApp::UpdateMaterialCBs(const MyGameTimer& gt)
 	}
 }
 
-void MyBillboardsApp::UpdateMainPassCB(const MyGameTimer& gt)
+void MyCylinderApp::UpdateMainPassCB(const MyGameTimer& gt)
 {
 	XMMATRIX view = XMLoadFloat4x4(&mView);
 	XMMATRIX proj = XMLoadFloat4x4(&mProj);
@@ -358,78 +323,20 @@ void MyBillboardsApp::UpdateMainPassCB(const MyGameTimer& gt)
 	currPassCB->CopyData(0, mMainPassCB);
 }
 
-void MyBillboardsApp::UpdateWaves(const MyGameTimer& gt)
+void MyCylinderApp::LoadTextures()
 {
-	// Every quarter second, generate a random wave.
-	static float t_base = 0.0f;
-	if ((mTimer.TotalTime() - t_base) >= 0.25f)
-	{
-		t_base += 0.25f;
-
-		int i = MyMathHelper::Rand(4, mWaves->RowCount() - 5);
-		int j = MyMathHelper::Rand(4, mWaves->ColumnCount() - 5);
-
-		float r = MyMathHelper::RandF(0.2f, 0.5f);
-
-		mWaves->Disturb(i, j, r);
-	}
-
-	// Update the wave simulation.
-	mWaves->Update(gt.DeltaTime());
-
-	// Update the wave vertex buffer with the new solution.
-	auto currWavesVB = mCurrFrameResource->WavesVB.get();
-	for (int i = 0; i < mWaves->VertexCount(); ++i)
-	{
-		Vertex v;
-
-		v.Pos = mWaves->Position(i);
-		v.Normal = mWaves->Normal(i);
-
-		// Derive tex-coords from position by
-		// mapping[-w/2, w/2] --> [0, 1]
-		v.TexC.x = 0.5f + v.Pos.x / mWaves->Width();
-		v.TexC.y = 0.5f + v.Pos.z / mWaves->Depth();
-
-		currWavesVB->CopyData(i, v);
-	}
-
-	// Set the dynamic VB of the wave renderitem to the current frame VB.
-	mWavesRitem->Geo->VertexBufferGPU = currWavesVB->Resource();
+	// The texture is useless since the topology is line strip..
+	// So the color of lines will just be black..
+	auto tex = std::make_unique<Texture>();
+	tex->Name = "bricksTex";
+	tex->Filename = L"../../Textures/bricks2.dds";
+	ThrowIfFailed(CreateDDSTextureFromFile12(md3dDevice.Get(),
+		mCommandList.Get(), tex->Filename.c_str(),
+		tex->Resource, tex->UploadHeap));
+	mTextures[tex->Name] = std::move(tex);	
 }
 
-void MyBillboardsApp::LoadTextures()
-{
-	const std::vector<std::string> texNames =
-	{
-		"grassTex",
-		"waterTex",
-		"wireFenceTex",
-		"treeArrayTex"
-	};
-
-	const std::vector<std::wstring> texFileNames =
-	{
-		L"../../Textures/grass.dds",
-		L"../../Textures/water1.dds",
-		L"../../Textures/WireFence.dds",
-		L"../../Textures/treeArray2.dds"
-	};
-
-	for (size_t i = 0; i < texFileNames.size(); ++i)
-	{
-		auto tex = std::make_unique<Texture>();
-		tex->Name = texNames[i];
-		tex->Filename = texFileNames[i];
-		ThrowIfFailed(CreateDDSTextureFromFile12(md3dDevice.Get(),
-			mCommandList.Get(), tex->Filename.c_str(),
-			tex->Resource, tex->UploadHeap));
-
-		mTextures[tex->Name] = std::move(tex);
-	}
-}
-
-void MyBillboardsApp::BuildRootSignature()
+void MyCylinderApp::BuildRootSignature()
 {
 	CD3DX12_DESCRIPTOR_RANGE texTable;
 	texTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
@@ -471,19 +378,11 @@ void MyBillboardsApp::BuildRootSignature()
 		IID_PPV_ARGS(mRootSignature.GetAddressOf())));
 }
 
-void MyBillboardsApp::BuildDescriptorHeaps()
+void MyCylinderApp::BuildDescriptorHeaps()
 {
-	// Resources container.
-	const std::vector<ComPtr<ID3D12Resource>> texResources =
-	{
-		 mTextures["grassTex"]->Resource,
-		 mTextures["waterTex"]->Resource,
-		 mTextures["wireFenceTex"]->Resource
-	};
-
 	// Create the SRV heap.
 	D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
-	srvHeapDesc.NumDescriptors = (UINT)texResources.size() + 1;
+	srvHeapDesc.NumDescriptors = 1;
 	srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(
@@ -492,300 +391,102 @@ void MyBillboardsApp::BuildDescriptorHeaps()
 	// Fill out the heap with actual descriptors.
 	CD3DX12_CPU_DESCRIPTOR_HANDLE hDescriptor(mSrvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 
+	auto bricksTex = mTextures["bricksTex"]->Resource;
+
 	// 0th descriptor.
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	srvDesc.Texture2D.MostDetailedMip = 0;
 	srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
-
-	for (size_t i = 0; i < texResources.size(); ++i)
-	{
-		srvDesc.Format = texResources[i]->GetDesc().Format;
-		srvDesc.Texture2D.MipLevels = texResources[i]->GetDesc().MipLevels;
-
-		md3dDevice->CreateShaderResourceView(texResources[i].Get(), &srvDesc, hDescriptor);
-		hDescriptor.Offset(1, mCbvSrvUavDescriptorSize);
-	}
-
-	auto treeArrayTex = mTextures["treeArrayTex"]->Resource;
-	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
-	srvDesc.Format = treeArrayTex->GetDesc().Format;
-	srvDesc.Texture2DArray.MostDetailedMip = 0;
-	srvDesc.Texture2DArray.MipLevels = -1;
-	srvDesc.Texture2DArray.FirstArraySlice = 0;
-	srvDesc.Texture2DArray.ArraySize = treeArrayTex->GetDesc().DepthOrArraySize;
-	md3dDevice->CreateShaderResourceView(treeArrayTex.Get(), &srvDesc, hDescriptor);
+	srvDesc.Format = bricksTex->GetDesc().Format;
+	srvDesc.Texture2D.MipLevels = bricksTex->GetDesc().MipLevels;
+	md3dDevice->CreateShaderResourceView(bricksTex.Get(), &srvDesc, hDescriptor);
 }
 
-void MyBillboardsApp::BuildShadersAndInputLayout()
+void MyCylinderApp::BuildShadersAndInputLayout()
 {
-	const D3D_SHADER_MACRO defines[] =
-	{
-		"FOG", "1",
-		NULL, NULL
-	};
-
-	const D3D_SHADER_MACRO alphaTestDefines[] =
-	{
-		"FOG", "1",
-		"ALPHA_TEST", "1",
-		NULL, NULL
-	};
-
 	const std::wstring defaultShaderPath = L"Shaders\\default.hlsl";
-	const std::wstring treeSpriteShaderPath = L"Shaders\\treeSprite.hlsl";
 
-	mShaders["standardVS"] = MyD3DUtil::CompileShader(
-		defaultShaderPath, nullptr, "VS", "vs_5_0");
-	mShaders["opaquePS"] = MyD3DUtil::CompileShader(
-		defaultShaderPath, defines, "PS", "ps_5_0");
-	mShaders["alphaTestedPS"] = MyD3DUtil::CompileShader(
-		defaultShaderPath, alphaTestDefines, "PS", "ps_5_0");
-
-	mShaders["treeSpriteVS"] = MyD3DUtil::CompileShader(
-		treeSpriteShaderPath, nullptr, "VS", "vs_5_0");
-	mShaders["treeSpriteGS"] = MyD3DUtil::CompileShader(
-		treeSpriteShaderPath, nullptr, "GS", "gs_5_0");
-	mShaders["treeSpritePS"] = MyD3DUtil::CompileShader(
-		treeSpriteShaderPath, alphaTestDefines, "PS", "ps_5_0");
+	mShaders["standardVS"] = MyD3DUtil::CompileShader(defaultShaderPath, nullptr, "VS", "vs_5_0");
+	mShaders["standardGS"] = MyD3DUtil::CompileShader(defaultShaderPath, nullptr, "GS", "gs_5_0");
+	mShaders["opaquePS"] = MyD3DUtil::CompileShader(defaultShaderPath, nullptr, "PS", "ps_5_0");
 
 	mInputLayout =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, 
 			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, 
-			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, 
+		{ "SIZE", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, 
 			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
 	};
-
-	mTreeSpriteInputLayout =
-	{
-		{"POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, 
-			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-		{"SIZE", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12,
-			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
-	};
 }
 
-void MyBillboardsApp::BuildLandGeometry()
+void MyCylinderApp::BuildCirclesGeometry()
 {
-	MyGeometryGenerator geoGen;
-	MyGeometryGenerator::MeshData grid = geoGen.CreateGrid(160.0f, 160.0f, 50, 50);
-
-	std::vector<Vertex> vertices(grid.Vertices.size());
-	for (size_t i = 0; i < grid.Vertices.size(); ++i)
-	{
-		auto& p = grid.Vertices[i].Position;
-		vertices[i].Pos = p;
-		vertices[i].Pos.y = GetHillsHeight(p.x, p.z);
-		vertices[i].Normal = GetHillsNormal(p.x, p.z);
-		vertices[i].TexC = grid.Vertices[i].TexC;
-	}
-
-	const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
-
-	std::vector<std::uint16_t> indices = grid.GetIndices16();
-	const UINT ibByteSize = (UINT)indices.size() * sizeof(std::uint16_t);
-
-	auto geo = std::make_unique<MeshGeometry>();
-	geo->Name = "landGeo";
-
-	ThrowIfFailed(D3DCreateBlob(vbByteSize, &geo->VertexBufferCPU));
-	CopyMemory(geo->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
-
-	ThrowIfFailed(D3DCreateBlob(ibByteSize, &geo->IndexBufferCPU));
-	CopyMemory(geo->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
-
-	geo->VertexBufferGPU = MyD3DUtil::CreateDefaultBuffer(md3dDevice.Get(),
-		mCommandList.Get(), vertices.data(), vbByteSize, geo->VertexBufferUploader);
-
-	geo->IndexBufferGPU = MyD3DUtil::CreateDefaultBuffer(md3dDevice.Get(),
-		mCommandList.Get(), indices.data(), ibByteSize, geo->IndexBufferUploader);
-
-	geo->VertexByteStride = sizeof(Vertex);
-	geo->VertexBufferByteSize = vbByteSize;
-	geo->IndexFormat = DXGI_FORMAT_R16_UINT;
-	geo->IndexBufferByteSize = ibByteSize;
-
-	SubmeshGeometry submesh;
-	submesh.IndexCount = (UINT)indices.size();
-	submesh.StartIndexLocation = 0;
-	submesh.BaseVertexLocation = 0;
-
-	geo->DrawArgs["grid"] = submesh;
-
-	mGeometries["landGeo"] = std::move(geo);
-}
-
-void MyBillboardsApp::BuildWavesGeometry()
-{
-	mWaves = std::make_unique<Waves>(128, 128, 1.0f, 0.03f, 4.0f, 0.2f);
-	std::vector<std::uint16_t> indices(3 * (size_t)mWaves->TriangleCount()); // 3 indices per face
-	assert(mWaves->VertexCount() < 0x0000ffff);
-
-	// Iterate over each quad.
-	int m = mWaves->RowCount();
-	int n = mWaves->ColumnCount();
-	size_t k = 0;
-	for (int i = 0; i < m - 1; ++i)
-	{
-		for (int j = 0; j < n - 1; ++j)
-		{
-			indices[k] = i * n + j;
-			indices[k + 1] = i * n + j + 1;
-			indices[k + 2] = (i + 1) * n + j;
-
-			indices[k + 3] = (i + 1) * n + j;
-			indices[k + 4] = i * n + j + 1;
-			indices[k + 5] = (i + 1) * n + j + 1;
-
-			k += 6; // next quad
-		}
-	}
-
-	UINT vbByteSize = mWaves->VertexCount() * sizeof(Vertex);
-	UINT ibByteSize = (UINT)indices.size() * sizeof(std::uint16_t);
-
-	auto geo = std::make_unique<MeshGeometry>();
-	geo->Name = "waterGeo";
-
-	// Set dynamically.
-	geo->VertexBufferCPU = nullptr;
-	geo->VertexBufferGPU = nullptr;
-
-	ThrowIfFailed(D3DCreateBlob(ibByteSize, &geo->IndexBufferCPU));
-	CopyMemory(geo->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
-
-	geo->IndexBufferGPU = MyD3DUtil::CreateDefaultBuffer(md3dDevice.Get(),
-		mCommandList.Get(), indices.data(), ibByteSize, geo->IndexBufferUploader);
-
-	geo->VertexByteStride = sizeof(Vertex);
-	geo->VertexBufferByteSize = vbByteSize;
-	geo->IndexFormat = DXGI_FORMAT_R16_UINT;
-	geo->IndexBufferByteSize = ibByteSize;
-
-	SubmeshGeometry submesh;
-	submesh.IndexCount = (UINT)indices.size();
-	submesh.StartIndexLocation = 0;
-	submesh.BaseVertexLocation = 0;
-
-	geo->DrawArgs["grid"] = submesh;
-
-	mGeometries[geo->Name] = std::move(geo);
-}
-
-void MyBillboardsApp::BuildBoxGeometry()
-{
-	MyGeometryGenerator geoGen;
-	MyGeometryGenerator::MeshData box = geoGen.CreateBox(10.0f, 10.0f, 10.0f, 5);
-
-	std::vector<Vertex> vertices(box.Vertices.size());
-	for (size_t i = 0; i < box.Vertices.size(); ++i)
-	{
-		vertices[i].Pos = box.Vertices[i].Position;
-		vertices[i].Normal = box.Vertices[i].Normal;
-		vertices[i].TexC = box.Vertices[i].TexC;
-	}
-
-	const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
-
-	std::vector<std::uint16_t> indices = box.GetIndices16();
-	const UINT ibByteSize = (UINT)indices.size() * sizeof(std::uint16_t);
-
-	auto boxGeo = std::make_unique<MeshGeometry>();
-	boxGeo->Name = "boxGeo";
-
-	ThrowIfFailed(D3DCreateBlob(vbByteSize, &boxGeo->VertexBufferCPU));
-	CopyMemory(boxGeo->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
-
-	ThrowIfFailed(D3DCreateBlob(ibByteSize, &boxGeo->IndexBufferCPU));
-	CopyMemory(boxGeo->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
-
-	boxGeo->VertexBufferGPU = MyD3DUtil::CreateDefaultBuffer(md3dDevice.Get(),
-		mCommandList.Get(), vertices.data(), vbByteSize, boxGeo->VertexBufferUploader);
-
-	boxGeo->IndexBufferGPU = MyD3DUtil::CreateDefaultBuffer(md3dDevice.Get(),
-		mCommandList.Get(), indices.data(), ibByteSize, boxGeo->IndexBufferUploader);
-
-	boxGeo->VertexByteStride = sizeof(Vertex);
-	boxGeo->VertexBufferByteSize = vbByteSize;
-	boxGeo->IndexFormat = DXGI_FORMAT_R16_UINT;
-	boxGeo->IndexBufferByteSize = ibByteSize;
-
-	SubmeshGeometry submesh;
-	submesh.IndexCount = (UINT)indices.size();
-	submesh.BaseVertexLocation = 0;
-	submesh.StartIndexLocation = 0;
-
-	boxGeo->DrawArgs["box"] = submesh;
-
-	mGeometries[boxGeo->Name] = std::move(boxGeo);
-}
-
-void MyBillboardsApp::BuildTreeSpritesGeometry()
-{
-	struct TreeSpriteVertex
+	struct CircleVertex
 	{
 		XMFLOAT3 Pos;
 		XMFLOAT2 Size;
 	};
 
-	static const int treeCount = 16;
-	std::array<TreeSpriteVertex, treeCount> vertices;
-	for (UINT i = 0; i < treeCount; ++i)
-	{
-		float x = MyMathHelper::RandF(-45.0f, 45.0f);
-		float z = MyMathHelper::RandF(-45.0f, 45.0f);
-		float y = GetHillsHeight(x, z);
+	const float radius = 5.0f;
+	const int verticesCount = 30; // SliceCount
 
-		y += 8.0f; // Move tree slightly above land height.
+	std::array<CircleVertex, verticesCount + 1> vertices;
+
+	float dTheta = 2.0f * XM_PI / verticesCount;		
+	for (UINT i = 0; i < verticesCount; ++i)
+	{
+		float x = radius * cosf(i * dTheta);
+		float z = radius * sinf(i * dTheta);
+		float y = 0.0f;
 
 		vertices[i].Pos = XMFLOAT3(x, y, z);
-		vertices[i].Size = XMFLOAT2(20.0f, 20.0f);
+		vertices[i].Size = XMFLOAT2(0.0f, 10.0f);
 	}
+	// We have to create one more vertex,
+	// so the last vertex and first vertex can be lined.
+	vertices[verticesCount] = vertices[0]; 
 
-	std::array<std::uint16_t, 16> indices =
-	{
-		0, 1, 2, 3, 4, 5, 6, 7, 8,
-		9, 10, 11, 12, 13, 14, 15
-	};
+	std::array<std::uint16_t, verticesCount + 1> indices;
+	
+	for (UINT i = 0; i < indices.size(); ++i)
+		indices[i] = i;
 
-	const UINT vbByteSize = (UINT)vertices.size() * sizeof(TreeSpriteVertex);
+	const UINT vbByteSize = (UINT)vertices.size() * sizeof(CircleVertex);
 	const UINT ibByteSize = (UINT)indices.size() * sizeof(std::uint16_t);
 
-	auto geo = std::make_unique<MeshGeometry>();
-	geo->Name = "treeSpritesGeo";
+	auto cylinderSpritesGeo = std::make_unique<MeshGeometry>();
+	cylinderSpritesGeo->Name = "cylinderSpritesGeo";
 
-	ThrowIfFailed(D3DCreateBlob(vbByteSize, &geo->VertexBufferCPU));
-	CopyMemory(geo->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
+	ThrowIfFailed(D3DCreateBlob(vbByteSize, &cylinderSpritesGeo->VertexBufferCPU));
+	CopyMemory(cylinderSpritesGeo->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
 
-	ThrowIfFailed(D3DCreateBlob(ibByteSize, &geo->IndexBufferCPU));
-	CopyMemory(geo->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
+	ThrowIfFailed(D3DCreateBlob(ibByteSize, &cylinderSpritesGeo->IndexBufferCPU));
+	CopyMemory(cylinderSpritesGeo->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
 
-	geo->VertexBufferGPU = MyD3DUtil::CreateDefaultBuffer(md3dDevice.Get(),
-		mCommandList.Get(), vertices.data(), vbByteSize, geo->VertexBufferUploader);
+	cylinderSpritesGeo->VertexBufferGPU = MyD3DUtil::CreateDefaultBuffer(md3dDevice.Get(),
+		mCommandList.Get(), vertices.data(), vbByteSize, cylinderSpritesGeo->VertexBufferUploader);
 
-	geo->IndexBufferGPU = MyD3DUtil::CreateDefaultBuffer(md3dDevice.Get(),
-		mCommandList.Get(), indices.data(), ibByteSize, geo->IndexBufferUploader);
+	cylinderSpritesGeo->IndexBufferGPU = MyD3DUtil::CreateDefaultBuffer(md3dDevice.Get(),
+		mCommandList.Get(), indices.data(), ibByteSize, cylinderSpritesGeo->IndexBufferUploader);
 
-	geo->VertexBufferByteSize = vbByteSize;
-	geo->IndexBufferByteSize = ibByteSize;
-	geo->VertexByteStride = sizeof(TreeSpriteVertex);
-	geo->IndexFormat = DXGI_FORMAT_R16_UINT;
+	cylinderSpritesGeo->VertexByteStride = sizeof(CircleVertex);
+	cylinderSpritesGeo->VertexBufferByteSize = vbByteSize;
+	cylinderSpritesGeo->IndexFormat = DXGI_FORMAT_R16_UINT;
+	cylinderSpritesGeo->IndexBufferByteSize = ibByteSize;
 
 	SubmeshGeometry submesh;
+	submesh.IndexCount = (UINT)indices.size();
 	submesh.BaseVertexLocation = 0;
 	submesh.StartIndexLocation = 0;
-	submesh.IndexCount = (UINT)indices.size();
 
-	geo->DrawArgs["points"] = submesh;
+	cylinderSpritesGeo->DrawArgs["lines"] = submesh;
 
-	mGeometries[geo->Name] = std::move(geo);
+	mGeometries[cylinderSpritesGeo->Name] = std::move(cylinderSpritesGeo);
 }
 
-void MyBillboardsApp::BuildPSOs()
+void MyCylinderApp::BuildPSOs()
 {
 	// PSO for opaque objects.
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC opaquePsoDesc;
@@ -798,16 +499,21 @@ void MyBillboardsApp::BuildPSOs()
 		reinterpret_cast<BYTE*>(mShaders["standardVS"]->GetBufferPointer()),
 		mShaders["standardVS"]->GetBufferSize()
 	};
+	opaquePsoDesc.GS =
+	{
+		reinterpret_cast<BYTE*>(mShaders["standardGS"]->GetBufferPointer()),
+		mShaders["standardGS"]->GetBufferSize()
+	};
 	opaquePsoDesc.PS =
 	{
 		reinterpret_cast<BYTE*>(mShaders["opaquePS"]->GetBufferPointer()),
 		mShaders["opaquePS"]->GetBufferSize()
 	};
 	opaquePsoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-	opaquePsoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT); // Ex 11-9
+	opaquePsoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 	opaquePsoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
 	opaquePsoDesc.SampleMask = UINT_MAX;
-	opaquePsoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	opaquePsoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
 	opaquePsoDesc.NumRenderTargets = 1;
 	opaquePsoDesc.RTVFormats[0] = mBackBufferFormat;
 	opaquePsoDesc.SampleDesc.Count = m4xMsaaState ? 4 : 1;
@@ -815,170 +521,57 @@ void MyBillboardsApp::BuildPSOs()
 	opaquePsoDesc.DSVFormat = mDepthStencilFormat;
 	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(
 		&opaquePsoDesc, IID_PPV_ARGS(&mPSOs["opaque"])));
-
-
-	// PSO for transparency blend objects.
-	D3D12_GRAPHICS_PIPELINE_STATE_DESC transparentPsoDesc = opaquePsoDesc;
-
-	D3D12_RENDER_TARGET_BLEND_DESC transparencyBlendDesc;
-	transparencyBlendDesc.BlendEnable = true;
-	transparencyBlendDesc.LogicOpEnable = false;
-	transparencyBlendDesc.SrcBlend = D3D12_BLEND_SRC_ALPHA;
-	transparencyBlendDesc.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
-	transparencyBlendDesc.BlendOp = D3D12_BLEND_OP_ADD;
-	transparencyBlendDesc.SrcBlendAlpha = D3D12_BLEND_ONE;
-	transparencyBlendDesc.DestBlendAlpha = D3D12_BLEND_ZERO;
-	transparencyBlendDesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;
-	transparencyBlendDesc.LogicOp = D3D12_LOGIC_OP_NOOP;
-	transparencyBlendDesc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-
-	transparentPsoDesc.BlendState.RenderTarget[0] = transparencyBlendDesc;
-	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(
-		&transparentPsoDesc, IID_PPV_ARGS(&mPSOs["transparent"])));
-
-
-	// PSO for alpha test.
-	D3D12_GRAPHICS_PIPELINE_STATE_DESC alphaTestedPsoDesc = transparentPsoDesc;
-	alphaTestedPsoDesc.PS =
-	{
-		reinterpret_cast<BYTE*>(mShaders["alphaTestedPS"]->GetBufferPointer()),
-		mShaders["alphaTestedPS"]->GetBufferSize()
-	};
-	alphaTestedPsoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
-
-	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(
-		&alphaTestedPsoDesc, IID_PPV_ARGS(&mPSOs["alphaTested"])));
-
-	
-	// PSO for tree sprites.
-	D3D12_GRAPHICS_PIPELINE_STATE_DESC treeSpritePsoDesc = opaquePsoDesc;
-	treeSpritePsoDesc.VS =
-	{
-		reinterpret_cast<BYTE*>(mShaders["treeSpriteVS"]->GetBufferPointer()),
-		mShaders["treeSpriteVS"]->GetBufferSize()
-	};
-	treeSpritePsoDesc.GS =
-	{
-		reinterpret_cast<BYTE*>(mShaders["treeSpriteGS"]->GetBufferPointer()),
-		mShaders["treeSpriteGS"]->GetBufferSize()
-	};
-	treeSpritePsoDesc.PS =
-	{
-		reinterpret_cast<BYTE*>(mShaders["treeSpritePS"]->GetBufferPointer()),
-		mShaders["treeSpritePS"]->GetBufferSize()
-	};
-	treeSpritePsoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
-	treeSpritePsoDesc.InputLayout = { mTreeSpriteInputLayout.data(), (UINT)mTreeSpriteInputLayout.size() };
-	treeSpritePsoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
-
-	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(
-		&treeSpritePsoDesc,	IID_PPV_ARGS(&mPSOs["treeSprites"])));
 }
 
-void MyBillboardsApp::BuildFrameResources()
+void MyCylinderApp::BuildFrameResources()
 {
 	for (int i = 0; i < gNumFrameResources; ++i)
 	{
 		mFrameResources.push_back(std::make_unique<MyFrameResource>(md3dDevice.Get(),
-			1, (UINT)mAllRitems.size(), (UINT)mMaterials.size(), mWaves->VertexCount()));
+			1, (UINT)mAllRitems.size(), (UINT)mMaterials.size()));
 	}
 }
 
-void MyBillboardsApp::BuildMaterials()
+void MyCylinderApp::BuildMaterials()
 {
-	auto grass = std::make_unique<Material>();
-	grass->Name = "grass";
-	grass->MatCBIndex = 0;
-	grass->DiffuseSrvHeapIndex = 0;
-	grass->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	grass->FresnelR0 = XMFLOAT3(0.01f, 0.01f, 0.01f);
-	grass->Roughness = 0.125f;
-	mMaterials[grass->Name] = std::move(grass);
-
-	auto water = std::make_unique<Material>();
-	water->Name = "water";
-	water->MatCBIndex = 1;
-	water->DiffuseSrvHeapIndex = 1;
-	water->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 0.5f);
-	water->FresnelR0 = XMFLOAT3(0.1f, 0.1f, 0.1f);
-	water->Roughness = 0.0f;
-	mMaterials[water->Name] = std::move(water);
-
-	auto box = std::make_unique<Material>();
-	box->Name = "box";
-	box->MatCBIndex = 2;
-	box->DiffuseSrvHeapIndex = 2;
-	box->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	box->FresnelR0 = XMFLOAT3(0.1f, 0.1f, 0.1f);
-	box->Roughness = 0.25f;
-	mMaterials[box->Name] = std::move(box);
-
-	auto treeSprites = std::make_unique<Material>();
-	treeSprites->Name = "treeSprites";
-	treeSprites->MatCBIndex = 3;
-	treeSprites->DiffuseSrvHeapIndex = 3;
-	treeSprites->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	treeSprites->FresnelR0 = XMFLOAT3(0.01f, 0.01f, 0.01f);
-	treeSprites->Roughness = 0.125f;
-	mMaterials[treeSprites->Name] = std::move(treeSprites);
+	auto cylinderSprites = std::make_unique<Material>();
+	cylinderSprites->Name = "cylinder";
+	cylinderSprites->MatCBIndex = 0;
+	cylinderSprites->DiffuseSrvHeapIndex = 0;
+	cylinderSprites->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	cylinderSprites->FresnelR0 = XMFLOAT3(0.01f, 0.01f, 0.01f);
+	cylinderSprites->Roughness = 0.125f;
+	mMaterials[cylinderSprites->Name] = std::move(cylinderSprites);
 }
 
-void MyBillboardsApp::BuildLandAndWavesRenderItems()
+void MyCylinderApp::BuildRenderItems()
 {
-	auto wavesRitem = std::make_unique<RenderItem>();
-	wavesRitem->World = MyMathHelper::Identity4x4();
-	XMStoreFloat4x4(&wavesRitem->TexTransform, XMMatrixScaling(5.0f, 5.0f, 1.0f));
-	wavesRitem->ObjCBIndex = 0;
-	wavesRitem->Mat = mMaterials["water"].get();
-	wavesRitem->Geo = mGeometries["waterGeo"].get();
-	wavesRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	wavesRitem->IndexCount = wavesRitem->Geo->DrawArgs["grid"].IndexCount;
-	wavesRitem->StartIndexLocation = wavesRitem->Geo->DrawArgs["grid"].StartIndexLocation;
-	wavesRitem->BaseVertexLocation = wavesRitem->Geo->DrawArgs["grid"].BaseVertexLocation;
-	mWavesRitem = wavesRitem.get();
-	mRitemLayer[(int)RenderLayer::Transparent].push_back(wavesRitem.get());
+	// We can make it more than two..
+	for (UINT i = 0; i < 1; ++i)
+	{
+		auto cylinderSpritesRitem = std::make_unique<RenderItem>();
+		cylinderSpritesRitem->Mat = mMaterials["cylinder"].get();
+		cylinderSpritesRitem->Geo = mGeometries["cylinderSpritesGeo"].get();
+		cylinderSpritesRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP;
+		cylinderSpritesRitem->IndexCount = cylinderSpritesRitem->Geo->DrawArgs["lines"].IndexCount;
+		cylinderSpritesRitem->StartIndexLocation = cylinderSpritesRitem->Geo->DrawArgs["lines"].StartIndexLocation;
+		cylinderSpritesRitem->BaseVertexLocation = cylinderSpritesRitem->Geo->DrawArgs["lines"].BaseVertexLocation;
 
-	auto gridRitem = std::make_unique<RenderItem>();
-	gridRitem->World = MyMathHelper::Identity4x4();
-	XMStoreFloat4x4(&gridRitem->TexTransform, XMMatrixScaling(5.0f, 5.0f, 1.0f));
-	gridRitem->ObjCBIndex = 1;
-	gridRitem->Mat = mMaterials["grass"].get();
-	gridRitem->Geo = mGeometries["landGeo"].get();
-	gridRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	gridRitem->IndexCount = gridRitem->Geo->DrawArgs["grid"].IndexCount;
-	gridRitem->StartIndexLocation = gridRitem->Geo->DrawArgs["grid"].StartIndexLocation;
-	gridRitem->BaseVertexLocation = gridRitem->Geo->DrawArgs["grid"].BaseVertexLocation;
-	mRitemLayer[(int)RenderLayer::Opaque].push_back(gridRitem.get());
+		float x = 0.0f;
+		float z = 0.0f;
+		// We can try to set random coordinates..
+		// x = MyMathHelper::RandF(-30.0f, 30.0f);
+		// z = MyMathHelper::RandF(-30.0f, 30.0f);
 
-	auto boxRitem = std::make_unique<RenderItem>();
-	XMStoreFloat4x4(&boxRitem->World, XMMatrixTranslation(3.0f, 5.0f, -9.0f));
-	boxRitem->ObjCBIndex = 2;
-	boxRitem->Mat = mMaterials["box"].get();
-	boxRitem->Geo = mGeometries["boxGeo"].get();
-	boxRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	boxRitem->IndexCount = boxRitem->Geo->DrawArgs["box"].IndexCount;
-	boxRitem->StartIndexLocation = boxRitem->Geo->DrawArgs["box"].StartIndexLocation;
-	boxRitem->BaseVertexLocation = boxRitem->Geo->DrawArgs["box"].BaseVertexLocation;
-	mRitemLayer[(int)RenderLayer::AlphaTested].push_back(boxRitem.get());
+		XMStoreFloat4x4(&cylinderSpritesRitem->World, XMMatrixTranslation(x, 0.0f, z));
+		cylinderSpritesRitem->ObjCBIndex = i;
 
-	auto treeSpritesRitem = std::make_unique<RenderItem>();
-	treeSpritesRitem->World = MyMathHelper::Identity4x4();
-	treeSpritesRitem->ObjCBIndex = 3;
-	treeSpritesRitem->Mat = mMaterials["treeSprites"].get();
-	treeSpritesRitem->Geo = mGeometries["treeSpritesGeo"].get();
-	treeSpritesRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_POINTLIST;
-	treeSpritesRitem->IndexCount = treeSpritesRitem->Geo->DrawArgs["points"].IndexCount;
-	treeSpritesRitem->StartIndexLocation = treeSpritesRitem->Geo->DrawArgs["points"].StartIndexLocation;
-	treeSpritesRitem->BaseVertexLocation = treeSpritesRitem->Geo->DrawArgs["points"].BaseVertexLocation;
-	mRitemLayer[(int)RenderLayer::AlphaTestedTreeSprites].push_back(treeSpritesRitem.get());
-
-	mAllRitems.push_back(std::move(wavesRitem));
-	mAllRitems.push_back(std::move(gridRitem));
-	mAllRitems.push_back(std::move(boxRitem));
-	mAllRitems.push_back(std::move(treeSpritesRitem));
+		mRitemLayer[(int)RenderLayer::Opaque].push_back(cylinderSpritesRitem.get());
+		mAllRitems.push_back(std::move(cylinderSpritesRitem));
+	}
 }
 
-void MyBillboardsApp::DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::vector<RenderItem*>& ritems)
+void MyCylinderApp::DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::vector<RenderItem*>& ritems)
 {
 	UINT objCBByteSize = MyD3DUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants));
 	UINT matCBByteSize = MyD3DUtil::CalcConstantBufferByteSize(sizeof(MaterialConstants));
@@ -1011,7 +604,7 @@ void MyBillboardsApp::DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const 
 	}
 }
 
-std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> MyBillboardsApp::GetStaticSamplers()
+std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> MyCylinderApp::GetStaticSamplers()
 {
 	// Applications usually only need a handful of samplers. So just define them
 	// all up front and keep them available as part of the root signature.
@@ -1066,23 +659,4 @@ std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> MyBillboardsApp::GetStaticSampl
 		pointWrap, pointClamp,
 		linearWrap, linearClamp,
 		anisotropicWrap, anisotropicClamp };
-}
-
-float MyBillboardsApp::GetHillsHeight(float x, float z) const
-{
-	return 0.3f * (z * sinf(0.1f * x) + x * cosf(0.1f * z));
-}
-
-XMFLOAT3 MyBillboardsApp::GetHillsNormal(float x, float z) const
-{
-	// n = (-df/dx, 1, -df/dz)
-	XMFLOAT3 n(
-		-0.03f * z * cosf(0.1f * x) - 0.3f * cosf(0.1f * z),
-		1.0f,
-		-0.3f * sinf(0.1f * x) + 0.03f * x * sinf(0.1f * z));
-
-	XMVECTOR unitNormal = XMVector3Normalize(XMLoadFloat3(&n));
-	XMStoreFloat3(&n, unitNormal);
-
-	return n;
 }

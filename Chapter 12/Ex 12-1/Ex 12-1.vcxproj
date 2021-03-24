@@ -147,7 +147,6 @@
     <ClCompile Include="..\..\Common\myGeometryGenerator.cpp" />
     <ClCompile Include="..\..\Common\myMathHelper.cpp" />
     <ClCompile Include="ex 12-1.cpp" />
-    <ClCompile Include="waves.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\Common\DDSTextureLoader.h" />
@@ -161,16 +160,12 @@
     <ClInclude Include="..\..\Common\myUploadBuffer.h" />
     <ClInclude Include="ex 12-1.h" />
     <ClInclude Include="RenderItem.h" />
-    <ClInclude Include="waves.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\default.hlsl">
       <FileType>Document</FileType>
     </None>
     <None Include="Shaders\lightingUtil.hlsl">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="Shaders\treeSprite.hlsl">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>

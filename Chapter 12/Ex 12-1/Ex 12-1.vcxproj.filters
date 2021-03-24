@@ -48,9 +48,6 @@
     <ClCompile Include="..\..\Common\myMathHelper.cpp">
       <Filter>소스 파일\Helper</Filter>
     </ClCompile>
-    <ClCompile Include="waves.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ex 12-1.h">
@@ -83,9 +80,6 @@
     <ClInclude Include="..\..\Common\myUploadBuffer.h">
       <Filter>헤더 파일\Helper</Filter>
     </ClInclude>
-    <ClInclude Include="waves.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="RenderItem.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -95,9 +89,6 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="Shaders\lightingUtil.hlsl">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\treeSprite.hlsl">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>
