@@ -85,10 +85,10 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\default.hlsl">
+    <None Include="Shaders\lightingUtil.hlsl">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="Shaders\lightingUtil.hlsl">
+    <None Include="Shaders\default.hlsl">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

@@ -329,7 +329,7 @@ void MyUnitSphereApp::LoadTextures()
 	// So We just load black image.
 	auto tex = std::make_unique<Texture>();
 	tex->Name = "blackTex";
-	tex->Filename = L"../../Textures/black1x1.dds";
+	tex->Filename = L"../../Textures/ice.dds";
 	ThrowIfFailed(CreateDDSTextureFromFile12(md3dDevice.Get(),
 		mCommandList.Get(), tex->Filename.c_str(),
 		tex->Resource, tex->UploadHeap));
@@ -426,7 +426,7 @@ void MyUnitSphereApp::BuildShadersAndInputLayout()
 void MyUnitSphereApp::BuildSphereGeometry()
 {
 	MyGeometryGenerator geoGen;
-	MyGeometryGenerator::MeshData mesh = geoGen.CreateGeosphere(10.0f, 1);
+	MyGeometryGenerator::MeshData mesh = geoGen.CreateGeosphere(10.0f, 0);
 
 	std::vector<Vertex> vertices(mesh.Vertices.size());
 

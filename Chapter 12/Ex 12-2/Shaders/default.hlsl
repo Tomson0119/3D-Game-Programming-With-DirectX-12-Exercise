@@ -71,16 +71,16 @@ cbuffer cbPass : register(b2)
 
 struct VertexIn
 {
-	float3 PosL : POSITION;
+	float3 PosL    : POSITION;
 	float3 NormalL : NORMAL;
-	float2 TexC : TEXCOORD;
+	float2 TexC    : TEXCOORD;
 };
 
 struct VertexOut
 {
-	float3 PosW : POSITION;
-	float3 NormalW : NORMAL;
-	float2 TexC : TEXCOORD;
+	float3 PosL    : POSITION;
+	float3 NormalL : NORMAL;
+	float2 TexC    : TEXCOORD;
 };
 
 struct GeoOut
@@ -95,34 +95,112 @@ VertexOut VS(VertexIn vin)
 {
 	VertexOut vout;
 
-	// Just pass data over geometry shader.
-	float4 posW = mul(float4(vin.PosL, 1.0f), gWorld);
-	// Assume uniform scaling..
-	float3 normalW = mul(float4(vin.NormalL, 1.0f), gWorld);
-
-	vout.PosW = posW.xyz;
-	vout.NormalW = normalW.xyz;
-	vout.TexC = vin.TexC; // just pass texcoord.
+	// Just pass it over to geometry shader.
+	vout.PosL = vin.PosL;
+	vout.NormalL = vin.NormalL;
+	vout.TexC = vin.TexC;
 
 	return vout;	
 }
 
-// Expand two vertices in line into a quad (4 vertices).
-[maxvertexcount(4)]
-void GS(triangle VertexOut gin[3], inout TriangleStream<GeoOut> triStream)
+VertexOut midPoint(VertexOut a, VertexOut b)
 {
-	GeoOut gout;
+	VertexOut mid;
+
+	float radius = length(a.PosL);
+
+	float3 n = normalize(0.5f * (a.PosL + b.PosL));
+
+	mid.PosL = radius * n;
+	mid.NormalL = n;
+	mid.TexC = 0.5f * (a.TexC + b.TexC);
+
+	return mid;
+}
+
+void subdivide(VertexOut v0, VertexOut v1, VertexOut v2, inout TriangleStream<GeoOut> triStream)
+{
+	VertexOut v[6];
+
+	v[0] = v0;
+	v[1] = midPoint(v0, v1);
+	v[2] = midPoint(v0, v2);
+	v[3] = midPoint(v1, v2);
+	v[4] = v2;
+	v[5] = v1;
+
+	GeoOut gout[6];
 
 	[unroll]
-	for (int i = 0; i < 3; ++i)
+	for (int i = 0; i < 6; ++i)
 	{
-		gout.PosH = mul(float4(gin[i].PosW, 1.0f), gViewProj);
-		gout.PosW = gin[i].PosW;
-		gout.NormalW = gin[i].NormalW;
-		gout.TexC = gin[i].TexC;
+		float4 posW = mul(float4(v[i].PosL, 1.0f), gWorld);
+		float3 normalW = mul(v[i].NormalL, (float3x3)gWorld);
 
-		triStream.Append(gout);
-	}		
+		gout[i].PosH = mul(posW, gViewProj);
+		gout[i].PosW = posW.xyz;
+		gout[i].NormalW = normalW;
+		gout[i].TexC = v[i].TexC;
+	}
+
+	[unroll]
+	for (i = 0; i < 5; ++i)
+		triStream.Append(gout[i]);
+
+	triStream.RestartStrip();
+
+	triStream.Append(gout[5]);
+	triStream.Append(gout[3]);
+	triStream.Append(gout[1]);
+
+	triStream.RestartStrip();
+}
+
+// Expand one triangle into 4 triangles (6 vertices).
+[maxvertexcount(36)]
+void GS(triangle VertexOut gin[3], inout TriangleStream<GeoOut> triStream)
+{
+	float distance = length(gEyePosW - float3(gWorld._41, gWorld._42, gWorld._43));
+	
+	if (distance >= 55)
+		// just pass it over ( 3 vertices )
+	{
+		GeoOut gout;
+
+		for (int i = 0; i < 3; ++i)
+		{
+			float4 posW = mul(float4(gin[i].PosL, 1.0f), gWorld);
+			float3 normalW = mul(gin[i].NormalL, (float3x3)gWorld);
+
+			gout.PosH = mul(posW, gViewProj);
+			gout.PosW = posW.xyz;
+			gout.NormalW = normalW;
+			gout.TexC = gin[i].TexC;
+
+			triStream.Append(gout);
+		}
+	}
+	else if (distance >= 35)
+		// subdivide one ( 9 vertices )
+		subdivide(gin[0], gin[1], gin[2], triStream);
+	else
+		// subdivide two ( 36 vertices )
+	{
+		VertexOut v[6];
+
+		v[0] = gin[0];
+		v[1] = midPoint(gin[0], gin[1]);
+		v[2] = midPoint(gin[0], gin[2]);
+		v[3] = midPoint(gin[1], gin[2]);
+		v[4] = gin[2];
+		v[5] = gin[1];
+
+		subdivide(v[0], v[1], v[2], triStream);
+		subdivide(v[2], v[3], v[4], triStream);
+		subdivide(v[1], v[3], v[2], triStream);
+		subdivide(v[1], v[5], v[3], triStream);
+	}
+
 }
 
 float4 PS(GeoOut pin) : SV_Target
