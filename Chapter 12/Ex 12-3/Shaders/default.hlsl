@@ -73,7 +73,6 @@ struct VertexIn
 {
 	float3 PosL    : POSITION;
 	float3 NormalL : NORMAL;
-	float3 TangentL: TANGENT;
 	float2 TexC    : TEXCOORD;
 };
 
@@ -81,7 +80,6 @@ struct VertexOut
 {
 	float3 PosW    : POSITION;
 	float3 NormalW : NORMAL;
-	float3 TangentW: TANGENT;
 	float2 TexC    : TEXCOORD;
 };
 
@@ -90,7 +88,6 @@ struct GeoOut
 	float4 PosH    : SV_POSITION;
 	float3 PosW	   : POSITION;
 	float3 NormalW : NORMAL;
-	float3 TangentW: TANGENT;
 	float2 TexC    : TEXCOORD;
 };
 
@@ -102,44 +99,40 @@ VertexOut VS(VertexIn vin)
 
 	// Assume that nonuniform scaling.
 	float3 normalW = mul(vin.NormalL, (float3x3)gWorld);
-	float3 tangentW = mul(vin.TangentL, (float3x3)gWorld);
 
 	vout.PosW = posW.xyz;
 	vout.NormalW = normalW;
-	vout.TangentW = tangentW;
 	vout.TexC = vin.TexC;
 
 	return vout;	
 }
 
-// Expand one triangle into 4 triangles (6 vertices).
 [maxvertexcount(3)]
-void GS(point VertexOut gin[1], inout TriangleStream<GeoOut> triStream)
+void GS(triangle VertexOut gin[3],
+		uint primID : SV_PrimitiveID,
+		inout TriangleStream<GeoOut> triStream)
 {
-	float3 T = gin[0].TangentW;
-	float3 N = gin[0].NormalW;
-	float3 B = cross(N, T);
-
-	float4 v[3];
-	v[0] = float4(gin[0].PosW - 1.0f * B, 1.0f);
-	v[1] = float4(gin[0].PosW + 0.5f * B + 0.86f * T, 1.0f);
-	v[2] = float4(gin[0].PosW + 0.5f * B - 0.86f * T, 1.0f);
+	// We need to recalculate normal vector for each triangle.
+	// Because normal vector of each vertex is different.
+	float3 v0 = float3(gin[1].PosW - gin[0].PosW);
+	float3 v1 = float3(gin[2].PosW - gin[0].PosW);
+	float3 normal = cross(v0, v1);
 
 	GeoOut gout;
 
 	[unroll]
 	for (int i = 0; i < 3; ++i)
 	{
-		float4 pos = mul(v[i], gViewProj);
+		float3 pos = gin[i].PosW + (primID % 5 + 1) * 0.25f * gTotalTime * normal;
 
-		gout.PosH = pos;
-		gout.PosW = pos.xyz;
-		gout.NormalW = gin[0].NormalW;
-		gout.TangentW = gin[0].TangentW;
-		gout.TexC = gin[0].TexC;
+		gout.PosH = mul(float4(pos, 1.0f), gViewProj);
+		gout.PosW = pos;
+		gout.NormalW = normal;
+		gout.TexC = gin[i].TexC;
 
 		triStream.Append(gout);
 	}
+	triStream.RestartStrip();
 }
 
 float4 PS(GeoOut pin) : SV_Target

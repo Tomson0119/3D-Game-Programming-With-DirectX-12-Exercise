@@ -418,9 +418,7 @@ void MyExplosionApp::BuildShadersAndInputLayout()
 			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, 
 			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 24,
-			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 36,
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24,
 			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
 	};
 }
@@ -436,7 +434,6 @@ void MyExplosionApp::BuildSphereGeometry()
 	{
 		vertices[i].Pos = mesh.Vertices[i].Position;
 		vertices[i].Normal = mesh.Vertices[i].Normal;
-		vertices[i].TangentU = mesh.Vertices[i].TangentU;
 		vertices[i].TexC = mesh.Vertices[i].TexC;
 	}
 
@@ -504,7 +501,7 @@ void MyExplosionApp::BuildPSOs()
 	opaquePsoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 	opaquePsoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
 	opaquePsoDesc.SampleMask = UINT_MAX;
-	opaquePsoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
+	opaquePsoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 	opaquePsoDesc.NumRenderTargets = 1;
 	opaquePsoDesc.RTVFormats[0] = mBackBufferFormat;
 	opaquePsoDesc.SampleDesc.Count = m4xMsaaState ? 4 : 1;
@@ -544,7 +541,7 @@ void MyExplosionApp::BuildRenderItems()
 		auto sphereRitem = std::make_unique<RenderItem>();
 		sphereRitem->Mat = mMaterials["sphere"].get();
 		sphereRitem->Geo = mGeometries["sphereGeo"].get();
-		sphereRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_POINTLIST;
+		sphereRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 		sphereRitem->IndexCount = sphereRitem->Geo->DrawArgs["sphere"].IndexCount;
 		sphereRitem->StartIndexLocation = sphereRitem->Geo->DrawArgs["sphere"].StartIndexLocation;
 		sphereRitem->BaseVertexLocation = sphereRitem->Geo->DrawArgs["sphere"].BaseVertexLocation;
