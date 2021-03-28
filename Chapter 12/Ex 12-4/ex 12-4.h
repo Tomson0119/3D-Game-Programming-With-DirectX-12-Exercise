@@ -105,6 +105,7 @@ private:
 	float mSunTheta = 1.25f * XM_PI;
 	float mSunPhi = XM_PIDIV4;
 
+	bool mShowNormal = false;
 	POINT mLastMousePos = { 0, 0 };
 };
 

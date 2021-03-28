@@ -131,8 +131,11 @@ void MyLandWaveApp::Draw(const MyGameTimer& gt)
 	//
 	// Ex 12-4
 	// Draw normal Lines.
-	mCommandList->SetPipelineState(mPSOs["normalLine"].Get());
-	DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::NormalLine]);
+	if (mShowNormal)
+	{
+		mCommandList->SetPipelineState(mPSOs["normalLine"].Get());
+		DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::NormalLine]);
+	}
 	
 	// Draw transparent render items.
 	mCommandList->SetPipelineState(mPSOs["transparent"].Get());
@@ -225,6 +228,15 @@ void MyLandWaveApp::OnKeyboardInput(const MyGameTimer& gt)
 		mSunPhi += 1.0f * dt;
 
 	mSunPhi = MyMathHelper::Clamp(mSunPhi, 0.1f, XM_PIDIV2);
+
+	static bool key_pressed = false;
+
+	if (GetAsyncKeyState('N') & 0x8000 && !key_pressed) {
+		mShowNormal = !mShowNormal;
+		key_pressed = true;
+	}
+	else if (GetAsyncKeyState('N') == 0)
+		key_pressed = false;
 }
 
 void MyLandWaveApp::UpdateCamera(const MyGameTimer& gt)
@@ -891,9 +903,13 @@ void MyLandWaveApp::BuildLandAndWavesRenderItems()
 	mAllRitems.push_back(std::move(gridRitem));
 	mAllRitems.push_back(std::move(boxRitem));
 
+	//
+	// Ex 12-4
 	mAllRitems.push_back(std::move(normalBoxRitem));
 	mAllRitems.push_back(std::move(normalGridRitem));
 	mAllRitems.push_back(std::move(normalWaveRitem));
+	//
+	//
 }
 
 void MyLandWaveApp::DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::vector<RenderItem*>& ritems)
