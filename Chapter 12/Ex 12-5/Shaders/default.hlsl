@@ -108,20 +108,27 @@ GeoOut VS(VertexIn vin)
 
 // Expand one point into line
 [maxvertexcount(2)]
-void GS(point GeoOut gin[1], inout LineStream<GeoOut> lineStream)
+void GS(triangle GeoOut gin[3], inout LineStream<GeoOut> lineStream)
 {
-	lineStream.Append(gin[0]);
+	float3 v0 = gin[1].PosW - gin[0].PosW;
+	float3 v1 = gin[2].PosW - gin[0].PosW;
 
-	float length = 1.5f;
-	float3 normal = gin[0].NormalW;
-	float3 pos = gin[0].PosW + length * normal;
+	float3 pos = (gin[0].PosW + gin[1].PosW + gin[2].PosW) / 3;
+	float3 normal = normalize(cross(v0, v1));
 
-	GeoOut gout = (GeoOut)0.0f;
-
+	GeoOut gout;
 	gout.PosH = mul(float4(pos, 1.0f), gViewProj);
 	gout.PosW = pos;
 	gout.NormalW = normal;
 	gout.TexC = gin[0].TexC;
+
+	lineStream.Append(gout);
+
+	float length = 1.5f;
+	pos = pos + length * normal;
+
+	gout.PosH = mul(float4(pos, 1.0f), gViewProj);
+	gout.PosW = pos;
 
 	lineStream.Append(gout);
 }
