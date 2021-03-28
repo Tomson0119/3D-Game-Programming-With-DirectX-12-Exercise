@@ -76,70 +76,57 @@ struct VertexIn
 	float2 TexC    : TEXCOORD;
 };
 
-struct VertexOut
-{
-	float4 PosH    : SV_POSITION;
-	float3 PosW    : POSITION;
-	float3 NormalW : NORMAL;
-	float2 TexC    : TEXCOORD;
-};
-
 struct GeoOut
 {
-	float4 PosH    : SV_POSITION;
+	float4 PosH	   : SV_POSITION;
 	float3 PosW    : POSITION;
 	float3 NormalW : NORMAL;
 	float2 TexC    : TEXCOORD;
 };
 
-VertexOut VS(VertexIn vin)
+GeoOut VS(VertexIn vin)
 {
-	VertexOut vout = (VertexOut)0.0f;
+	GeoOut gout = (GeoOut)0.0f;
 
 	// Transform to world space.
 	float4 posW = mul(float4(vin.PosL, 1.0f), gWorld);
-	vout.PosW = posW.xyz;
+	gout.PosW = posW.xyz;
 	
 	// Assumes nonuniform scaling; otherwise, need to use 
 	// inverse-transpose of world matrix.
-	vout.NormalW = mul(vin.NormalL, (float3x3)gWorld);
+	gout.NormalW = mul(vin.NormalL, (float3x3)gWorld);
 
 	// Transform to homogeneous clip space.
-	vout.PosH = mul(posW, gViewProj);
+	gout.PosH = mul(posW, gViewProj);
 
 	// Output vertex attributes for interpolation across triangle.
 	float4 texC = mul(float4(vin.TexC, 0.0f, 1.0f), gTexTransform);
-	vout.TexC = mul(texC, gMatTransform).xy;
+	gout.TexC = mul(texC, gMatTransform).xy;
 
-	return vout;
+	return gout;
 }
 
 // Expand one point into line
 [maxvertexcount(2)]
-void GS(point VertexOut gin[1], inout LineStream<GeoOut> lineStream)
+void GS(point GeoOut gin[1], inout LineStream<GeoOut> lineStream)
 {
-	GeoOut gout;
-
-	gout.PosH = mul(float4(gin[0].PosW, 1.0f), gViewProj);
-	gout.PosW = gin[0].PosW;
-	gout.NormalW = gin[0].NormalW;
-	gout.TexC = float2(0.0f, 0.0f);
-
-	lineStream.Append(gout);
+	lineStream.Append(gin[0]);
 
 	float length = 1.5f;
 	float3 normal = gin[0].NormalW;
-	float3 pos = gin[0].PosW + length * normal;	
+	float3 pos = gin[0].PosW + length * normal;
+
+	GeoOut gout = (GeoOut)0.0f;
 
 	gout.PosH = mul(float4(pos, 1.0f), gViewProj);
 	gout.PosW = pos;
 	gout.NormalW = normal;
-	gout.TexC = float2(1.0f, 1.0f);
+	gout.TexC = gin[0].TexC;
 
 	lineStream.Append(gout);
 }
 
-float4 PS(VertexOut pin) : SV_Target
+float4 PS(GeoOut pin) : SV_Target
 {
 	float4 diffuseAlbedo = gDiffuseMap.Sample(gsamAnisotropicWrap, pin.TexC) * gDiffuseAlbedo;
 
