@@ -1007,7 +1007,11 @@ void MyBillboardsApp::DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const 
 		cmdList->SetGraphicsRootConstantBufferView(1, objCBAddress);
 		cmdList->SetGraphicsRootConstantBufferView(2, matCBAddress);
 
-		cmdList->DrawIndexedInstanced(ri->IndexCount, 1, ri->StartIndexLocation, ri->BaseVertexLocation, 0);
+		cmdList->DrawIndexedInstanced(ri->IndexCount-16, 1, ri->StartIndexLocation, ri->BaseVertexLocation, 0);
+		cmdList->DrawInstanced(4, 1, 0, 0);
+		cmdList->DrawInstanced(4, 1, 4, 0);
+		cmdList->DrawInstanced(4, 1, 8, 0);
+		cmdList->DrawInstanced(4, 1, 12, 0);
 	}
 }
 
