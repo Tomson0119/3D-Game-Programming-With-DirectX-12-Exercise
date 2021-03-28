@@ -777,7 +777,7 @@ void MyLandWaveApp::BuildPSOs()
 		reinterpret_cast<BYTE*>(mShaders["normalGS"]->GetBufferPointer()),
 		mShaders["normalGS"]->GetBufferSize()
 	};
-	normalPsoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
+	normalPsoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(
 		&normalPsoDesc, IID_PPV_ARGS(&mPSOs["normalLine"])));
 }
@@ -835,6 +835,7 @@ void MyLandWaveApp::BuildLandAndWavesRenderItems()
 	wavesRitem->BaseVertexLocation = wavesRitem->Geo->DrawArgs["grid"].BaseVertexLocation;
 	mWavesRitem = wavesRitem.get();
 	mRitemLayer[(int)RenderLayer::Transparent].push_back(wavesRitem.get());
+	mRitemLayer[(int)RenderLayer::NormalLine].push_back(wavesRitem.get());
 
 	auto gridRitem = std::make_unique<RenderItem>();
 	gridRitem->World = MyMathHelper::Identity4x4();
@@ -847,6 +848,7 @@ void MyLandWaveApp::BuildLandAndWavesRenderItems()
 	gridRitem->StartIndexLocation = gridRitem->Geo->DrawArgs["grid"].StartIndexLocation;
 	gridRitem->BaseVertexLocation = gridRitem->Geo->DrawArgs["grid"].BaseVertexLocation;
 	mRitemLayer[(int)RenderLayer::Opaque].push_back(gridRitem.get());
+	mRitemLayer[(int)RenderLayer::NormalLine].push_back(gridRitem.get());
 
 	auto boxRitem = std::make_unique<RenderItem>();
 	XMStoreFloat4x4(&boxRitem->World, XMMatrixTranslation(3.0f, 5.0f, -9.0f));
@@ -858,58 +860,12 @@ void MyLandWaveApp::BuildLandAndWavesRenderItems()
 	boxRitem->StartIndexLocation = boxRitem->Geo->DrawArgs["box"].StartIndexLocation;
 	boxRitem->BaseVertexLocation = boxRitem->Geo->DrawArgs["box"].BaseVertexLocation;
 	mRitemLayer[(int)RenderLayer::AlphaTested].push_back(boxRitem.get());
+	mRitemLayer[(int)RenderLayer::NormalLine].push_back(boxRitem.get());
 
-
-	//
-	// Ex 12-4
-	//
-	auto normalBoxRitem = std::make_unique<RenderItem>();
-	normalBoxRitem->World = boxRitem->World;
-	normalBoxRitem->ObjCBIndex = 3;
-	normalBoxRitem->Mat = mMaterials["box"].get();
-	normalBoxRitem->Geo = mGeometries["boxGeo"].get();
-	normalBoxRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_POINTLIST;
-	normalBoxRitem->IndexCount = normalBoxRitem->Geo->DrawArgs["box"].IndexCount;
-	normalBoxRitem->StartIndexLocation = normalBoxRitem->Geo->DrawArgs["box"].StartIndexLocation;
-	normalBoxRitem->BaseVertexLocation = normalBoxRitem->Geo->DrawArgs["box"].BaseVertexLocation;
-	mRitemLayer[(int)RenderLayer::NormalLine].push_back(normalBoxRitem.get());
-
-	auto normalGridRitem = std::make_unique<RenderItem>();
-	normalGridRitem->World = gridRitem->World;
-	normalGridRitem->ObjCBIndex = 4;
-	normalGridRitem->Mat = mMaterials["grass"].get();
-	normalGridRitem->Geo = mGeometries["landGeo"].get();
-	normalGridRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_POINTLIST;
-	normalGridRitem->IndexCount = normalGridRitem->Geo->DrawArgs["grid"].IndexCount;
-	normalGridRitem->StartIndexLocation = normalGridRitem->Geo->DrawArgs["grid"].StartIndexLocation;
-	normalGridRitem->BaseVertexLocation = normalGridRitem->Geo->DrawArgs["grid"].BaseVertexLocation;
-	mRitemLayer[(int)RenderLayer::NormalLine].push_back(normalGridRitem.get());
-
-	auto normalWaveRitem = std::make_unique<RenderItem>();
-	normalWaveRitem->World = wavesRitem->World;
-	normalWaveRitem->ObjCBIndex = 5;
-	normalWaveRitem->Mat = mMaterials["water"].get();
-	normalWaveRitem->Geo = mGeometries["waterGeo"].get();
-	normalWaveRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_POINTLIST;
-	normalWaveRitem->IndexCount = normalWaveRitem->Geo->DrawArgs["grid"].IndexCount;
-	normalWaveRitem->StartIndexLocation = normalWaveRitem->Geo->DrawArgs["grid"].StartIndexLocation;
-	normalWaveRitem->BaseVertexLocation = normalWaveRitem->Geo->DrawArgs["grid"].BaseVertexLocation;
-	mRitemLayer[(int)RenderLayer::NormalLine].push_back(normalWaveRitem.get());
-	//
-	//
-	//
 
 	mAllRitems.push_back(std::move(wavesRitem));
 	mAllRitems.push_back(std::move(gridRitem));
 	mAllRitems.push_back(std::move(boxRitem));
-
-	//
-	// Ex 12-4
-	mAllRitems.push_back(std::move(normalBoxRitem));
-	mAllRitems.push_back(std::move(normalGridRitem));
-	mAllRitems.push_back(std::move(normalWaveRitem));
-	//
-	//
 }
 
 void MyLandWaveApp::DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::vector<RenderItem*>& ritems)
