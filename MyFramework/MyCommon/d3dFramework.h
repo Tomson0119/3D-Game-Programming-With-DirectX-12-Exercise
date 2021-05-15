@@ -22,8 +22,11 @@ private:
 	void CreateCommandObjects();
 	void CreateSwapChain();
 	void CreateRtvDsvDescriptorHeaps();
+
+	void WaitUntilGPUComplete();
 	
-	void LogAdapters(std::vector<IDXGIAdapter1*>& adapters);
+	void OutputAdapterInfo(IDXGIAdapter1* adapter);
+	void QueryVideoMemory(IDXGIAdapter1* adapter);
 
 	void UpdateFrameStates();
 
@@ -43,6 +46,25 @@ private:
 
 	ComPtr<IDXGIFactory4> mDxgiFactory;
 	ComPtr<ID3D12Device> mD3dDevice;
+	
+	ComPtr<ID3D12CommandQueue> mCommandQueue;
+	ComPtr<ID3D12CommandAllocator> mCommandAllocator;
+	ComPtr<ID3D12GraphicsCommandList> mCommandList;
+
+	ComPtr<ID3D12DescriptorHeap> mRtvDescriptorHeap;
+	ComPtr<ID3D12DescriptorHeap> mDsvDescriptorHeap;
+
+	UINT mRtvDescriptorSize = 0;
+	UINT mDsvDescriptorSize = 0;
+
+	ComPtr<ID3D12Fence> mFence;
+	UINT mCurrentFenceValue = 0;
+	HANDLE mFenceEvent;
+
+	static const UINT mSwapChainBufferCount = 2;
+
+	UINT mMsaa4xQualityLevels = 0;
+	bool mMsaa4xEnable = false;
 
 	std::wstring mWndCaption = L"D3D12 App";
 

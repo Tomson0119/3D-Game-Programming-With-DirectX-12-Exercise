@@ -20,6 +20,30 @@ bool D3DFramework::InitFramework()
 	return true;
 }
 
+void D3DFramework::Run()
+{
+	MSG msg{};
+
+	mTimer.Reset();
+
+	while (msg.message != WM_QUIT)
+	{
+		// 윈도우 메세지 처리
+		if (PeekMessage(&msg, 0, 0, 0, PM_REMOVE))
+		{
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
+		else  // 타이머 및 Framework 업데이트
+		{
+			mTimer.Tick();
+			UpdateFrameStates();
+			Update();
+			Draw();
+		}
+	}
+}
+
 bool D3DFramework::InitDirect3D()
 {
 	CreateD3DDevice();
@@ -48,6 +72,8 @@ void D3DFramework::CreateD3DDevice()
 	IDXGIAdapter1* adapter1 = nullptr;
 	while (mDxgiFactory->EnumAdapters1(i++, &adapter1) != DXGI_ERROR_NOT_FOUND)
 	{
+		OutputAdapterInfo(adapter1);
+
 		DXGI_ADAPTER_DESC1 adapter1Desc;
 		adapter1->GetDesc1(&adapter1Desc);
 		
@@ -63,15 +89,118 @@ void D3DFramework::CreateD3DDevice()
 	if (!adapter1)
 	{
 		ThrowIfFailed(mDxgiFactory->EnumWarpAdapter(IID_PPV_ARGS(&adapter1)));
-
 		ThrowIfFailed(D3D12CreateDevice(
 			adapter1,
 			D3D_FEATURE_LEVEL_12_0,
 			IID_PPV_ARGS(&mD3dDevice)));
 	}
 
+	QueryVideoMemory(adapter1);
+	if (adapter1) adapter1->Release();
+
+	D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS d3dMsaaQualityLevels;
+	d3dMsaaQualityLevels.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	d3dMsaaQualityLevels.SampleCount = 4;
+	d3dMsaaQualityLevels.Flags = D3D12_MULTISAMPLE_QUALITY_LEVELS_FLAG_NONE;
+	d3dMsaaQualityLevels.NumQualityLevels = 0;
+
+	ThrowIfFailed(mD3dDevice->CheckFeatureSupport(
+		D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS,
+		&d3dMsaaQualityLevels,
+		sizeof(d3dMsaaQualityLevels)));
+
+	mMsaa4xQualityLevels = d3dMsaaQualityLevels.NumQualityLevels;
+	mMsaa4xEnable = (mMsaa4xQualityLevels > 1) ? true : false;
+
+	ThrowIfFailed(mD3dDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mFence)));
+
+	mFenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+}
+
+void D3DFramework::CreateCommandObjects()
+{
+	D3D12_COMMAND_QUEUE_DESC d3dCommandQueueDesc = {};
+	d3dCommandQueueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+	d3dCommandQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+
+	ThrowIfFailed(mD3dDevice->CreateCommandQueue(
+		&d3dCommandQueueDesc, 
+		IID_PPV_ARGS(&mCommandQueue)));
+
+	ThrowIfFailed(mD3dDevice->CreateCommandAllocator(
+		D3D12_COMMAND_LIST_TYPE_DIRECT,
+		IID_PPV_ARGS(&mCommandAllocator)));
+
+	ThrowIfFailed(mD3dDevice->CreateCommandList(
+		0,
+		D3D12_COMMAND_LIST_TYPE_DIRECT,
+		mCommandAllocator.Get(),
+		nullptr,
+		IID_PPV_ARGS(&mCommandList)));
+
+	mCommandList->Close();
+}
+
+void D3DFramework::CreateSwapChain()
+{
+	
+
+
+}
+
+void D3DFramework::CreateRtvDsvDescriptorHeaps()
+{
+	// For Render Target Descriptor Heap
+	D3D12_DESCRIPTOR_HEAP_DESC d3dDescriptorHeapDesc = {};
+	d3dDescriptorHeapDesc.NumDescriptors = mSwapChainBufferCount;
+	d3dDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+	d3dDescriptorHeapDesc.NodeMask = 0;
+	d3dDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+
+	ThrowIfFailed(mD3dDevice->CreateDescriptorHeap(
+		&d3dDescriptorHeapDesc,
+		IID_PPV_ARGS(&mRtvDescriptorHeap)));
+
+	mRtvDescriptorSize = mD3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+
+	// For Depth Stencil Descriptor Heap
+	d3dDescriptorHeapDesc.NumDescriptors = 1;
+	d3dDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+	
+	ThrowIfFailed(mD3dDevice->CreateDescriptorHeap(
+		&d3dDescriptorHeapDesc,
+		IID_PPV_ARGS(&mDsvDescriptorHeap)));
+	
+	mDsvDescriptorSize = mD3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+}
+
+void D3DFramework::WaitUntilGPUComplete()
+{
+	++mCurrentFenceValue;
+	ThrowIfFailed(mCommandQueue->Signal(mFence.Get(), mCurrentFenceValue));
+	if (mFence->GetCompletedValue() < mCurrentFenceValue)
+	{
+		ThrowIfFailed(mFence->SetEventOnCompletion(mCurrentFenceValue, mFenceEvent));
+		WaitForSingleObject(mFenceEvent, INFINITE);
+	}
+}
+
+void D3DFramework::OutputAdapterInfo(IDXGIAdapter1* adapter)
+{
+	DXGI_ADAPTER_DESC1 desc;
+	adapter->GetDesc1(&desc);
+
+	std::wstring text = L"----- Adapter : ";
+	text += desc.Description;
+	text += L"\n";
+
+	OutputDebugString(text.c_str());
+}
+
+void D3DFramework::QueryVideoMemory(IDXGIAdapter1* adapter)
+{
 	IDXGIAdapter3* adapter3 = nullptr;
-	ThrowIfFailed(adapter1->QueryInterface(&adapter3));
+	ThrowIfFailed(adapter->QueryInterface(&adapter3));
 	if (adapter3)
 	{
 		DXGI_QUERY_VIDEO_MEMORY_INFO localVideoMemoryInfo, nonLocalVideoMemoryInfo;
@@ -84,50 +213,6 @@ void D3DFramework::CreateD3DDevice()
 			DXGI_MEMORY_SEGMENT_GROUP_NON_LOCAL,
 			&nonLocalVideoMemoryInfo));
 		adapter3->Release();
-	}
-	if (adapter1) adapter1->Release();
-
-
-
-}
-
-void D3DFramework::CreateCommandObjects()
-{
-}
-
-void D3DFramework::CreateSwapChain()
-{
-}
-
-void D3DFramework::CreateRtvDsvDescriptorHeaps()
-{
-}
-
-void D3DFramework::LogAdapters(std::vector<IDXGIAdapter1*>& adapters)
-{
-}
-
-void D3DFramework::Run()
-{
-	MSG msg{};
-
-	mTimer.Reset();
-
-	while (msg.message != WM_QUIT)
-	{
-		// 윈도우 메세지 처리
-		if (PeekMessage(&msg, 0, 0, 0, PM_REMOVE))
-		{
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
-		}
-		else  // 타이머 및 Framework 업데이트
-		{
-			mTimer.Tick();
-			UpdateFrameStates();
-			Update();
-			Draw();
-		}
 	}
 }
 
