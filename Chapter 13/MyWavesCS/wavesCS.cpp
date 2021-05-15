@@ -1,6 +1,7 @@
 #include "wavesCS.h"
 #include "../../Common/DDSTextureLoader.h"
 
+
 MyWavesCsApp::MyWavesCsApp()
 	: MyD3DApp()
 {
@@ -1009,9 +1010,9 @@ void MyWavesCsApp::DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std
 
 		cmdList->DrawIndexedInstanced(ri->IndexCount-16, 1, ri->StartIndexLocation, ri->BaseVertexLocation, 0);
 		cmdList->DrawInstanced(4, 1, 0, 0);
-		cmdList->DrawInstanced(4, 1, 4, 0);
-		cmdList->DrawInstanced(4, 1, 8, 0);
-		cmdList->DrawInstanced(4, 1, 12, 0);
+		//cmdList->DrawInstanced(4, 1, 4, 0);
+		//cmdList->DrawInstanced(4, 1, 8, 0);
+		//cmdList->DrawInstanced(4, 1, 12, 0);
 	}
 }
 

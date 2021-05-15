@@ -4,6 +4,8 @@
 #include <vector>
 #include <windowsx.h>
 
+#define _DEBUG
+
 using Microsoft::WRL::ComPtr;
 
 MyD3DApp* MyD3DApp::mApp = nullptr;
