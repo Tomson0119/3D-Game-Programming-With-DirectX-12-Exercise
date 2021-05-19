@@ -2,16 +2,19 @@
 #include "d3dFramework.h"
 
 D3DFramework::D3DFramework()
+	: mViewPort{ }, mScissorRect{ }
 {
 }
 
 D3DFramework::~D3DFramework()
 {
+	if (mD3dDevice) WaitUntilGPUComplete();
+	if (mFenceEvent) CloseHandle(mFenceEvent);
 }
 
 bool D3DFramework::InitFramework()
 {
-	if(!InitWindow(mWndCaption.c_str(), mClientWidth, mClientHeight))
+	if(!InitWindow(mWndCaption.c_str(), mFrameWidth, mFrameHeight))
 		return false;
 
 	if (!InitDirect3D())
@@ -37,9 +40,15 @@ void D3DFramework::Run()
 		else  // 타이머 및 Framework 업데이트
 		{
 			mTimer.Tick();
-			UpdateFrameStates();
-			Update();
-			Draw();
+			
+			if (!mPaused) {
+				Update(mTimer);
+				Draw(mTimer);
+			}
+			else
+			{
+				Sleep(100);
+			}
 		}
 	}
 }
@@ -50,6 +59,8 @@ bool D3DFramework::InitDirect3D()
 	CreateCommandObjects();
 	CreateRtvDsvDescriptorHeaps();
 	CreateSwapChain();
+
+	OnResize();
 
 	return true;
 }
@@ -143,9 +154,33 @@ void D3DFramework::CreateCommandObjects()
 
 void D3DFramework::CreateSwapChain()
 {
+	DXGI_SWAP_CHAIN_DESC swapChainDesc;	
+	swapChainDesc.BufferDesc.Width = mFrameWidth;
+	swapChainDesc.BufferDesc.Height = mFrameHeight;
+	swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	swapChainDesc.BufferDesc.RefreshRate.Numerator = 60;
+	swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
+	swapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
+	swapChainDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
 	
+	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+	swapChainDesc.BufferCount = mSwapChainBufferCount;
+	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+	swapChainDesc.OutputWindow = m_hwnd;
+	swapChainDesc.SampleDesc.Count = (mMsaa4xEnable) ? 4 : 1;
+	swapChainDesc.SampleDesc.Quality = (mMsaa4xEnable) ? (mMsaa4xQualityLevels - 1) : 0;
+	swapChainDesc.Windowed = true;
+	swapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
+	ThrowIfFailed(mDxgiFactory->CreateSwapChain(
+		mCommandQueue.Get(),
+		&swapChainDesc,
+		(IDXGISwapChain**)mSwapChain.GetAddressOf()));
 
+	mCurrBackBufferIndex = mSwapChain->GetCurrentBackBufferIndex();
+
+	// Alt-Enter 단축키 사용을 금지한다.
+	ThrowIfFailed(mDxgiFactory->MakeWindowAssociation(m_hwnd, DXGI_MWA_NO_ALT_ENTER));
 }
 
 void D3DFramework::CreateRtvDsvDescriptorHeaps()
@@ -172,6 +207,96 @@ void D3DFramework::CreateRtvDsvDescriptorHeaps()
 		IID_PPV_ARGS(&mDsvDescriptorHeap)));
 	
 	mDsvDescriptorSize = mD3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+	mCbvSrvUavDescriptorSize = mD3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+}
+
+void D3DFramework::OnResize()
+{
+	// 사이즈를 변경하기 전에 명령 목록을 비운다.
+	WaitUntilGPUComplete();
+
+	// 커맨드 리스트를 초기화하고, 리소스들의 Com 포인터를 Release한다.
+	ThrowIfFailed(mCommandList->Reset(mCommandAllocator.Get(), nullptr));
+	for (int i = 0; i < mSwapChainBufferCount; ++i)
+		mSwapChainBuffers[i].Reset();
+	
+	ThrowIfFailed(mSwapChain->ResizeBuffers(
+		mSwapChainBufferCount,
+		mFrameWidth, mFrameHeight,
+		mSwapChainBufferFormat,
+		DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH));
+
+	mCurrBackBufferIndex = mSwapChain->GetCurrentBackBufferIndex();
+
+	CreateRenderTargetViews();
+	CreateDepthStencilView();
+
+	ThrowIfFailed(mCommandList->Close());
+	ID3D12CommandList* cmdList[] = { mCommandList.Get() };
+	mCommandQueue->ExecuteCommandLists(_countof(cmdList), cmdList);
+
+	WaitUntilGPUComplete();
+
+	mViewPort.Width = (float)mFrameWidth;
+	mViewPort.Height = (float)mFrameHeight;
+	mViewPort.TopLeftX = 0.0f;
+	mViewPort.TopLeftY = 0.0f;
+	mViewPort.MaxDepth = 1.0f;
+	mViewPort.MinDepth = 0.0f;
+
+	mScissorRect = { 0, 0, mFrameWidth, mFrameHeight };
+}
+
+void D3DFramework::CreateRenderTargetViews()
+{
+	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(CurrentBackBufferView());
+	for (UINT i = 0; i < mSwapChainBufferCount; ++i)
+	{
+		ThrowIfFailed(mSwapChain->GetBuffer(i, IID_PPV_ARGS(&mSwapChainBuffers[i])));
+		mD3dDevice->CreateRenderTargetView(mSwapChainBuffers[i].Get(), nullptr, rtvHandle);
+		rtvHandle.Offset(1, mRtvDescriptorSize);
+	}
+}
+
+void D3DFramework::CreateDepthStencilView()
+{
+	D3D12_RESOURCE_DESC resourceDesc;
+	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	resourceDesc.Alignment = 0;
+	resourceDesc.Width = mFrameWidth;
+	resourceDesc.Height = mFrameHeight;
+	resourceDesc.DepthOrArraySize = 1;
+	resourceDesc.MipLevels = 1;
+
+	resourceDesc.Format = mDepthStencilBufferFormat;
+	resourceDesc.SampleDesc.Count = mMsaa4xEnable ? 4 : 1;
+	resourceDesc.SampleDesc.Quality = mMsaa4xEnable ? (mMsaa4xQualityLevels - 1) : 0;
+	resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+	resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+
+	D3D12_CLEAR_VALUE clearValue;
+	clearValue.Format = mDepthStencilBufferFormat;
+	clearValue.DepthStencil.Depth = 1.0f;
+	clearValue.DepthStencil.Stencil = 0;
+
+	CD3DX12_HEAP_PROPERTIES heapProperties(D3D12_HEAP_TYPE_DEFAULT);	
+	ThrowIfFailed(mD3dDevice->CreateCommittedResource(
+		&heapProperties,
+		D3D12_HEAP_FLAG_NONE,
+		&resourceDesc,
+		D3D12_RESOURCE_STATE_DEPTH_WRITE,
+		&clearValue,
+		IID_PPV_ARGS(&mDepthStencilBuffer)));
+
+	D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
+	depthStencilDesc.Format = mDepthStencilBufferFormat;
+	depthStencilDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+	depthStencilDesc.Flags = D3D12_DSV_FLAG_NONE;
+	
+	mD3dDevice->CreateDepthStencilView(
+		mDepthStencilBuffer.Get(),
+		&depthStencilDesc,
+		DepthStencilView());
 }
 
 void D3DFramework::WaitUntilGPUComplete()
@@ -221,15 +346,48 @@ LRESULT D3DFramework::OnProcessMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 	switch(uMsg)
 	{
 	case WM_ACTIVATE:  // 윈도우 창을 활성화 했을 때
+		if (LOWORD(wParam) == WA_INACTIVE)
+		{
+			mPaused = true;
+			mTimer.Stop();
+		}
+		else
+		{
+			mPaused = false;
+			mTimer.Start();
+		}
 		break;
 		
 	case WM_SIZE:  // 윈도우 창의 크기를 변경했을 때
+		mFrameWidth = LOWORD(lParam);
+		mFrameHeight = HIWORD(lParam);
+		if (wParam == SIZE_MINIMIZED)
+		{
+			mPaused = true;
+		}
+		else if (wParam == SIZE_MAXIMIZED)
+		{
+			mPaused = false;
+			OnResize();
+		}
+		else if (wParam == SIZE_RESTORED)
+		{
+			if (mD3dDevice) {
+				mPaused = false;
+				OnResize();
+			}
+		}		
 		break;
 
 	case WM_ENTERSIZEMOVE:  // 윈도우 창의 크기 조절 바를 클릭했을 때
+		mPaused = true;
+		mTimer.Stop();
 		break;
 
 	case WM_EXITSIZEMOVE:  // 윈도우 창 크기 조절을 끝마쳤을 때
+		mPaused = false;
+		mTimer.Start();
+		OnResize();
 		break;
 
 	case WM_GETMINMAXINFO:  // 윈도우의 최대 최소 크기를 지정한다.
@@ -273,10 +431,36 @@ void D3DFramework::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
 	switch (uMsg)
 	{
 	case WM_KEYUP:
-		if ((int)wParam == VK_ESCAPE)
+		switch(wParam)
+		{
+		case VK_ESCAPE:
 			PostQuitMessage(0);
-		break;
+			break;
+
+		case VK_F9:
+			mSwapChain->GetFullscreenState(&mFullScreen, NULL);
+
+			if (!mFullScreen)
+				ShowWindow(m_hwnd, SW_MAXIMIZE); // 윈도우를 최대화한다.
+
+			mSwapChain->SetFullscreenState(!mFullScreen, NULL);
+
+			if(mFullScreen)
+				ShowWindow(m_hwnd, SW_RESTORE); // 윈도우를 복구한다.
+
+			OnResize();
+			break;
+		}
 	}
+}
+
+void D3DFramework::Update(const GameTimer& timer)
+{
+	UpdateFrameStates();
+}
+
+void D3DFramework::Draw(const GameTimer& timer)
+{
 }
 
 void D3DFramework::UpdateFrameStates()
@@ -300,4 +484,21 @@ void D3DFramework::UpdateFrameStates()
 		frameCount = 0;
 		elapsed += 1.0f;
 	}
+}
+
+ID3D12Resource* D3DFramework::CurrentBackBuffer() const
+{
+	return mSwapChainBuffers[mCurrBackBufferIndex].Get();
+}
+
+D3D12_CPU_DESCRIPTOR_HANDLE D3DFramework::CurrentBackBufferView() const
+{
+	return CD3DX12_CPU_DESCRIPTOR_HANDLE(
+		mRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
+		mCurrBackBufferIndex, mRtvDescriptorSize);
+}
+
+D3D12_CPU_DESCRIPTOR_HANDLE D3DFramework::DepthStencilView() const
+{
+	return mDsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 }

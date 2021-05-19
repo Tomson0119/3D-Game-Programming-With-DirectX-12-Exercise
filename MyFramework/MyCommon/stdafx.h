@@ -1,5 +1,9 @@
 #pragma once
 
+#ifndef _DEBUG
+#define _DEBUG
+#endif
+
 
 // Window 헤더 파일:
 #include <Windows.h>

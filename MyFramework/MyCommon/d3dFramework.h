@@ -23,6 +23,9 @@ private:
 	void CreateSwapChain();
 	void CreateRtvDsvDescriptorHeaps();
 
+	void CreateRenderTargetViews();
+	void CreateDepthStencilView();
+
 	void WaitUntilGPUComplete();
 	
 	void OutputAdapterInfo(IDXGIAdapter1* adapter);
@@ -30,44 +33,65 @@ private:
 
 	void UpdateFrameStates();
 
+	ID3D12Resource* CurrentBackBuffer() const;
+	D3D12_CPU_DESCRIPTOR_HANDLE CurrentBackBufferView() const;
+	D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilView() const;
+
 public:
 	// BaseWin 오버라이딩 함수
 	virtual PCWSTR ClassName() const { return L"Main Window"; }
 	virtual LRESULT OnProcessMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 protected:
+	virtual void OnResize();
+
 	virtual void OnProcessMouseInput(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	virtual void OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam);
-	virtual void Update() { }
-	virtual void Draw() { }
+	virtual void Update(const GameTimer& timer);
+	virtual void Draw(const GameTimer& timer);
 
 private:
 	GameTimer mTimer;
 
+	bool mPaused     = false;
+	BOOL mFullScreen = false;
+
 	ComPtr<IDXGIFactory4> mDxgiFactory;
-	ComPtr<ID3D12Device> mD3dDevice;
+	ComPtr<ID3D12Device>  mD3dDevice;
 	
-	ComPtr<ID3D12CommandQueue> mCommandQueue;
-	ComPtr<ID3D12CommandAllocator> mCommandAllocator;
+	ComPtr<ID3D12CommandQueue>		  mCommandQueue;
+	ComPtr<ID3D12CommandAllocator>	  mCommandAllocator;
 	ComPtr<ID3D12GraphicsCommandList> mCommandList;
 
 	ComPtr<ID3D12DescriptorHeap> mRtvDescriptorHeap;
 	ComPtr<ID3D12DescriptorHeap> mDsvDescriptorHeap;
 
+	static const UINT mSwapChainBufferCount = 2;
+	ComPtr<ID3D12Resource> mSwapChainBuffers[mSwapChainBufferCount];
+	ComPtr<ID3D12Resource> mDepthStencilBuffer;
+
 	UINT mRtvDescriptorSize = 0;
 	UINT mDsvDescriptorSize = 0;
+	UINT mCbvSrvUavDescriptorSize = 0;
 
 	ComPtr<ID3D12Fence> mFence;
 	UINT mCurrentFenceValue = 0;
-	HANDLE mFenceEvent;
+	HANDLE mFenceEvent = NULL;
 
-	static const UINT mSwapChainBufferCount = 2;
+	ComPtr<IDXGISwapChain3> mSwapChain;
+	UINT mCurrBackBufferIndex = 0;
 
 	UINT mMsaa4xQualityLevels = 0;
 	bool mMsaa4xEnable = false;
 
+	D3D12_VIEWPORT mViewPort;
+	D3D12_RECT mScissorRect;
+
+	DXGI_FORMAT mSwapChainBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+	DXGI_FORMAT mDepthStencilBufferFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
+
 	std::wstring mWndCaption = L"D3D12 App";
 
-	int mClientWidth = 800;
-	int mClientHeight = 600;
+	int mFrameWidth = 800;
+	int mFrameHeight = 600;
 };
