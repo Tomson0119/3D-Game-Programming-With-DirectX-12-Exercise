@@ -459,10 +459,6 @@ void D3DFramework::Update(const GameTimer& timer)
 	UpdateFrameStates();
 }
 
-void D3DFramework::Draw(const GameTimer& timer)
-{
-}
-
 void D3DFramework::UpdateFrameStates()
 {
 	static int frameCount = 0;

@@ -12,7 +12,7 @@ public:
 	D3DFramework& operator=(const D3DFramework& rhs) = delete;
 	virtual ~D3DFramework();
 
-	bool InitFramework();
+	virtual bool InitFramework();
 	void Run();
 
 private:
@@ -24,14 +24,15 @@ private:
 	void CreateRtvDsvDescriptorHeaps();
 
 	void CreateRenderTargetViews();
-	void CreateDepthStencilView();
-
-	void WaitUntilGPUComplete();
+	void CreateDepthStencilView();	
 	
 	void OutputAdapterInfo(IDXGIAdapter1* adapter);
 	void QueryVideoMemory(IDXGIAdapter1* adapter);
 
 	void UpdateFrameStates();
+
+protected:
+	void WaitUntilGPUComplete();
 
 	ID3D12Resource* CurrentBackBuffer() const;
 	D3D12_CPU_DESCRIPTOR_HANDLE CurrentBackBufferView() const;
@@ -48,9 +49,9 @@ protected:
 	virtual void OnProcessMouseInput(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	virtual void OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	virtual void Update(const GameTimer& timer);
-	virtual void Draw(const GameTimer& timer);
+	virtual void Draw(const GameTimer& timer) = 0;
 
-private:
+protected:
 	GameTimer mTimer;
 
 	bool mPaused     = false;
