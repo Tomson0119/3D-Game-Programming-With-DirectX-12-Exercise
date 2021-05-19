@@ -151,6 +151,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\MyCommon\camera.cpp" />
     <ClCompile Include="..\MyCommon\d3dFramework.cpp" />
     <ClCompile Include="..\MyCommon\dxException.cpp" />
     <ClCompile Include="..\MyCommon\gameTimer.cpp" />
@@ -166,6 +167,12 @@
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">../MyCommon/stdafx.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">../MyCommon/stdafx.h</PrecompiledHeaderFile>
     </ClCompile>
+    <ClCompile Include="gameScene.cpp">
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">../MyCommon/stdafx.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">../MyCommon/stdafx.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">../MyCommon/stdafx.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">../MyCommon/stdafx.h</PrecompiledHeaderFile>
+    </ClCompile>
     <ClCompile Include="main.cpp">
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">../MyCommon/stdafx.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">../MyCommon/stdafx.h</PrecompiledHeaderFile>
@@ -175,11 +182,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\MyCommon\basewin.h" />
+    <ClInclude Include="..\MyCommon\camera.h" />
     <ClInclude Include="..\MyCommon\d3dFramework.h" />
     <ClInclude Include="..\MyCommon\dxException.h" />
     <ClInclude Include="..\MyCommon\gameTimer.h" />
     <ClInclude Include="..\MyCommon\stdafx.h" />
     <ClInclude Include="framework.h" />
+    <ClInclude Include="gameScene.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -39,6 +39,12 @@
     <ClCompile Include="..\MyCommon\d3dFramework.cpp">
       <Filter>소스 파일\Helper</Filter>
     </ClCompile>
+    <ClCompile Include="gameScene.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="..\MyCommon\camera.cpp">
+      <Filter>소스 파일\Helper</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -57,6 +63,12 @@
       <Filter>헤더 파일\Helper</Filter>
     </ClInclude>
     <ClInclude Include="..\MyCommon\gameTimer.h">
+      <Filter>헤더 파일\Helper</Filter>
+    </ClInclude>
+    <ClInclude Include="gameScene.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="..\MyCommon\camera.h">
       <Filter>헤더 파일\Helper</Filter>
     </ClInclude>
   </ItemGroup>
