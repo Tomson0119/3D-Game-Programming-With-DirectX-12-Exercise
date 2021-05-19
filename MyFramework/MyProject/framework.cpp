@@ -4,10 +4,13 @@
 GameFramework::GameFramework()
 	: D3DFramework()
 {
+	mScenes.emplace(std::make_unique<GameScene>());
 }
 
 GameFramework::~GameFramework()
 {
+	size_t size = mScenes.size();
+	for (int i = 0; i < size; ++i) mScenes.pop();
 }
 
 bool GameFramework::InitFramework()
@@ -18,12 +21,8 @@ bool GameFramework::InitFramework()
 	// 초기화하는 명령어를 넣기 위해 커맨드 리스트를 개방한다.
 	ThrowIfFailed(mCommandList->Reset(mCommandAllocator.Get(), nullptr));
 
-	// Build Objects
-	BuildRootSignature();
-	BuildDescriptorHeaps();
-	BuildShadersAndLayouts();
-	BuildMeshObjects();
-	BuildPSO();	
+	if (!mScenes.empty())
+		mScenes.top().get()->BuildObjects();
 
 	// Command List를 닫고 Queue에 명령어를 싣는다.
 	ThrowIfFailed(mCommandList->Close());
@@ -36,24 +35,31 @@ bool GameFramework::InitFramework()
 	return true;
 }
 
-void GameFramework::BuildRootSignature()
+void GameFramework::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-}
+	switch (uMsg)
+	{
+	case WM_KEYUP:
+	{
+		switch (wParam)
+		{
+		case VK_ESCAPE:
+			if (mScenes.size() > 1)
+				mScenes.pop();
+			else
+				PostQuitMessage(0);
+			return;
 
-void GameFramework::BuildDescriptorHeaps()
-{
-}
-
-void GameFramework::BuildShadersAndLayouts()
-{
-}
-
-void GameFramework::BuildMeshObjects()
-{
-}
-
-void GameFramework::BuildPSO()
-{
+		default:
+			D3DFramework::OnProcessKeyInput(uMsg, wParam, lParam);
+			break;
+		}
+		break;
+	}
+	default:
+		if (!mScenes.empty()) mScenes.top()->OnProcessKeyInput(uMsg, wParam, lParam);
+		break;
+	}	
 }
 
 void GameFramework::Update(const GameTimer& timer)
@@ -77,31 +83,14 @@ void GameFramework::Draw(const GameTimer& timer)
 		CurrentBackBuffer(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
 	
 	// 화면 버퍼와 깊이 스텐실 버퍼를 초기화한다.
-	mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::Black, 0, nullptr);
+	mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::White, 0, nullptr);
 	mCommandList->ClearDepthStencilView(DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 	
 	// 렌더링할 버퍼를 구체적으로 설정한다.
 	mCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), TRUE, &DepthStencilView());
 
-	// 상수 버퍼 서술자를 설정한다.
-	//
-	//
-
-	// Root signature를 설정한다.
-	//
-	//
-
-	// 정점과 인덱스 버퍼, 위상구조를 설정한다.
-	//
-	//
-	// 
-	// Root 서술자를 설정한다.
-	//
-	//
-
-	// 실제로 화면에 그린다.
-	//
-	//
+	if (!mScenes.empty())
+		mScenes.top().get()->Draw(timer);
 
 	// 화면 버퍼의 상태를 다시 PRESENT 상태로 전이한다.
 	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
