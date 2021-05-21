@@ -9,31 +9,22 @@ GameScene::~GameScene()
 {
 }
 
-<<<<<<< HEAD
 void GameScene::BuildObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
 {
-	BuildRootSignature();
-=======
-void GameScene::BuildObjects()
-{
->>>>>>> master-DESKTOP-BNBSJFG
+	BuildRootSignature(device);
 }
 
 void GameScene::Draw(const GameTimer& timer)
 {
-<<<<<<< HEAD
-	mCmdList->SetGraphicsRootSignature(mRootSignature.Get());
+	
 
-=======
->>>>>>> master-DESKTOP-BNBSJFG
 }
 
 void GameScene::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 }
-<<<<<<< HEAD
 
-void GameScene::BuildRootSignature()
+void GameScene::BuildRootSignature(ID3D12Device* device)
 {
 	CD3DX12_ROOT_PARAMETER parameters[1];	
 	parameters[0].InitAsConstantBufferView(0);
@@ -48,7 +39,7 @@ void GameScene::BuildRootSignature()
 		&rootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1,
 		rootSigBlob.GetAddressOf(), errorBlob.GetAddressOf()));
 
-	ThrowIfFailed(mDevice->CreateRootSignature(
+	ThrowIfFailed(device->CreateRootSignature(
 		0, rootSigBlob->GetBufferPointer(),
 		rootSigBlob->GetBufferSize(),
 		IID_PPV_ARGS(&mRootSignature)));
@@ -61,5 +52,3 @@ void GameScene::BuildShadersAndLayouts()
 void GameScene::BuildPSOs()
 {
 }
-=======
->>>>>>> master-DESKTOP-BNBSJFG

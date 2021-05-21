@@ -1,10 +1,7 @@
 #pragma once
 
 #include "../MyCommon/d3dFramework.h"
-<<<<<<< HEAD
 #include "../MyCommon/camera.h"
-=======
->>>>>>> master-DESKTOP-BNBSJFG
 #include "gameScene.h"
 
 class GameFramework : public D3DFramework
@@ -27,10 +24,5 @@ private:
 
 private:
 	std::stack<std::unique_ptr<GameScene>> mScenes;
-<<<<<<< HEAD
 	std::unique_ptr<Camera> mCamera;
-=======
-
-
->>>>>>> master-DESKTOP-BNBSJFG
 };
