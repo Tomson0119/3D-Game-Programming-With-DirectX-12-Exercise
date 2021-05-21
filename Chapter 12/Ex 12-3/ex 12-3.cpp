@@ -1,18 +1,18 @@
-#include "ex 12-2.h"
+#include "ex 12-3.h"
 #include "../../Common/DDSTextureLoader.h"
 
-MyUnitSphereApp::MyUnitSphereApp()
+MyExplosionApp::MyExplosionApp()
 	: MyD3DApp()
 {
 }
 
-MyUnitSphereApp::~MyUnitSphereApp()
+MyExplosionApp::~MyExplosionApp()
 {
 	if (md3dDevice != nullptr)
 		FlushCommandQueue();
 }
 
-bool MyUnitSphereApp::Initialize()
+bool MyExplosionApp::Initialize()
 {
 	if (!MyD3DApp::Initialize())
 		return false;
@@ -41,7 +41,7 @@ bool MyUnitSphereApp::Initialize()
 	return true;
 }
 
-void MyUnitSphereApp::OnResize()
+void MyExplosionApp::OnResize()
 {
 	MyD3DApp::OnResize();
 
@@ -51,7 +51,7 @@ void MyUnitSphereApp::OnResize()
 	XMStoreFloat4x4(&mProj, P);
 }
 
-void MyUnitSphereApp::Update(const MyGameTimer& gt)
+void MyExplosionApp::Update(const MyGameTimer& gt)
 {
 	OnKeyboardInput(gt);
 	UpdateCamera(gt);
@@ -78,7 +78,7 @@ void MyUnitSphereApp::Update(const MyGameTimer& gt)
 	UpdateMainPassCB(gt);
 }
 
-void MyUnitSphereApp::Draw(const MyGameTimer& gt)
+void MyExplosionApp::Draw(const MyGameTimer& gt)
 {
 	auto cmdListAlloc = mCurrFrameResource->CmdListAlloc;
 
@@ -149,7 +149,7 @@ void MyUnitSphereApp::Draw(const MyGameTimer& gt)
 	mCommandQueue->Signal(mFence.Get(), mCurrentFence);
 }
 
-void MyUnitSphereApp::OnMouseDown(WPARAM btnState, int x, int y)
+void MyExplosionApp::OnMouseDown(WPARAM btnState, int x, int y)
 {
 	mLastMousePos.x = x;
 	mLastMousePos.y = y;
@@ -157,12 +157,12 @@ void MyUnitSphereApp::OnMouseDown(WPARAM btnState, int x, int y)
 	SetCapture(m_hwnd);
 }
 
-void MyUnitSphereApp::OnMouseUp(WPARAM btnState, int x, int y)
+void MyExplosionApp::OnMouseUp(WPARAM btnState, int x, int y)
 {
 	ReleaseCapture();
 }
 
-void MyUnitSphereApp::OnMouseMove(WPARAM btnState, int x, int y)
+void MyExplosionApp::OnMouseMove(WPARAM btnState, int x, int y)
 {
 	if ((btnState & MK_LBUTTON) != 0)
 	{
@@ -194,7 +194,7 @@ void MyUnitSphereApp::OnMouseMove(WPARAM btnState, int x, int y)
 	mLastMousePos.y = y;
 }
 
-void MyUnitSphereApp::OnKeyboardInput(const MyGameTimer& gt)
+void MyExplosionApp::OnKeyboardInput(const MyGameTimer& gt)
 {
 	const float dt = gt.DeltaTime();
 
@@ -210,7 +210,7 @@ void MyUnitSphereApp::OnKeyboardInput(const MyGameTimer& gt)
 	mSunPhi = MyMathHelper::Clamp(mSunPhi, 0.1f, XM_PIDIV2);
 }
 
-void MyUnitSphereApp::UpdateCamera(const MyGameTimer& gt)
+void MyExplosionApp::UpdateCamera(const MyGameTimer& gt)
 {
 	// Convert Spherical to Cartesian coordinates.
 	mEyePos.x = mRadius * sinf(mPhi) * cosf(mTheta);
@@ -226,12 +226,12 @@ void MyUnitSphereApp::UpdateCamera(const MyGameTimer& gt)
 	XMStoreFloat4x4(&mView, view);
 }
 
-void MyUnitSphereApp::AnimateMaterials(const MyGameTimer& gt)
+void MyExplosionApp::AnimateMaterials(const MyGameTimer& gt)
 {
 	
 }
 
-void MyUnitSphereApp::UpdateObjectCBs(const MyGameTimer& gt)
+void MyExplosionApp::UpdateObjectCBs(const MyGameTimer& gt)
 {
 	auto currObjectCB = mCurrFrameResource->ObjectCB.get();
 	for (auto& e : mAllRitems)
@@ -255,7 +255,7 @@ void MyUnitSphereApp::UpdateObjectCBs(const MyGameTimer& gt)
 	}
 }
 
-void MyUnitSphereApp::UpdateMaterialCBs(const MyGameTimer& gt)
+void MyExplosionApp::UpdateMaterialCBs(const MyGameTimer& gt)
 {
 	auto currMaterialCB = mCurrFrameResource->MaterialCB.get();
 	for (auto& e : mMaterials)
@@ -280,7 +280,7 @@ void MyUnitSphereApp::UpdateMaterialCBs(const MyGameTimer& gt)
 	}
 }
 
-void MyUnitSphereApp::UpdateMainPassCB(const MyGameTimer& gt)
+void MyExplosionApp::UpdateMainPassCB(const MyGameTimer& gt)
 {
 	XMMATRIX view = XMLoadFloat4x4(&mView);
 	XMMATRIX proj = XMLoadFloat4x4(&mProj);
@@ -323,12 +323,12 @@ void MyUnitSphereApp::UpdateMainPassCB(const MyGameTimer& gt)
 	currPassCB->CopyData(0, mMainPassCB);
 }
 
-void MyUnitSphereApp::LoadTextures()
+void MyExplosionApp::LoadTextures()
 {
 	// The texture is useless since the topology is line strip..
 	// So We just load black image.
 	auto tex = std::make_unique<Texture>();
-	tex->Name = "blackTex";
+	tex->Name = "sphereTex";
 	tex->Filename = L"../../Textures/black1x1.dds";
 	ThrowIfFailed(CreateDDSTextureFromFile12(md3dDevice.Get(),
 		mCommandList.Get(), tex->Filename.c_str(),
@@ -336,7 +336,7 @@ void MyUnitSphereApp::LoadTextures()
 	mTextures[tex->Name] = std::move(tex);	
 }
 
-void MyUnitSphereApp::BuildRootSignature()
+void MyExplosionApp::BuildRootSignature()
 {
 	CD3DX12_DESCRIPTOR_RANGE texTable;
 	texTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
@@ -378,7 +378,7 @@ void MyUnitSphereApp::BuildRootSignature()
 		IID_PPV_ARGS(mRootSignature.GetAddressOf())));
 }
 
-void MyUnitSphereApp::BuildDescriptorHeaps()
+void MyExplosionApp::BuildDescriptorHeaps()
 {
 	// Create the SRV heap.
 	D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
@@ -391,7 +391,7 @@ void MyUnitSphereApp::BuildDescriptorHeaps()
 	// Fill out the heap with actual descriptors.
 	CD3DX12_CPU_DESCRIPTOR_HANDLE hDescriptor(mSrvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 
-	auto bricksTex = mTextures["blackTex"]->Resource;
+	auto bricksTex = mTextures["sphereTex"]->Resource;
 
 	// 0th descriptor.
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -404,7 +404,7 @@ void MyUnitSphereApp::BuildDescriptorHeaps()
 	md3dDevice->CreateShaderResourceView(bricksTex.Get(), &srvDesc, hDescriptor);
 }
 
-void MyUnitSphereApp::BuildShadersAndInputLayout()
+void MyExplosionApp::BuildShadersAndInputLayout()
 {
 	const std::wstring defaultShaderPath = L"Shaders\\default.hlsl";
 
@@ -416,17 +416,17 @@ void MyUnitSphereApp::BuildShadersAndInputLayout()
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, 
 			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "NORMAL", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, 
+		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, 
 			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24,
 			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
 	};
 }
 
-void MyUnitSphereApp::BuildSphereGeometry()
+void MyExplosionApp::BuildSphereGeometry()
 {
 	MyGeometryGenerator geoGen;
-	MyGeometryGenerator::MeshData mesh = geoGen.CreateGeosphere(10.0f, 0);
+	MyGeometryGenerator::MeshData mesh = geoGen.CreateGeosphere(10.0f, 3);
 
 	std::vector<Vertex> vertices(mesh.Vertices.size());
 
@@ -474,7 +474,7 @@ void MyUnitSphereApp::BuildSphereGeometry()
 	mGeometries[sphereGeo->Name] = std::move(sphereGeo);
 }
 
-void MyUnitSphereApp::BuildPSOs()
+void MyExplosionApp::BuildPSOs()
 {
 	// PSO for opaque objects.
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC opaquePsoDesc;
@@ -512,7 +512,7 @@ void MyUnitSphereApp::BuildPSOs()
 		&opaquePsoDesc, IID_PPV_ARGS(&mPSOs["opaque"])));
 }
 
-void MyUnitSphereApp::BuildFrameResources()
+void MyExplosionApp::BuildFrameResources()
 {
 	for (int i = 0; i < gNumFrameResources; ++i)
 	{
@@ -521,7 +521,7 @@ void MyUnitSphereApp::BuildFrameResources()
 	}
 }
 
-void MyUnitSphereApp::BuildMaterials()
+void MyExplosionApp::BuildMaterials()
 {
 	auto sphereMat = std::make_unique<Material>();
 	sphereMat->Name = "sphere";
@@ -533,7 +533,7 @@ void MyUnitSphereApp::BuildMaterials()
 	mMaterials[sphereMat->Name] = std::move(sphereMat);
 }
 
-void MyUnitSphereApp::BuildRenderItems()
+void MyExplosionApp::BuildRenderItems()
 {
 	// We can make it more than two..
 	for (UINT i = 0; i < 1; ++i)
@@ -561,7 +561,7 @@ void MyUnitSphereApp::BuildRenderItems()
 	}
 }
 
-void MyUnitSphereApp::DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::vector<RenderItem*>& ritems)
+void MyExplosionApp::DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::vector<RenderItem*>& ritems)
 {
 	UINT objCBByteSize = MyD3DUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants));
 	UINT matCBByteSize = MyD3DUtil::CalcConstantBufferByteSize(sizeof(MaterialConstants));
@@ -594,7 +594,7 @@ void MyUnitSphereApp::DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const 
 	}
 }
 
-std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> MyUnitSphereApp::GetStaticSamplers()
+std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> MyExplosionApp::GetStaticSamplers()
 {
 	// Applications usually only need a handful of samplers. So just define them
 	// all up front and keep them available as part of the root signature.

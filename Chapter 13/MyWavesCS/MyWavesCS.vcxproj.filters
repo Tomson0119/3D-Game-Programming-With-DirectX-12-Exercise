@@ -13,24 +13,56 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="헤더 파일\Helper">
-      <UniqueIdentifier>{3f553b92-8830-48f8-8cb4-656cce48b357}</UniqueIdentifier>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{56b92b73-fc70-4e56-92cc-65991a75bbbb}</UniqueIdentifier>
     </Filter>
     <Filter Include="소스 파일\Helper">
-      <UniqueIdentifier>{9b48db52-547b-4227-bcc4-a72c2538a907}</UniqueIdentifier>
+      <UniqueIdentifier>{c35734e7-ec25-45b4-87d6-7d77fd029f3f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Shaders">
-      <UniqueIdentifier>{555c2dc2-dc54-44e3-97aa-0d8feed971b1}</UniqueIdentifier>
+    <Filter Include="헤더 파일\Helper">
+      <UniqueIdentifier>{7bdc25d1-3b99-427f-8e84-80899db4ed3d}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ex 12-2.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
+    <ClCompile Include="wavesCS.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="waves.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Common\DDSTextureLoader.cpp">
+      <Filter>소스 파일\Helper</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Common\myd3dApp.cpp">
+      <Filter>소스 파일\Helper</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Common\myd3dUtil.cpp">
+      <Filter>소스 파일\Helper</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Common\myFrameResource.cpp">
+      <Filter>소스 파일\Helper</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Common\myGameTimer.cpp">
+      <Filter>소스 파일\Helper</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Common\myGeometryGenerator.cpp">
+      <Filter>소스 파일\Helper</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Common\myMathHelper.cpp">
+      <Filter>소스 파일\Helper</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
     <ClInclude Include="RenderItem.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\myUploadBuffer.h">
+    <ClInclude Include="waves.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="wavesCS.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Common\DDSTextureLoader.h">
       <Filter>헤더 파일\Helper</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Common\mybasewin.h">
@@ -54,41 +86,18 @@
     <ClInclude Include="..\..\Common\myMathHelper.h">
       <Filter>헤더 파일\Helper</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\DDSTextureLoader.h">
+    <ClInclude Include="..\..\Common\myUploadBuffer.h">
       <Filter>헤더 파일\Helper</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ex 12-2.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Common\myd3dApp.cpp">
-      <Filter>소스 파일\Helper</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Common\myd3dUtil.cpp">
-      <Filter>소스 파일\Helper</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Common\myFrameResource.cpp">
-      <Filter>소스 파일\Helper</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Common\myGameTimer.cpp">
-      <Filter>소스 파일\Helper</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Common\myGeometryGenerator.cpp">
-      <Filter>소스 파일\Helper</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Common\myMathHelper.cpp">
-      <Filter>소스 파일\Helper</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Common\DDSTextureLoader.cpp">
-      <Filter>소스 파일\Helper</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
+    <None Include="Shaders\default.hlsl">
+      <Filter>Shaders</Filter>
+    </None>
     <None Include="Shaders\lightingUtil.hlsl">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="Shaders\default.hlsl">
+    <None Include="Shaders\treeSprite.hlsl">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

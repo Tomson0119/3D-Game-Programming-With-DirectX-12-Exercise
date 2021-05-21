@@ -13,24 +13,56 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="헤더 파일\Helper">
-      <UniqueIdentifier>{3f553b92-8830-48f8-8cb4-656cce48b357}</UniqueIdentifier>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{16effec5-f4d2-46f8-bcec-1c61e86331d1}</UniqueIdentifier>
     </Filter>
     <Filter Include="소스 파일\Helper">
-      <UniqueIdentifier>{9b48db52-547b-4227-bcc4-a72c2538a907}</UniqueIdentifier>
+      <UniqueIdentifier>{ba686d49-053f-4abd-9cad-0ee6ae4d1a5f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Shaders">
-      <UniqueIdentifier>{555c2dc2-dc54-44e3-97aa-0d8feed971b1}</UniqueIdentifier>
+    <Filter Include="헤더 파일\Helper">
+      <UniqueIdentifier>{25052467-0f4f-496e-badd-35a6e6493836}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ex 12-2.h">
+    <ClCompile Include="ex 12-4.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Waves.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Common\myMathHelper.cpp">
+      <Filter>소스 파일\Helper</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Common\DDSTextureLoader.cpp">
+      <Filter>소스 파일\Helper</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Common\myd3dApp.cpp">
+      <Filter>소스 파일\Helper</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Common\myd3dUtil.cpp">
+      <Filter>소스 파일\Helper</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Common\myFrameResource.cpp">
+      <Filter>소스 파일\Helper</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Common\myGameTimer.cpp">
+      <Filter>소스 파일\Helper</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Common\myGeometryGenerator.cpp">
+      <Filter>소스 파일\Helper</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ex 12-4.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="RenderItem.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\myUploadBuffer.h">
+    <ClInclude Include="Waves.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Common\DDSTextureLoader.h">
       <Filter>헤더 파일\Helper</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Common\mybasewin.h">
@@ -54,35 +86,9 @@
     <ClInclude Include="..\..\Common\myMathHelper.h">
       <Filter>헤더 파일\Helper</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\DDSTextureLoader.h">
+    <ClInclude Include="..\..\Common\myUploadBuffer.h">
       <Filter>헤더 파일\Helper</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="ex 12-2.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Common\myd3dApp.cpp">
-      <Filter>소스 파일\Helper</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Common\myd3dUtil.cpp">
-      <Filter>소스 파일\Helper</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Common\myFrameResource.cpp">
-      <Filter>소스 파일\Helper</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Common\myGameTimer.cpp">
-      <Filter>소스 파일\Helper</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Common\myGeometryGenerator.cpp">
-      <Filter>소스 파일\Helper</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Common\myMathHelper.cpp">
-      <Filter>소스 파일\Helper</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Common\DDSTextureLoader.cpp">
-      <Filter>소스 파일\Helper</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\lightingUtil.hlsl">
