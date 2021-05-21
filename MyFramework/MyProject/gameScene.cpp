@@ -9,20 +9,29 @@ GameScene::~GameScene()
 {
 }
 
+<<<<<<< HEAD
 void GameScene::BuildObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
 {
 	BuildRootSignature();
+=======
+void GameScene::BuildObjects()
+{
+>>>>>>> master-DESKTOP-BNBSJFG
 }
 
 void GameScene::Draw(const GameTimer& timer)
 {
+<<<<<<< HEAD
 	mCmdList->SetGraphicsRootSignature(mRootSignature.Get());
 
+=======
+>>>>>>> master-DESKTOP-BNBSJFG
 }
 
 void GameScene::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 }
+<<<<<<< HEAD
 
 void GameScene::BuildRootSignature()
 {
@@ -52,3 +61,5 @@ void GameScene::BuildShadersAndLayouts()
 void GameScene::BuildPSOs()
 {
 }
+=======
+>>>>>>> master-DESKTOP-BNBSJFG

@@ -40,7 +40,10 @@
 #include <string>
 #include <memory>
 
+<<<<<<< HEAD
 #include "dxException.h"
+=======
+>>>>>>> master-DESKTOP-BNBSJFG
 
 using namespace DirectX;
 using namespace DirectX::PackedVector;

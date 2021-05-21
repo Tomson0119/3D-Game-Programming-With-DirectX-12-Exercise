@@ -4,8 +4,12 @@
 GameFramework::GameFramework()
 	: D3DFramework()
 {
+<<<<<<< HEAD
 	mScenes.emplace(std::make_unique<GameScene>(mD3dDevice.Get(), mCommandList.Get()));
 	mCamera = std::make_unique<Camera>();
+=======
+	mScenes.emplace(std::make_unique<GameScene>());
+>>>>>>> master-DESKTOP-BNBSJFG
 }
 
 GameFramework::~GameFramework()
@@ -66,7 +70,10 @@ void GameFramework::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
 void GameFramework::Update(const GameTimer& timer)
 {
 	D3DFramework::Update(timer);
+<<<<<<< HEAD
 	mCamera->UpdateViewMatrix();
+=======
+>>>>>>> master-DESKTOP-BNBSJFG
 }
 
 void GameFramework::Draw(const GameTimer& timer)
