@@ -2,6 +2,10 @@
 
 #ifndef _DEBUG
 #define _DEBUG
+#else
+#define _CRTDBG_MAP_ALLOC
+#include <crtdbg.h>
+#include <dxgidebug.h>
 #endif
 
 
@@ -24,9 +28,6 @@
 
 #include "d3dx12.h"
 
-#ifdef _DEBUG
-#include <dxgidebug.h>
-#endif
 
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "d3dcompiler.lib")
@@ -56,11 +57,11 @@ inline std::wstring AnsiToWString(const std::string& str)
 }
 
 #ifndef ThrowIfFailed
-#define ThrowIfFailed(f)										   \
-{																   \
-	HRESULT hr = (f);											   \
-	std::wstring wfn = AnsiToWString(__FILE__);					   \
-	if (FAILED(hr))	{ throw DxException(hr, L#f, wfn, __LINE__); } \
+#define ThrowIfFailed(f)												\
+{																		\
+	HRESULT hr_ = (f);													\
+	std::wstring wfn = AnsiToWString(__FILE__);							\
+	if (FAILED(hr_))	{ throw DxException(hr_, L#f, wfn, __LINE__); } \
 }																		
 #endif
 

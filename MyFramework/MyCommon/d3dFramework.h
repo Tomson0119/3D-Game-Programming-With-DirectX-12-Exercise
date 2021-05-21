@@ -4,6 +4,7 @@
 #include "gameTimer.h"
 #include "dxException.h"
 
+
 class D3DFramework : public BaseWin<D3DFramework>
 {
 public:
