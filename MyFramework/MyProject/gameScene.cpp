@@ -12,12 +12,21 @@ GameScene::~GameScene()
 void GameScene::BuildObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
 {
 	BuildRootSignature(device);
+	BuildPSOs(device);
+
 }
 
-void GameScene::Draw(const GameTimer& timer)
+void GameScene::Draw(ID3D12GraphicsCommandList* cmdList, const GameTimer& timer)
 {
-	
+	cmdList->SetGraphicsRootSignature(mRootSignature.Get());
 
+	// cmdList->SetGraphicsRootConstantBufferView(0, virtualAdress)
+	
+	for (const auto& pso : mPipelines)
+	{
+		pso.second->SetPipeline(cmdList);
+		pso.second->Draw(cmdList);
+	}
 }
 
 void GameScene::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -45,10 +54,15 @@ void GameScene::BuildRootSignature(ID3D12Device* device)
 		IID_PPV_ARGS(&mRootSignature)));
 }
 
-void GameScene::BuildShadersAndLayouts()
+void GameScene::BuildShaders()
 {
+	auto colorShader = std::make_unique<ColorShader>();
+	mShaders["color"] = std::move(colorShader);
 }
 
-void GameScene::BuildPSOs()
+void GameScene::BuildPSOs(ID3D12Device* device)
 {
+	auto colorPSO = std::make_unique<Pipeline>();
+	colorPSO->BuildPipeline(device, mRootSignature.Get(), mShaders["color"].get());
+	mPipelines["defaultColor"] = std::move(colorPSO);
 }
