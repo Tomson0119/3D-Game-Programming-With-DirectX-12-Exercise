@@ -1,9 +1,9 @@
 #include "stdafx.h"
 #include "camera.h"
 
-Camera::Camera()
+Camera::Camera(float fovY, float aspect, float zn, float zf)
 {
-	SetLens(0.25f * Math::PI, 1.0f, 1.0f, 1000.0f);
+	SetLens(fovY, aspect, zn, zf);
 }
 
 Camera::~Camera()

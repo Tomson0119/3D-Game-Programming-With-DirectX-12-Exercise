@@ -3,7 +3,9 @@
 class Camera
 {
 public:
-	Camera();
+	Camera(float fovY, float aspect, float zn, float zf);
+	Camera(const Camera& rhs) = delete;
+	Camera& operator=(const Camera& rhs) = delete;
 	~Camera();
 
 	XMFLOAT3 GetPosition() const { return mPosition; }
