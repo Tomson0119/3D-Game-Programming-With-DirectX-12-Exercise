@@ -1,11 +1,18 @@
 #include "../MyCommon/stdafx.h"
 #include "framework.h"
 
+DXGI_SAMPLE_DESC gMsaaStateDesc;
+
 GameFramework::GameFramework()
 	: D3DFramework()
 {
+	// 전역 변수 멀티샘플링 서술자 세팅
+	// 파이프라인 객체를 생성할 때 쓰인다.
+	gMsaaStateDesc.Count = (mMsaa4xEnable) ? 4 : 1;
+	gMsaaStateDesc.Quality = (mMsaa4xEnable) ? (mMsaa4xQualityLevels - 1) : 0;
+
 	mScenes.emplace(std::make_unique<GameScene>());
-	mCamera = std::make_unique<Camera>();
+	mCamera = std::make_unique<Camera>(0.25f * Math::PI, 1.0f, 1.0f, 1000.0f);
 }
 
 GameFramework::~GameFramework()
@@ -85,14 +92,15 @@ void GameFramework::Draw(const GameTimer& timer)
 		CurrentBackBuffer(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
 	
 	// 화면 버퍼와 깊이 스텐실 버퍼를 초기화한다.
-	mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::White, 0, nullptr);
+	XMFLOAT4 color = (!mScenes.empty()) ? mScenes.top()->GetFrameColor() : (XMFLOAT4)Colors::White;
+
+	mCommandList->ClearRenderTargetView(CurrentBackBufferView(), (FLOAT*)&color, 0, nullptr);
 	mCommandList->ClearDepthStencilView(DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 	
 	// 렌더링할 버퍼를 구체적으로 설정한다.
 	mCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), TRUE, &DepthStencilView());
 
-	if (!mScenes.empty())
-		mScenes.top().get()->Draw(timer);
+	if (!mScenes.empty()) mScenes.top().get()->Draw(mCommandList.Get(), timer);
 
 	// 화면 버퍼의 상태를 다시 PRESENT 상태로 전이한다.
 	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(

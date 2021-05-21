@@ -4,6 +4,8 @@
 #include "../MyCommon/camera.h"
 #include "gameScene.h"
 
+extern DXGI_SAMPLE_DESC gMsaaStateDesc;
+
 class GameFramework : public D3DFramework
 {
 public:
