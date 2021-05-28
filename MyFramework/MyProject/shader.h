@@ -23,12 +23,6 @@ protected:
 	ComPtr<ID3DBlob> VS = nullptr;
 	ComPtr<ID3DBlob> GS = nullptr;
 	ComPtr<ID3DBlob> PS = nullptr;
-
-	ComPtr<ID3DBlob> CompileShader(
-		const std::wstring& fileName,
-		const std::string& entry,
-		const std::string& target,
-		const D3D_SHADER_MACRO* defines = nullptr);
 };
 
 class ColorShader : public Shader

@@ -6,31 +6,6 @@ Shader::Shader()
 {	
 }
 
-ComPtr<ID3DBlob> Shader::CompileShader(
-	const std::wstring& fileName,
-	const std::string& entry, 
-	const std::string& target,
-	const D3D_SHADER_MACRO* defines)
-{
-	UINT compileFlags = 0;
-#ifdef _DEBUG
-	compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
-#endif
-
-	ComPtr<ID3DBlob> codeBlob;
-	ComPtr<ID3DBlob> errorBlob;
-	HRESULT hr = D3DCompileFromFile(fileName.c_str(), defines, NULL,
-		entry.c_str(), target.c_str(), compileFlags, NULL,
-		&codeBlob, &errorBlob);
-
-	if (errorBlob)
-		OutputDebugStringA((char*)errorBlob->GetBufferPointer());
-
-	ThrowIfFailed(hr);
-
-	return codeBlob;
-}
-
 
 ///////////////////////////////////////////////////////////////////////
 //
