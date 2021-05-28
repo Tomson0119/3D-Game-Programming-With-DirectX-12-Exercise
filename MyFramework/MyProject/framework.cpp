@@ -12,7 +12,6 @@ GameFramework::GameFramework()
 	gMsaaStateDesc.Quality = (mMsaa4xEnable) ? (mMsaa4xQualityLevels - 1) : 0;
 
 	mScenes.emplace(std::make_unique<GameScene>());
-	mCamera = std::make_unique<Camera>(0.25f * Math::PI, 1.0f, 1.0f, 1000.0f);
 }
 
 GameFramework::~GameFramework()
@@ -41,6 +40,10 @@ bool GameFramework::InitFramework()
 	WaitUntilGPUComplete();
 
 	return true;
+}
+
+void GameFramework::OnProcessMouseInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
 }
 
 void GameFramework::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -73,7 +76,8 @@ void GameFramework::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
 void GameFramework::Update(const GameTimer& timer)
 {
 	D3DFramework::Update(timer);
-	mCamera->UpdateViewMatrix();
+
+	if (!mScenes.empty()) mScenes.top()->Update(timer);
 }
 
 void GameFramework::Draw(const GameTimer& timer)
