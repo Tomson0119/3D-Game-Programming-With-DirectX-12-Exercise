@@ -51,11 +51,14 @@
     <ClCompile Include="pipeline.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="mesh.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="shader.cpp">
       <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="gameObject.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="..\MyCommon\mesh.cpp">
+      <Filter>소스 파일\Helper</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -86,11 +89,17 @@
     <ClInclude Include="pipeline.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="mesh.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="shader.h">
       <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="..\MyCommon\constantBuffer.h">
+      <Filter>헤더 파일\Helper</Filter>
+    </ClInclude>
+    <ClInclude Include="gameObject.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="..\MyCommon\mesh.h">
+      <Filter>헤더 파일\Helper</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
