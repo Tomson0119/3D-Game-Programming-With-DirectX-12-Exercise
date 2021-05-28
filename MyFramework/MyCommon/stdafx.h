@@ -35,6 +35,7 @@
 
 
 // C++ 헤더 파일:
+#include <array>
 #include <vector>
 #include <stack>
 #include <unordered_map>
@@ -47,6 +48,19 @@ using namespace DirectX;
 using namespace DirectX::PackedVector;
 
 using Microsoft::WRL::ComPtr;
+
+extern ComPtr<ID3D12Resource> CreateBufferResource(
+	ID3D12Device* device,
+	ID3D12GraphicsCommandList* cmdList,
+	const void* initData,
+	UINT64 byteSize,
+	ComPtr<ID3D12Resource>& uploadBuffer);
+
+extern ComPtr<ID3DBlob> CompileShader(
+	const std::wstring& fileName,
+	const std::string& entry,
+	const std::string& target,
+	const D3D_SHADER_MACRO* defines = nullptr);
 
 
 inline std::wstring AnsiToWString(const std::string& str)
@@ -67,7 +81,7 @@ inline std::wstring AnsiToWString(const std::string& str)
 
 
 ////////////////////////////////////////////////////////////////////////////
-
+//
 namespace Math
 {
 	const float PI = 3.1415926535f;
