@@ -13,7 +13,7 @@ Pipeline::~Pipeline()
 
 void Pipeline::SetPipeline(ID3D12GraphicsCommandList* cmdList)
 {
-	mCommandList->
+	
 }
 
 void Pipeline::Draw(ID3D12GraphicsCommandList* cmdList)
