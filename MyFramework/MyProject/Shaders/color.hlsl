@@ -1,8 +1,14 @@
 
-cbuffer constants : register(b0)
+cbuffer CommonCB : register(b0)
 {
-	float4x4 world;
-	float4x4 viewProj;
+    matrix gView : packoffset(c0);
+    matrix gProj : packoffset(c4);
+    matrix gViewProj : packoffset(c8);
+}
+
+cbuffer ObjectCB : register(b1)
+{
+    matrix gWorld : packoffset(c0);
 }
 
 struct VertexIn
@@ -13,7 +19,7 @@ struct VertexIn
 
 struct VertexOut
 {
-	float4 PosH  : SV_POSITON;
+	float4 PosH  : SV_POSITION;
 	float4 Color : COLOR;
 };
 
@@ -21,8 +27,8 @@ VertexOut VS(VertexIn vin)
 {
 	VertexOut vout;
 	
-	float4x4 worldViewProj = mul(world, viewProj);
-	vout.PosH = mul(float4(vin.PosL, 1.0f), worldViewProj);
+    float4 posW = mul(float4(vin.PosL, 1.0f), gWorld);
+	vout.PosH = mul(posW, gViewProj);
 	vout.Color = vin.Color;
 	
 	return vout;
