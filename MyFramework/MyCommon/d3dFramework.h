@@ -16,6 +16,8 @@ public:
 	virtual bool InitFramework();
 	void Run();
 
+	float GetAspect() const { return static_cast<float>(mFrameWidth) / mFrameHeight; }
+
 private:
 	bool InitDirect3D();
 

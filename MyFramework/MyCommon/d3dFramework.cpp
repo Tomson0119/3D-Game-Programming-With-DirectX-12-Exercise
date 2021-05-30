@@ -154,6 +154,8 @@ void D3DFramework::CreateCommandObjects()
 
 void D3DFramework::CreateSwapChain()
 {
+	mSwapChain.Reset();
+
 	DXGI_SWAP_CHAIN_DESC swapChainDesc;	
 	swapChainDesc.BufferDesc.Width = mFrameWidth;
 	swapChainDesc.BufferDesc.Height = mFrameHeight;
