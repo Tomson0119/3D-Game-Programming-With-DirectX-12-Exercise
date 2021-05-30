@@ -3,6 +3,7 @@
 class Camera
 {
 public:
+	Camera();
 	Camera(float fovY, float aspect, float zn, float zf);
 	Camera(const Camera& rhs) = delete;
 	Camera& operator=(const Camera& rhs) = delete;
@@ -40,18 +41,18 @@ public:
 private:
 	bool mViewDirty = false;
 
-	XMFLOAT3 mPosition = { 0.0f,0.0f,0.0f };
-	XMFLOAT3 mRight = { 1.0f,0.0f,0.0f };
-	XMFLOAT3 mUp = { 0.0f,1.0f,0.0f };
-	XMFLOAT3 mLook = { 0.0f,0.0f,1.0f };
+	XMFLOAT3 mPosition = { 0.0f, 0.0f, 0.0f };
+	XMFLOAT3 mRight = { 1.0f, 0.0f, 0.0f };
+	XMFLOAT3 mUp = { 0.0f, 1.0f, 0.0f };
+	XMFLOAT3 mLook = { 0.0f, 0.0f, 1.0f };
 
 	float mFarZ = 0.0f;
 	float mNearZ = 0.0f;
 	float mAspect = 0.0f;
 	
 	XMFLOAT2 mFov = { 0.0f, 0.0f };
-	XMFLOAT2 mNearWindow = { 0.0f,0.0f };
-	XMFLOAT2 mFarWindow = { 0.0f,0.0f };	
+	XMFLOAT2 mNearWindow = { 0.0f, 0.0f };
+	XMFLOAT2 mFarWindow = { 0.0f, 0.0f };	
 
 	XMFLOAT4X4 mView = Matrix4x4::Identity4x4();
 	XMFLOAT4X4 mProj = Matrix4x4::Identity4x4();
