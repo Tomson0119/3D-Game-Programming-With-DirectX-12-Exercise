@@ -11,15 +11,6 @@ Pipeline::~Pipeline()
 {
 }
 
-void Pipeline::SetPipeline(ID3D12GraphicsCommandList* cmdList)
-{
-	
-}
-
-void Pipeline::Draw(ID3D12GraphicsCommandList* cmdList)
-{
-}
-
 void Pipeline::BuildPipeline(
 	ID3D12Device* device,
 	ID3D12RootSignature* rootSig,
@@ -27,19 +18,19 @@ void Pipeline::BuildPipeline(
 {
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
 
-	auto layout = &shader->GetInputLayout();
+	auto layout = shader->GetInputLayout();
 
 	psoDesc.pRootSignature = rootSig;
-	psoDesc.InputLayout = { 
-		layout->data(),
-		(UINT)layout->size()
+	psoDesc.InputLayout = {
+		layout.data(),
+		(UINT)layout.size()
 	};
 	psoDesc.VS = {
-		shader->GetVS()->GetBufferPointer(),
+		reinterpret_cast<BYTE*>(shader->GetVS()->GetBufferPointer()),
 		shader->GetVS()->GetBufferSize()
 	};
 	psoDesc.PS = {
-		shader->GetPS()->GetBufferPointer(),
+		reinterpret_cast<BYTE*>(shader->GetPS()->GetBufferPointer()),
 		shader->GetPS()->GetBufferSize()
 	};
 	psoDesc.RasterizerState = mRasterizerDesc;
@@ -52,7 +43,20 @@ void Pipeline::BuildPipeline(
 	psoDesc.DSVFormat = mDepthStencilFormat;
 	psoDesc.SampleDesc.Count = gMsaaStateDesc.Count;
 	psoDesc.SampleDesc.Quality = gMsaaStateDesc.Quality;
-
 	ThrowIfFailed(device->CreateGraphicsPipelineState(
 		&psoDesc, IID_PPV_ARGS(&mPSO)));
+}
+
+void Pipeline::SetObject(GameObject* obj)
+{
+	mRenderObjects.push_back(obj);
+}
+
+void Pipeline::Draw(ID3D12GraphicsCommandList* cmdList, D3D12_GPU_VIRTUAL_ADDRESS startAddress, UINT stride)
+{
+	for (const auto& item : mRenderObjects) {
+		auto address = startAddress + item->CBIndex() * stride;
+		cmdList->SetGraphicsRootConstantBufferView(1, address);
+		item->Draw(cmdList);
+	}
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Shader.h"
+#include "gameObject.h"
 
 class Pipeline
 {
@@ -10,13 +11,15 @@ public:
 	Pipeline& operator=(const Pipeline& rhs) = delete;
 	virtual ~Pipeline();
 
-	void SetPipeline(ID3D12GraphicsCommandList* cmdList);
-	void Draw(ID3D12GraphicsCommandList* cmdList);
-
 	void BuildPipeline(
 		ID3D12Device* device, 
 		ID3D12RootSignature* rootSig,
 		Shader* shader);
+
+	void SetObject(GameObject* obj);
+	void Draw(ID3D12GraphicsCommandList* cmdList, D3D12_GPU_VIRTUAL_ADDRESS startAddress, UINT stride);
+
+	ID3D12PipelineState* GetPSO() const { return mPSO.Get(); }
 
 protected:
 	ComPtr<ID3D12PipelineState> mPSO;
@@ -29,4 +32,6 @@ protected:
 	DXGI_FORMAT mDepthStencilFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 
 	D3D12_PRIMITIVE_TOPOLOGY_TYPE mPrimitive = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+
+	std::vector<GameObject*> mRenderObjects;
 };
