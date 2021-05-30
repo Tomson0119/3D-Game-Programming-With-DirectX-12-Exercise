@@ -9,10 +9,8 @@ Shader::Shader()
 
 ///////////////////////////////////////////////////////////////////////
 //
-
-
-ColorShader::ColorShader()
-	: Shader()
+ColorShader::ColorShader(const std::wstring& path)
+	: Shader(), mShaderPath(path)
 {
 	Compile();
 	BuildInputLayout();

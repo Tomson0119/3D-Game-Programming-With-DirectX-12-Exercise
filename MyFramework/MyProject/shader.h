@@ -28,7 +28,7 @@ protected:
 class ColorShader : public Shader
 {
 public:
-	ColorShader();
+	ColorShader(const std::wstring& path);
 	ColorShader(const ColorShader& rhs) = delete;
 	ColorShader& operator=(const ColorShader& rhs) = delete;
 	virtual ~ColorShader() { }
@@ -37,5 +37,5 @@ public:
 	virtual void BuildInputLayout() override;
 
 private:
-	std::wstring mShaderPath = L"Shaders\\color.hlsl";
+	std::wstring mShaderPath;
 };
