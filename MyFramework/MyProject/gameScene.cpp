@@ -3,7 +3,8 @@
 
 GameScene::GameScene()
 {
-	mCamera = std::make_unique<Camera>(0.25f * Math::PI, 1.0f, 1.0f, 1000.0f);
+	mCamera = std::make_unique<Camera>();
+	mCamera->SetPosition(0.0f, 0.0f, -10.0f);
 }
 
 GameScene::~GameScene()
@@ -13,27 +14,50 @@ GameScene::~GameScene()
 void GameScene::BuildObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
 {
 	BuildRootSignature(device);
-	BuildShaders();
+	BuildShadersAndPSOs(device);
+	BuildGameObjects(device, cmdList);
 	BuildConstantBuffers(device);
-	BuildPSOs(device);
+}
+
+void GameScene::Resize(float aspect)
+{
+	mCamera->SetLens(0.25f * Math::PI, aspect, 1.0f, 1000.0f);
 }
 
 void GameScene::Update(const GameTimer& timer)
 {
+	// 카메라의 상태를 업데이트한다.
 	mCamera->UpdateViewMatrix();
+
+	// 카메라로부터 상수를 받는다.
+	CameraConstants cameraCnst;
+	cameraCnst.View = Matrix4x4::Transpose(mCamera->GetView());
+	cameraCnst.Proj = Matrix4x4::Transpose(mCamera->GetProj());
+	cameraCnst.ViewProj = Matrix4x4::Transpose(Matrix4x4::Multiply(mCamera->GetView(), mCamera->GetProj()));
+	mCameraCB->CopyData(0, cameraCnst);
+
+	ObjectConstants objCnst;
+	for (UINT i = 0; i < mGameObjects.size(); ++i)
+	{
+		mGameObjects[i]->Update();  // 오브젝트의 상태를 업데이트한다.
+		
+		// 오브젝트로부터 상수를 받아 업데이트한다.
+		objCnst.World = Matrix4x4::Transpose(mGameObjects[i]->GetWorld());
+		mObjectCB->CopyData(i, objCnst);
+	}
 }
 
 void GameScene::Draw(ID3D12GraphicsCommandList* cmdList, const GameTimer& timer)
 {
 	cmdList->SetGraphicsRootSignature(mRootSignature.Get());
-
-	auto common = mCommonCB->Resource();	
-	cmdList->SetGraphicsRootConstantBufferView(0, common->GetGPUVirtualAddress());
 	
-	for (const auto& pso : mPipelines)
+	auto cmCB = mCameraCB->Resource();	
+	cmdList->SetGraphicsRootConstantBufferView(0, cmCB->GetGPUVirtualAddress());
+	
+	for (const auto& [name, pso] : mPipelines)
 	{
-		pso.second->SetPipeline(cmdList);
-		pso.second->Draw(cmdList);
+		cmdList->SetPipelineState(pso->GetPSO());
+		pso->Draw(cmdList, mObjectCB->Resource()->GetGPUVirtualAddress(), mObjectCB->GetByteSize());
 	}
 }
 
@@ -51,8 +75,8 @@ void GameScene::BuildRootSignature(ID3D12Device* device)
 	parameters[0].InitAsConstantBufferView(0);  // CommonCB
 	parameters[1].InitAsConstantBufferView(1);  // ObjectCB
 
-	CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(1, parameters, 0, nullptr,
-		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+	CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(_countof(parameters), parameters, 
+		0, nullptr,	D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
 	ComPtr<ID3DBlob> rootSigBlob = nullptr;
 	ComPtr<ID3DBlob> errorBlob = nullptr;
@@ -67,24 +91,27 @@ void GameScene::BuildRootSignature(ID3D12Device* device)
 		IID_PPV_ARGS(&mRootSignature)));
 }
 
-void GameScene::BuildGameObjects()
+void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
 {
-}
+	mMeshes["box"] = std::make_unique<BoxMesh>(device, cmdList, 4.0f, 4.0f, 4.0f, true);
 
-void GameScene::BuildShaders()
-{
-	auto colorShader = std::make_unique<ColorShader>();
-	mShaders["color"] = std::move(colorShader);
+	auto boxObject = std::make_unique<GameObject>(0, mMeshes["box"].get());
+	mPipelines["defaultColor"]->SetObject(boxObject.get());
+	mGameObjects.push_back(std::move(boxObject));
 }
 
 void GameScene::BuildConstantBuffers(ID3D12Device* device)
 {
-	mCommonCB = std::make_unique<ConstantBuffer<CommonConstants>>(device, 1);
+	mObjectCB = std::make_unique<ConstantBuffer<ObjectConstants>>(device, mGameObjects.size());
+	mCameraCB = std::make_unique<ConstantBuffer<CameraConstants>>(device, 1);
 }
 
-void GameScene::BuildPSOs(ID3D12Device* device)
+void GameScene::BuildShadersAndPSOs(ID3D12Device* device)
 {
-	auto colorPSO = std::make_unique<Pipeline>();
-	colorPSO->BuildPipeline(device, mRootSignature.Get(), mShaders["color"].get());
-	mPipelines["defaultColor"] = std::move(colorPSO);
+	// Shader
+	mShaders["color"] = std::make_unique<ColorShader>(L"Shaders\\color.hlsl");
+
+	// Pipeline
+	mPipelines["defaultColor"] = std::make_unique<Pipeline>();
+	mPipelines["defaultColor"]->BuildPipeline(device, mRootSignature.Get(), mShaders["color"].get());
 }
