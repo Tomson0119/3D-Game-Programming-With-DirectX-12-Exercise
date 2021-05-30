@@ -18,6 +18,7 @@ public:
 	void SetFrameSize(UINT width, UINT height) { mFrameWidth = width; mFrameHeight = height; }
 
 private:
+	virtual void OnResize() override;
 	virtual void OnProcessMouseInput(UINT uMsg, WPARAM wParam, LPARAM lParam) override;
 	virtual void OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam) override;
 

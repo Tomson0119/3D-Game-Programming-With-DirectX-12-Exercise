@@ -1,6 +1,7 @@
 #include "../MyCommon/stdafx.h"
 #include "framework.h"
 
+
 DXGI_SAMPLE_DESC gMsaaStateDesc;
 
 GameFramework::GameFramework()
@@ -40,6 +41,14 @@ bool GameFramework::InitFramework()
 	WaitUntilGPUComplete();
 
 	return true;
+}
+
+void GameFramework::OnResize()
+{
+	D3DFramework::OnResize();
+
+	if (!mScenes.empty())
+		mScenes.top().get()->Resize(GetAspect());
 }
 
 void GameFramework::OnProcessMouseInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
