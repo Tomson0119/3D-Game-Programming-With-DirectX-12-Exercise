@@ -133,6 +133,11 @@ namespace Vector3
 	{
 		return XMVectorGetX(XMVector3Dot(XMLoadFloat3(&v1), XMLoadFloat3(&v2)));
 	}
+
+	inline XMFLOAT3 Add(XMFLOAT3& v1, XMFLOAT3& v2, float distance)
+	{
+		return VectorToFloat3(XMLoadFloat3(&v1) + XMLoadFloat3(&v2) * distance);
+	}
 }
 
 namespace Matrix4x4
@@ -141,6 +146,27 @@ namespace Matrix4x4
 	{	
 		XMFLOAT4X4 ret;
 		XMStoreFloat4x4(&ret, XMMatrixIdentity());
+		return ret;
+	}
+
+	inline XMFLOAT4X4 Transpose(XMFLOAT4X4& mat)
+	{
+		XMFLOAT4X4 ret;
+		XMStoreFloat4x4(&ret, XMMatrixTranspose(XMLoadFloat4x4(&mat)));
+		return ret;
+	}
+
+	inline XMFLOAT4X4 Multiply(XMFLOAT4X4& mat1, XMFLOAT4X4& mat2)
+	{
+		XMFLOAT4X4 ret;
+		XMStoreFloat4x4(&ret, XMMatrixMultiply(XMLoadFloat4x4(&mat1), XMLoadFloat4x4(&mat2)));
+		return ret;
+	}
+
+	inline XMFLOAT4X4 Multiply(XMMATRIX& mat1, XMFLOAT4X4& mat2)
+	{
+		XMFLOAT4X4 ret;
+		XMStoreFloat4x4(&ret, XMMatrixMultiply(mat1, XMLoadFloat4x4(&mat2)));
 		return ret;
 	}
 }
