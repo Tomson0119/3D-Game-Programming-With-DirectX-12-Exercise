@@ -91,6 +91,7 @@
       <AdditionalOptions>/permissive %(AdditionalOptions)</AdditionalOptions>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -108,6 +109,7 @@
       <AdditionalOptions>/permissive %(AdditionalOptions)</AdditionalOptions>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -125,6 +127,7 @@
       <AdditionalOptions>/permissive %(AdditionalOptions)</AdditionalOptions>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -142,6 +145,7 @@
       <AdditionalOptions>/permissive %(AdditionalOptions)</AdditionalOptions>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -155,7 +159,6 @@
     <ClCompile Include="..\MyCommon\d3dFramework.cpp" />
     <ClCompile Include="..\MyCommon\dxException.cpp" />
     <ClCompile Include="..\MyCommon\gameTimer.cpp" />
-    <ClCompile Include="..\MyCommon\mesh.cpp" />
     <ClCompile Include="..\MyCommon\stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
@@ -186,6 +189,12 @@
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">../MyCommon/stdafx.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">../MyCommon/stdafx.h</PrecompiledHeaderFile>
     </ClCompile>
+    <ClCompile Include="mesh.cpp">
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">../MyCommon/stdafx.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">../MyCommon/stdafx.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">../MyCommon/stdafx.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">../MyCommon/stdafx.h</PrecompiledHeaderFile>
+    </ClCompile>
     <ClCompile Include="pipeline.cpp">
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">../MyCommon/stdafx.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">../MyCommon/stdafx.h</PrecompiledHeaderFile>
@@ -205,12 +214,12 @@
     <ClInclude Include="..\MyCommon\d3dFramework.h" />
     <ClInclude Include="..\MyCommon\dxException.h" />
     <ClInclude Include="..\MyCommon\gameTimer.h" />
-    <ClInclude Include="..\MyCommon\mesh.h" />
     <ClInclude Include="..\MyCommon\stdafx.h" />
     <ClInclude Include="..\MyCommon\constantBuffer.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="gameObject.h" />
     <ClInclude Include="gameScene.h" />
+    <ClInclude Include="mesh.h" />
     <ClInclude Include="pipeline.h" />
     <ClInclude Include="shader.h" />
   </ItemGroup>
