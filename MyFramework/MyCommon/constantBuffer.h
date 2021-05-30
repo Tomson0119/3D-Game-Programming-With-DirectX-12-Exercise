@@ -38,6 +38,11 @@ public:
 	{
 		memcpy(&mData[index * mByteSize], &data, sizeof(Cnst));
 	}
+
+	UINT GetByteSize() const
+	{
+		return mByteSize;
+	}
 	
 private:
 	ComPtr<ID3D12Resource> mUploadBuffer = nullptr;
