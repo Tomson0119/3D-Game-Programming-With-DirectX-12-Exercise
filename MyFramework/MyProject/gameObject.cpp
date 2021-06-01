@@ -106,3 +106,35 @@ XMFLOAT3 GameObject::GetRight()
 {
 	return Vector3::Normalize(XMFLOAT3(mWorld._11, mWorld._12, mWorld._13));
 }
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+ColorObject::ColorObject(int offset, Mesh* mesh)
+	: GameObject(offset, mesh)
+{
+}
+
+ColorObject::~ColorObject()
+{
+}
+
+void ColorObject::Update()
+{
+	GameObject::Update();
+}
+
+ObjectConstants ColorObject::GetObjectConstants()
+{
+	ObjectConstants objCnst = {};
+	objCnst.World = Matrix4x4::Transpose(mWorld);
+	objCnst.Mat = mMaterial;
+	return objCnst;
+}
+
+void ColorObject::SetMaterial(XMFLOAT4 color, XMFLOAT3 frenel, float roughness)
+{
+	mMaterial.Color = color;
+	mMaterial.Frenel = frenel;
+	mMaterial.Roughness = roughness;
+}

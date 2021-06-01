@@ -2,6 +2,7 @@
 
 #include "mesh.h"
 
+
 class GameObject
 {
 public:
@@ -32,12 +33,31 @@ public:
 	XMFLOAT3 GetUp();
 	XMFLOAT3 GetRight();
 
-	XMFLOAT4X4 GetWorld() const { return mWorld; }
 	UINT CBIndex() const { return mCBIndex; }
+	virtual ObjectConstants GetObjectConstants() = 0;
 
 protected:
 	XMFLOAT4X4 mWorld = Matrix4x4::Identity4x4();
+
 	Mesh* mMesh = nullptr;
 	UINT mCBIndex = 0;
+};
+
+class ColorObject : public GameObject
+{
+public:
+	ColorObject(int offset, Mesh* mesh);
+	ColorObject(const ColorObject& rhs) = delete;
+	ColorObject& operator=(const ColorObject& rhs) = delete;
+	virtual ~ColorObject();
+
+	virtual void Update() override;
+	virtual ObjectConstants GetObjectConstants() override;
+
+	void SetColor(XMFLOAT4 color);
+	void SetMaterial(XMFLOAT4 Color, XMFLOAT3 Frenel, float Roughness);
+
+private:
+	Material mMaterial = {};
 
 };
