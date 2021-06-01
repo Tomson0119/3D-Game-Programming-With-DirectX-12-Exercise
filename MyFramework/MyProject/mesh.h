@@ -2,6 +2,7 @@
 
 struct Vertex
 {
+	Vertex() = default;
 	Vertex(float x,  float y,  float z,
 		   float nx, float ny, float nz,
 		   float u,  float v)
@@ -29,6 +30,11 @@ public:
 		const void* ibData, UINT ibCount);
 
 	void Draw(ID3D12GraphicsCommandList* cmdList);
+
+	void LoadFromBinary(
+		ID3D12Device* device,
+		ID3D12GraphicsCommandList* cmdList,
+		const std::wstring& path);
 	
 protected:
 	ComPtr<ID3D12Resource> mVertexBufferGPU;
@@ -72,3 +78,11 @@ public:
 		bool colored=false);
 	virtual ~BoxMesh();
 };
+
+class CarMesh : public Mesh
+{
+public:
+	CarMesh() { }
+	virtual ~CarMesh() { }
+};
+
