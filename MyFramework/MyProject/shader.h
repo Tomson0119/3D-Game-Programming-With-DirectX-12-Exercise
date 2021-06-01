@@ -8,7 +8,7 @@ public:
 	Shader& operator=(const Shader& rhs) = delete;
 	virtual ~Shader() { }
 
-	virtual void Compile() = 0;
+	virtual void Compile(const std::wstring& path) = 0;
 	virtual void BuildInputLayout() = 0;
 
 	std::vector<D3D12_INPUT_ELEMENT_DESC> GetInputLayout() const { return mInputLayout; }
@@ -33,9 +33,6 @@ public:
 	ColorShader& operator=(const ColorShader& rhs) = delete;
 	virtual ~ColorShader() { }
 
-	virtual void Compile() override;
+	virtual void Compile(const std::wstring& path) override;
 	virtual void BuildInputLayout() override;
-
-private:
-	std::wstring mShaderPath;
 };
