@@ -30,7 +30,7 @@ bool GameFramework::InitFramework()
 	ThrowIfFailed(mCommandList->Reset(mCommandAllocator.Get(), nullptr));
 
 	if (!mScenes.empty())
-		mScenes.top().get()->BuildObjects(mD3dDevice.Get(), mCommandList.Get());
+		mScenes.top()->BuildObjects(mD3dDevice.Get(), mCommandList.Get());
 
 	// Command List를 닫고 Queue에 명령어를 싣는다.
 	ThrowIfFailed(mCommandList->Close());
@@ -53,6 +53,25 @@ void GameFramework::OnResize()
 
 void GameFramework::OnProcessMouseInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+	switch (uMsg)
+	{
+	case WM_LBUTTONDOWN:
+	case WM_RBUTTONDOWN:
+		if (!mScenes.empty())
+			mScenes.top()->OnProcessMouseDown(m_hwnd, wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+		break;
+
+	case WM_LBUTTONUP:
+	case WM_RBUTTONUP:
+		if (!mScenes.empty())
+			mScenes.top()->OnProcessMouseUp(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+		break;
+
+	case WM_MOUSEMOVE:
+		if (!mScenes.empty())
+			mScenes.top()->OnProcessMouseMove(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+		break;
+	}
 }
 
 void GameFramework::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -113,7 +132,7 @@ void GameFramework::Draw(const GameTimer& timer)
 	// 렌더링할 버퍼를 구체적으로 설정한다.
 	mCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), TRUE, &DepthStencilView());
 
-	if (!mScenes.empty()) mScenes.top().get()->Draw(mCommandList.Get(), timer);
+	if (!mScenes.empty()) mScenes.top()->Draw(mCommandList.Get(), timer);
 
 	// 화면 버퍼의 상태를 다시 PRESENT 상태로 전이한다.
 	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
