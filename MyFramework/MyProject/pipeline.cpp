@@ -55,8 +55,8 @@ void Pipeline::SetObject(GameObject* obj)
 void Pipeline::Draw(ID3D12GraphicsCommandList* cmdList, D3D12_GPU_VIRTUAL_ADDRESS startAddress, UINT stride)
 {
 	for (const auto& item : mRenderObjects) {
-		auto address = startAddress + item->CBIndex() * stride;
-		cmdList->SetGraphicsRootConstantBufferView(1, address);
+		auto address = startAddress + (UINT64)item->CBIndex() * stride;
+		cmdList->SetGraphicsRootConstantBufferView(2, address);
 		item->Draw(cmdList);
 	}
 }
