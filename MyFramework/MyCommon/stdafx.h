@@ -11,6 +11,7 @@
 
 // Window 헤더 파일:
 #include <Windows.h>
+#include <windowsx.h>
 #include <sdkddkver.h>
 #include <wrl.h>
 #include <comdef.h>
@@ -41,6 +42,8 @@
 #include <unordered_map>
 #include <string>
 #include <memory>
+#include <fstream>
+#include <math.h>
 
 #include "dxException.h"
 
@@ -82,6 +85,45 @@ inline std::wstring AnsiToWString(const std::string& str)
 
 ////////////////////////////////////////////////////////////////////////////
 //
+#define NUM_LIGHTS 1
+
+struct Light
+{
+	XMFLOAT3 Position;
+	XMFLOAT3 Direction;
+	XMFLOAT3 Diffuse;
+};
+
+struct LightConstants
+{
+	XMFLOAT4 Ambient;
+	Light Lights[NUM_LIGHTS];
+};
+
+struct CameraConstants
+{
+	XMFLOAT4X4 View;
+	XMFLOAT4X4 Proj;
+	XMFLOAT4X4 ViewProj;
+	XMFLOAT3 CameraPos;
+};
+
+struct Material
+{
+	XMFLOAT4 Color;
+	XMFLOAT3 Frenel;
+	float Roughness;
+};
+
+struct ObjectConstants
+{
+	XMFLOAT4X4 World;
+	Material Mat;
+};
+
+
+////////////////////////////////////////////////////////////////////////////
+//
 namespace Math
 {
 	const float PI = 3.1415926535f;
@@ -89,6 +131,11 @@ namespace Math
 
 namespace Vector3
 {
+	inline XMFLOAT3 Zero()
+	{
+		return XMFLOAT3(0.0f, 0.0f, 0.0f);
+	}
+
 	inline XMFLOAT3 VectorToFloat3(FXMVECTOR& vector)
 	{
 		XMFLOAT3 ret;
@@ -137,6 +184,14 @@ namespace Vector3
 	inline XMFLOAT3 Add(XMFLOAT3& v1, XMFLOAT3& v2, float distance)
 	{
 		return VectorToFloat3(XMLoadFloat3(&v1) + XMLoadFloat3(&v2) * distance);
+	}
+}
+
+namespace Vector4
+{
+	inline XMFLOAT4 Zero()
+	{
+		return XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f);
 	}
 }
 
