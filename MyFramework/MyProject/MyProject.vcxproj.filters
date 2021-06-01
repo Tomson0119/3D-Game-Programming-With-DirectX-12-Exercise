@@ -106,5 +106,8 @@
     <None Include="Shaders\color.hlsl">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="Shaders\lighting.hlsl">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>
