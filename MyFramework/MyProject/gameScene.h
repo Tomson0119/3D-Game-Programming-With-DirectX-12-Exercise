@@ -9,17 +9,6 @@
 #include "pipeline.h"
 #include "shader.h"
 
-struct ObjectConstants
-{
-	XMFLOAT4X4 World;
-};
-
-struct CameraConstants
-{
-	XMFLOAT4X4 View;
-	XMFLOAT4X4 Proj;
-	XMFLOAT4X4 ViewProj;
-};
 
 class GameScene
 {
@@ -32,12 +21,13 @@ public:
 	void BuildObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList);
 
 	void Resize(float aspect);
-
 	void Update(const GameTimer& timer);
 	void Draw(ID3D12GraphicsCommandList* cmdList, const GameTimer& timer);
 
-	void OnProcessMouseInput(UINT uMsg, WPARAM wParam, LPARAM lParam);
-	void OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam);
+	void OnProcessMouseDown(HWND hwnd, WPARAM buttonState, int x, int y);
+	void OnProcessMouseUp(WPARAM buttonState, int x, int y);
+	void OnProcessMouseMove(WPARAM buttonState, int x, int y);
+	void OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam) { }
 
 	XMFLOAT4 GetFrameColor() const { return mFrameColor; }
 
@@ -48,12 +38,13 @@ private:
 	void BuildShadersAndPSOs(ID3D12Device* device);
 
 private:
-	XMFLOAT4 mFrameColor = (XMFLOAT4)Colors::White;
+	XMFLOAT4 mFrameColor = (XMFLOAT4)Colors::LightSkyBlue;
 
 	std::unique_ptr<Camera> mCamera;
 
 	std::unique_ptr<ConstantBuffer<ObjectConstants>> mObjectCB;
 	std::unique_ptr<ConstantBuffer<CameraConstants>> mCameraCB;
+	std::unique_ptr<ConstantBuffer<LightConstants>> mLightCB;
 
 	ComPtr<ID3D12RootSignature> mRootSignature;
 	
@@ -61,4 +52,8 @@ private:
 	std::unordered_map<std::string, std::unique_ptr<Shader>> mShaders;
 	std::unordered_map<std::string, std::unique_ptr<Pipeline>> mPipelines;
 	std::vector<std::unique_ptr<GameObject>> mGameObjects;
+
+	Light mSun;
+
+	POINT mLastMousePos;
 };

@@ -5,6 +5,10 @@ GameScene::GameScene()
 {
 	mCamera = std::make_unique<Camera>();
 	mCamera->SetPosition(0.0f, 0.0f, -10.0f);
+
+	mSun.Diffuse = XMFLOAT3(1.0f, 1.0f, 1.0f);
+	mSun.Direction = Vector3::Normalize(XMFLOAT3(1.0f, 1.0f, -1.0f));
+	mSun.Position = XMFLOAT3(0.0f, 0.0f, 0.0f);  // 태양광은 위치정보가 의미 없다.
 }
 
 GameScene::~GameScene()
@@ -34,16 +38,20 @@ void GameScene::Update(const GameTimer& timer)
 	cameraCnst.View = Matrix4x4::Transpose(mCamera->GetView());
 	cameraCnst.Proj = Matrix4x4::Transpose(mCamera->GetProj());
 	cameraCnst.ViewProj = Matrix4x4::Transpose(Matrix4x4::Multiply(mCamera->GetView(), mCamera->GetProj()));
+	cameraCnst.CameraPos = mCamera->GetPosition();
 	mCameraCB->CopyData(0, cameraCnst);
 
-	ObjectConstants objCnst;
-	for (UINT i = 0; i < mGameObjects.size(); ++i)
+	LightConstants lightCnst;
+	lightCnst.Ambient = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	lightCnst.Lights[0] = mSun;
+	mLightCB->CopyData(0, lightCnst);
+
+	for (const auto& obj : mGameObjects)
 	{
-		mGameObjects[i]->Update();  // 오브젝트의 상태를 업데이트한다.
+		obj->Update();  // 오브젝트의 상태를 업데이트한다.
 		
-		// 오브젝트로부터 상수를 받아 업데이트한다.
-		objCnst.World = Matrix4x4::Transpose(mGameObjects[i]->GetWorld());
-		mObjectCB->CopyData(i, objCnst);
+		// 오브젝트로부터 상수들을 받아 업데이트한다.
+		mObjectCB->CopyData(obj->CBIndex(), obj->GetObjectConstants());
 	}
 }
 
@@ -53,6 +61,9 @@ void GameScene::Draw(ID3D12GraphicsCommandList* cmdList, const GameTimer& timer)
 	
 	auto cmCB = mCameraCB->Resource();	
 	cmdList->SetGraphicsRootConstantBufferView(0, cmCB->GetGPUVirtualAddress());
+
+	auto litCB = mLightCB->Resource();
+	cmdList->SetGraphicsRootConstantBufferView(1, litCB->GetGPUVirtualAddress());
 	
 	for (const auto& [name, pso] : mPipelines)
 	{
@@ -61,19 +72,40 @@ void GameScene::Draw(ID3D12GraphicsCommandList* cmdList, const GameTimer& timer)
 	}
 }
 
-void GameScene::OnProcessMouseInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
+void GameScene::OnProcessMouseDown(HWND hwnd, WPARAM buttonState, int x, int y)
 {
+	mLastMousePos.x = x;
+	mLastMousePos.y = y;
+
+	SetCapture(hwnd);
 }
 
-void GameScene::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
+void GameScene::OnProcessMouseUp(WPARAM buttonState, int x, int y)
 {
+	ReleaseCapture();
+}
+
+void GameScene::OnProcessMouseMove(WPARAM buttonState, int x, int y)
+{
+	if (buttonState & VK_LBUTTON)
+	{
+		float delta_x = XMConvertToRadians(0.25f * static_cast<float>(x - mLastMousePos.x));
+		float delta_y = XMConvertToRadians(0.25f * static_cast<float>(y - mLastMousePos.y));
+
+		// Rotate camera local axis
+		mCamera->RotateY(delta_x);
+		mCamera->Pitch(delta_y);
+	}
+	mLastMousePos.x = x;
+	mLastMousePos.y = y;
 }
 
 void GameScene::BuildRootSignature(ID3D12Device* device)
 {
-	CD3DX12_ROOT_PARAMETER parameters[2];	
+	CD3DX12_ROOT_PARAMETER parameters[3];	
 	parameters[0].InitAsConstantBufferView(0);  // CommonCB
-	parameters[1].InitAsConstantBufferView(1);  // ObjectCB
+	parameters[1].InitAsConstantBufferView(1);  // LightCB
+	parameters[2].InitAsConstantBufferView(2);  // ObjectCB
 
 	CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(_countof(parameters), parameters, 
 		0, nullptr,	D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
@@ -93,24 +125,28 @@ void GameScene::BuildRootSignature(ID3D12Device* device)
 
 void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
 {
-	mMeshes["box"] = std::make_unique<BoxMesh>(device, cmdList, 4.0f, 4.0f, 4.0f, true);
+	mMeshes["car"] = std::make_unique<CarMesh>();
+	mMeshes["car"]->LoadFromBinary(device, cmdList, L"Models\\racing_car.bin");
 
-	auto boxObject = std::make_unique<GameObject>(0, mMeshes["box"].get());
-	mPipelines["defaultColor"]->SetObject(boxObject.get());
-	mGameObjects.push_back(std::move(boxObject));
+	auto carObject = std::make_unique<ColorObject>(0, mMeshes["car"].get());
+	carObject->SetMaterial(XMFLOAT4(0.2f, 0.0f, 0.0f, 1.0f), XMFLOAT3(0.1f, 0.1f, 0.1f), 0.25f);
+
+	mPipelines["defaultColor"]->SetObject(carObject.get());
+	mGameObjects.push_back(std::move(carObject));
 }
 
 void GameScene::BuildConstantBuffers(ID3D12Device* device)
 {
 	mObjectCB = std::make_unique<ConstantBuffer<ObjectConstants>>(device, mGameObjects.size());
 	mCameraCB = std::make_unique<ConstantBuffer<CameraConstants>>(device, 1);
+	mLightCB = std::make_unique<ConstantBuffer<LightConstants>>(device, 1);
 }
 
 void GameScene::BuildShadersAndPSOs(ID3D12Device* device)
 {
 	// Shader
 	mShaders["color"] = std::make_unique<ColorShader>(L"Shaders\\color.hlsl");
-
+	
 	// Pipeline
 	mPipelines["defaultColor"] = std::make_unique<Pipeline>();
 	mPipelines["defaultColor"]->BuildPipeline(device, mRootSignature.Get(), mShaders["color"].get());
