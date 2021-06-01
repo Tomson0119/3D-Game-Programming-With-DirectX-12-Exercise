@@ -56,7 +56,8 @@ ComPtr<ID3DBlob> CompileShader(
 
 	ComPtr<ID3DBlob> codeBlob;
 	ComPtr<ID3DBlob> errorBlob;
-	HRESULT hr = D3DCompileFromFile(fileName.c_str(), defines, NULL,
+	HRESULT hr = D3DCompileFromFile(fileName.c_str(), defines,
+		D3D_COMPILE_STANDARD_FILE_INCLUDE,
 		entry.c_str(), target.c_str(), compileFlags, NULL,
 		&codeBlob, &errorBlob);
 
