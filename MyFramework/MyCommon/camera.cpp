@@ -6,11 +6,6 @@ Camera::Camera()
 	SetLens(0.25f * Math::PI, 1.0f, 1.0f, 1000.0f);
 }
 
-Camera::Camera(float fovY, float aspect, float zn, float zf)
-{
-	SetLens(fovY, aspect, zn, zf);
-}
-
 Camera::~Camera()
 {
 }
@@ -120,3 +115,49 @@ void Camera::UpdateViewMatrix()
 		mViewDirty = false;
 	}
 }
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//TopViewCamera::TopViewCamera(float radius, float theta, float phi)
+//	: Camera(), mRadius(radius), mTheta(theta), mPhi(phi)
+//{
+//	SetLens(0.25f * Math::PI, 1.0f, 1.0f, 1000.0f);
+//	mViewDirty = true;
+//}
+//
+//TopViewCamera::~TopViewCamera()
+//{
+//
+//}
+//
+//void TopViewCamera::SetTarget(const XMFLOAT3& target)
+//{
+//	mTarget = target;
+//	mViewDirty = true;
+//}
+//
+//void TopViewCamera::RotateTheta(float dx)
+//{
+//	mTheta += dx;
+//	mViewDirty = true;
+//}
+//
+//void TopViewCamera::RotatePhi(float dy)
+//{
+//	mPhi += dy;
+//	mViewDirty = true;
+//}
+//
+//void TopViewCamera::UpdateViewMatrix()
+//{
+//	if (mViewDirty)
+//	{
+//		mPosition.x = mRadius * sinf(mPhi) * cosf(mTheta);
+//		mPosition.z = mRadius * sinf(mPhi) * sinf(mTheta);
+//		mPosition.y = mRadius * cosf(mPhi);
+//
+//		LookAt(mPosition, mTarget, mUp);
+//		Camera::UpdateViewMatrix();
+//	}
+//}

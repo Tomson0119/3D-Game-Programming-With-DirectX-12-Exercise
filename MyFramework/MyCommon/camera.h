@@ -4,10 +4,9 @@ class Camera
 {
 public:
 	Camera();
-	Camera(float fovY, float aspect, float zn, float zf);
 	Camera(const Camera& rhs) = delete;
 	Camera& operator=(const Camera& rhs) = delete;
-	~Camera();
+	virtual ~Camera();
 
 	XMFLOAT3 GetPosition() const { return mPosition; }
 	XMFLOAT3 GetRight() const { return mRight; }
@@ -32,13 +31,13 @@ public:
 	XMFLOAT4X4 GetProj() const { return mProj; }
 
 	void Move(float dx, float dy, float dz);
-
+	
 	void Pitch(float angle);
 	void RotateY(float angle);
 
-	void UpdateViewMatrix();
+	virtual void UpdateViewMatrix();
 
-private:
+protected:
 	bool mViewDirty = false;
 
 	XMFLOAT3 mPosition = { 0.0f, 0.0f, 0.0f };
@@ -57,3 +56,25 @@ private:
 	XMFLOAT4X4 mView = Matrix4x4::Identity4x4();
 	XMFLOAT4X4 mProj = Matrix4x4::Identity4x4();
 };
+
+//class TopViewCamera : public Camera
+//{
+//public:
+//	TopViewCamera(float radius, float theta, float phi);
+//	TopViewCamera(const Camera& rhs) = delete;
+//	TopViewCamera& operator=(const Camera& rhs) = delete;
+//	virtual ~TopViewCamera();
+//
+//	void SetTarget(const XMFLOAT3& target);
+//	void RotateTheta(float dx);
+//	void RotatePhi(float dy);
+//
+//	virtual void UpdateViewMatrix();
+//
+//private:
+//	XMFLOAT3 mTarget = Vector3::Zero();
+//
+//	float mRadius = 0.0f;
+//	float mPhi = 0.0f;
+//	float mTheta = 0.0f;
+//};
