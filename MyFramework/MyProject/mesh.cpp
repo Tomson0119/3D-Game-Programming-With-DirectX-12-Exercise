@@ -13,12 +13,12 @@ Mesh::~Mesh()
 void Mesh::CreateResourceInfo(
 	ID3D12Device* device, 
 	ID3D12GraphicsCommandList* cmdList,
-	UINT vbStride,
+	UINT vbStride, UINT ibStride,
 	const void* vbData, UINT vbCount, 
 	const void* ibData, UINT ibCount)
 {
 	const UINT vbByteSize = vbCount * vbStride;
-	const UINT ibByteSize = ibCount * sizeof(std::uint16_t);
+	const UINT ibByteSize = ibCount * ibStride;
 
 	mVertexBufferGPU = CreateBufferResource(device, cmdList,
 		vbData, vbByteSize, mVertexUploadBuffer);
@@ -39,7 +39,7 @@ void Mesh::CreateResourceInfo(
 
 	mIndexBufferView.BufferLocation = mIndexBufferGPU->GetGPUVirtualAddress();
 	mIndexBufferView.SizeInBytes = ibByteSize;
-	mIndexBufferView.Format = DXGI_FORMAT_R16_UINT;
+	mIndexBufferView.Format = DXGI_FORMAT_R32_UINT;
 }
 
 void Mesh::Draw(ID3D12GraphicsCommandList* cmdList)
@@ -49,6 +49,108 @@ void Mesh::Draw(ID3D12GraphicsCommandList* cmdList)
 	cmdList->IASetPrimitiveTopology(mPrimitiveTopology);
 
 	cmdList->DrawIndexedInstanced(mIndexCount, 1, mStartIndex, mBaseVertex, 0);
+}
+
+void Mesh::LoadFromText(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList, const std::wstring& path)
+{
+	/*std::ifstream file(path);
+
+	assert(file.is_open() && L"Could not find file");
+
+	std::vector<Vertex> vertices;
+	std::vector<int> indices;
+
+	std::vector<XMFLOAT3> positions;
+	std::vector<XMFLOAT3> normals;
+	std::vector<XMFLOAT2> texCoords;
+
+	char ignore[64] = {};
+	UINT verticesCount = 0;
+	UINT indicesCount = 0;
+
+	file >> ignore >> verticesCount;
+	positions.resize(verticesCount);
+	for (size_t i = 0; i < verticesCount; ++i)
+		file >> positions[i].x >> positions[i].y >> positions[i].z;
+
+	file >> ignore >> verticesCount;
+	normals.resize(verticesCount);
+	for (size_t i = 0; i < verticesCount; ++i)
+		file >> normals[i].x >> normals[i].y >> normals[i].z;
+
+	file >> ignore >> verticesCount;
+	texCoords.resize(verticesCount);
+	for (size_t i = 0; i < verticesCount; ++i)
+		file >> texCoords[i].x >> texCoords[i].y;
+
+	file >> ignore >> indicesCount;
+	indices.resize(indicesCount);
+	for (size_t i = 0; i < indicesCount; ++i)
+		file >> indices[i];
+
+	vertices.resize(verticesCount);
+	for (size_t i = 0; i < vertices.size(); ++i)
+	{
+		vertices[i].Position = positions[i];
+		vertices[i].Normal = normals[i];
+		vertices[i].TexCoord = texCoords[i];
+	}*/
+
+	std::ifstream InFile(path);
+
+	char pstrToken[64] = { '\0' };
+
+	std::vector<Vertex> vertices;
+	std::vector<UINT> indices;
+
+	std::vector<XMFLOAT3> positions;
+	std::vector<XMFLOAT3> normals;
+	std::vector<XMFLOAT2> texCoords;
+
+	UINT verticesCount = 0;
+	UINT indicesCount = 0;
+
+	for (; ; )
+	{
+		InFile >> pstrToken;
+		if (!InFile) break;
+
+		if (!strcmp(pstrToken, "<Vertices>:"))
+		{
+			InFile >> verticesCount;
+			positions.resize(verticesCount);
+			for (UINT i = 0; i < verticesCount; i++) InFile >> positions[i].x >> positions[i].y >> positions[i].z;
+		}
+		else if (!strcmp(pstrToken, "<Normals>:"))
+		{
+			InFile >> pstrToken;
+			normals.resize(verticesCount);
+			for (UINT i = 0; i < verticesCount; i++) InFile >> normals[i].x >> normals[i].y >> normals[i].z;
+		}
+		else if (!strcmp(pstrToken, "<TextureCoords>:"))
+		{
+			InFile >> pstrToken;
+			texCoords.resize(verticesCount);
+			for (UINT i = 0; i < verticesCount; i++) InFile >> texCoords[i].x >> texCoords[i].y;
+		}
+		else if (!strcmp(pstrToken, "<Indices>:"))
+		{
+			InFile >> indicesCount;
+			indices.resize(indicesCount);
+			for (UINT i = 0; i < indicesCount; i++) InFile >> indices[i];
+		}
+	}
+
+	vertices.resize(verticesCount);
+	for (size_t i = 0; i < verticesCount; ++i)
+	{
+		vertices[i].Position = positions[i];
+		vertices[i].Normal = normals[i];
+		vertices[i].TexCoord = texCoords[i];
+	}
+
+	Mesh::CreateResourceInfo(device, cmdList, sizeof(Vertex), sizeof(UINT),
+		vertices.data(), (UINT)vertices.size(),	indices.data(), (UINT)indices.size());
 }
 
 void Mesh::LoadFromBinary(
@@ -65,7 +167,7 @@ void Mesh::LoadFromBinary(
 	UINT indicesCount = 0;
 
 	std::vector<Vertex> vertices;
-	std::vector<std::uint16_t> indices;
+	std::vector<UINT> indices;
 
 	std::vector<XMFLOAT3> positions;
 	std::vector<XMFLOAT3> normals;
@@ -107,7 +209,7 @@ void Mesh::LoadFromBinary(
 	file.read(reinterpret_cast<char*>(&indicesCount), sizeof(UINT));
 
 	indices.resize(indicesCount);
-	file.read(reinterpret_cast<char*>(&indices[0]), sizeof(std::uint16_t) * indicesCount);
+	file.read(reinterpret_cast<char*>(&indices[0]), sizeof(UINT) * indicesCount);
 
 	file.close();
 
@@ -120,7 +222,7 @@ void Mesh::LoadFromBinary(
 		vertices[i].TexCoord = texCoords[i];
 	}
 
-	Mesh::CreateResourceInfo(device, cmdList, sizeof(Vertex),
+	Mesh::CreateResourceInfo(device, cmdList, sizeof(Vertex), sizeof(UINT),
 		vertices.data(), (UINT)vertices.size(), indices.data(), (UINT)indices.size());
 }
 
@@ -191,7 +293,7 @@ BoxMesh::BoxMesh(
 			20, 21, 22, 20, 22, 23
 		};
 
-		Mesh::CreateResourceInfo(device, cmdList, sizeof(Vertex),
+		Mesh::CreateResourceInfo(device, cmdList, sizeof(Vertex), sizeof(std::uint16_t),
 			vertices.data(), (UINT)vertices.size(), indices.data(), (UINT)indices.size());
 	}
 	else {
@@ -224,7 +326,7 @@ BoxMesh::BoxMesh(
 			1, 4, 7, 1, 7, 2
 		};
 
-		Mesh::CreateResourceInfo(device, cmdList, sizeof(ColoredVertex),
+		Mesh::CreateResourceInfo(device, cmdList, sizeof(ColoredVertex), sizeof(std::uint16_t),
 			vertices.data(), (UINT)vertices.size(), indices.data(), (UINT)indices.size());
 	}
 }

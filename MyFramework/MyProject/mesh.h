@@ -25,11 +25,16 @@ public:
 	void CreateResourceInfo(
 		ID3D12Device* device,
 		ID3D12GraphicsCommandList* cmdList,
-		UINT vbStride,
+		UINT vbStride, UINT ibStride,
 		const void* vbData, UINT vbCount,
 		const void* ibData, UINT ibCount);
 
 	void Draw(ID3D12GraphicsCommandList* cmdList);
+
+	void LoadFromText(
+		ID3D12Device* device,
+		ID3D12GraphicsCommandList* cmdList,
+		const std::wstring& path);
 
 	void LoadFromBinary(
 		ID3D12Device* device,
