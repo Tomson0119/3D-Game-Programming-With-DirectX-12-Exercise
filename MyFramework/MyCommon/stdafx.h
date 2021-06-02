@@ -85,13 +85,13 @@ inline std::wstring AnsiToWString(const std::string& str)
 
 ////////////////////////////////////////////////////////////////////////////
 //
-#define NUM_LIGHTS 1
+#define NUM_LIGHTS 3
 
 struct Light
 {
-	XMFLOAT3 Position;
-	XMFLOAT3 Direction;
-	XMFLOAT3 Diffuse;
+	XMFLOAT3A Position = XMFLOAT3A(0.0f, 0.0f, 0.0f);
+	XMFLOAT3A Direction = XMFLOAT3A(0.0f, 0.0f, 0.0f);
+	XMFLOAT3A Diffuse = XMFLOAT3A(0.0f, 0.0f, 0.0f);
 };
 
 struct LightConstants
