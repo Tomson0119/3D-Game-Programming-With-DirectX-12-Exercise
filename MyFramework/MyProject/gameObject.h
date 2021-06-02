@@ -54,7 +54,6 @@ public:
 	virtual void Update() override;
 	virtual ObjectConstants GetObjectConstants() override;
 
-	void SetColor(XMFLOAT4 color);
 	void SetMaterial(XMFLOAT4 Color, XMFLOAT3 Frenel, float Roughness);
 
 private:
