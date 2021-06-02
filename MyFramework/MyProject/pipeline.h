@@ -7,11 +7,12 @@ class Pipeline
 {
 public:
 	Pipeline();
+	Pipeline(bool wired);
 	Pipeline(const Pipeline& rhs) = delete;
 	Pipeline& operator=(const Pipeline& rhs) = delete;
 	virtual ~Pipeline();
 
-	void BuildPipeline(
+	virtual void BuildPipeline(
 		ID3D12Device* device, 
 		ID3D12RootSignature* rootSig,
 		Shader* shader);
@@ -34,4 +35,6 @@ protected:
 	D3D12_PRIMITIVE_TOPOLOGY_TYPE mPrimitive = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 
 	std::vector<GameObject*> mRenderObjects;
+
+	bool mIsWiredFrame = false;
 };

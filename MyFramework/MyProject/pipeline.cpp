@@ -7,6 +7,11 @@ Pipeline::Pipeline()
 {
 }
 
+Pipeline::Pipeline(bool wired)
+{
+	mIsWiredFrame = wired;
+}
+
 Pipeline::~Pipeline()
 {
 }
@@ -43,6 +48,10 @@ void Pipeline::BuildPipeline(
 	psoDesc.DSVFormat = mDepthStencilFormat;
 	psoDesc.SampleDesc.Count = gMsaaStateDesc.Count;
 	psoDesc.SampleDesc.Quality = gMsaaStateDesc.Quality;
+
+	if (mIsWiredFrame)
+		psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_WIREFRAME;
+
 	ThrowIfFailed(device->CreateGraphicsPipelineState(
 		&psoDesc, IID_PPV_ARGS(&mPSO)));
 }
