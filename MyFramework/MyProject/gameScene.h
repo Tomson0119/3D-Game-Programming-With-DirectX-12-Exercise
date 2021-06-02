@@ -27,7 +27,7 @@ public:
 	void OnProcessMouseDown(HWND hwnd, WPARAM buttonState, int x, int y);
 	void OnProcessMouseUp(WPARAM buttonState, int x, int y);
 	void OnProcessMouseMove(WPARAM buttonState, int x, int y);
-	void OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam) { }
+	void OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	void ProcessInputKeyboard(const GameTimer& timer);
 
@@ -55,7 +55,7 @@ private:
 	std::unordered_map<std::string, std::unique_ptr<Pipeline>> mPipelines;
 	std::vector<std::unique_ptr<GameObject>> mGameObjects;
 
-	Light mSun;
-
 	POINT mLastMousePos;
+
+	bool mShowWireFrame = false;
 };
