@@ -53,7 +53,7 @@ void Mesh::Draw(ID3D12GraphicsCommandList* cmdList)
 
 void Mesh::LoadFromText(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList, const std::wstring& path)
 {
-	/*std::ifstream file(path);
+	std::ifstream file(path);
 
 	assert(file.is_open() && L"Could not find file");
 
@@ -90,59 +90,6 @@ void Mesh::LoadFromText(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList
 
 	vertices.resize(verticesCount);
 	for (size_t i = 0; i < vertices.size(); ++i)
-	{
-		vertices[i].Position = positions[i];
-		vertices[i].Normal = normals[i];
-		vertices[i].TexCoord = texCoords[i];
-	}*/
-
-	std::ifstream InFile(path);
-
-	char pstrToken[64] = { '\0' };
-
-	std::vector<Vertex> vertices;
-	std::vector<UINT> indices;
-
-	std::vector<XMFLOAT3> positions;
-	std::vector<XMFLOAT3> normals;
-	std::vector<XMFLOAT2> texCoords;
-
-	UINT verticesCount = 0;
-	UINT indicesCount = 0;
-
-	for (; ; )
-	{
-		InFile >> pstrToken;
-		if (!InFile) break;
-
-		if (!strcmp(pstrToken, "<Vertices>:"))
-		{
-			InFile >> verticesCount;
-			positions.resize(verticesCount);
-			for (UINT i = 0; i < verticesCount; i++) InFile >> positions[i].x >> positions[i].y >> positions[i].z;
-		}
-		else if (!strcmp(pstrToken, "<Normals>:"))
-		{
-			InFile >> pstrToken;
-			normals.resize(verticesCount);
-			for (UINT i = 0; i < verticesCount; i++) InFile >> normals[i].x >> normals[i].y >> normals[i].z;
-		}
-		else if (!strcmp(pstrToken, "<TextureCoords>:"))
-		{
-			InFile >> pstrToken;
-			texCoords.resize(verticesCount);
-			for (UINT i = 0; i < verticesCount; i++) InFile >> texCoords[i].x >> texCoords[i].y;
-		}
-		else if (!strcmp(pstrToken, "<Indices>:"))
-		{
-			InFile >> indicesCount;
-			indices.resize(indicesCount);
-			for (UINT i = 0; i < indicesCount; i++) InFile >> indices[i];
-		}
-	}
-
-	vertices.resize(verticesCount);
-	for (size_t i = 0; i < verticesCount; ++i)
 	{
 		vertices[i].Position = positions[i];
 		vertices[i].Normal = normals[i];
