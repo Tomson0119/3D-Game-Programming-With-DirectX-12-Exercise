@@ -8,7 +8,7 @@ GameScene::GameScene()
 
 	mSun.Diffuse = XMFLOAT3(1.0f, 1.0f, 1.0f);
 	mSun.Direction = Vector3::Normalize(XMFLOAT3(1.0f, 1.0f, -1.0f));
-	mSun.Position = XMFLOAT3(0.0f, 0.0f, 0.0f);  // 태양광은 위치정보가 의미 없다.
+	mSun.Position = XMFLOAT3(10.0f, 10.0f, -10.0f);  // 태양광은 위치정보가 의미 없다.
 }
 
 GameScene::~GameScene()
@@ -30,6 +30,8 @@ void GameScene::Resize(float aspect)
 
 void GameScene::Update(const GameTimer& timer)
 {
+	ProcessInputKeyboard(timer);
+
 	// 카메라의 상태를 업데이트한다.
 	mCamera->UpdateViewMatrix();
 
@@ -42,7 +44,7 @@ void GameScene::Update(const GameTimer& timer)
 	mCameraCB->CopyData(0, cameraCnst);
 
 	LightConstants lightCnst;
-	lightCnst.Ambient = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	lightCnst.Ambient = XMFLOAT4(0.4f, 0.4f, 0.4f, 1.0f);
 	lightCnst.Lights[0] = mSun;
 	mLightCB->CopyData(0, lightCnst);
 
@@ -100,6 +102,23 @@ void GameScene::OnProcessMouseMove(WPARAM buttonState, int x, int y)
 	mLastMousePos.y = y;
 }
 
+void GameScene::ProcessInputKeyboard(const GameTimer& timer)
+{
+	const float dt = timer.ElapsedTime();
+
+	if (GetAsyncKeyState('W') & 0x8000)
+		mCamera->Move(0.0f, 0.0f, 10.0f * dt);
+	
+	if (GetAsyncKeyState('S') & 0x8000)
+		mCamera->Move(0.0f, 0.0f, -10.0f * dt);
+
+	if (GetAsyncKeyState('A') & 0x8000)
+		mCamera->Move(-10.0f * dt, 0.0f, 0.0f);
+
+	if (GetAsyncKeyState('D') & 0x8000)
+		mCamera->Move(10.0f * dt, 0.0f, 0.0f);
+}
+
 void GameScene::BuildRootSignature(ID3D12Device* device)
 {
 	CD3DX12_ROOT_PARAMETER parameters[3];	
@@ -125,11 +144,11 @@ void GameScene::BuildRootSignature(ID3D12Device* device)
 
 void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
 {
-	mMeshes["car"] = std::make_unique<CarMesh>();
-	mMeshes["car"]->LoadFromBinary(device, cmdList, L"Models\\racing_car.bin");
+	mMeshes["car"] = std::make_unique<Mesh>();
+	mMeshes["car"]->LoadFromBinary(device, cmdList, L"Models\\FlyerPlayerShip.bin");
 
 	auto carObject = std::make_unique<ColorObject>(0, mMeshes["car"].get());
-	carObject->SetMaterial(XMFLOAT4(0.2f, 0.0f, 0.0f, 1.0f), XMFLOAT3(0.1f, 0.1f, 0.1f), 0.25f);
+	carObject->SetMaterial((XMFLOAT4)Colors::Gray, XMFLOAT3(0.1f, 0.1f, 0.1f), 0.25f);
 
 	mPipelines["defaultColor"]->SetObject(carObject.get());
 	mGameObjects.push_back(std::move(carObject));

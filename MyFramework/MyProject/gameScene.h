@@ -29,6 +29,8 @@ public:
 	void OnProcessMouseMove(WPARAM buttonState, int x, int y);
 	void OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam) { }
 
+	void ProcessInputKeyboard(const GameTimer& timer);
+
 	XMFLOAT4 GetFrameColor() const { return mFrameColor; }
 
 private:
