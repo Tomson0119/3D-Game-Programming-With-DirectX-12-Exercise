@@ -4,11 +4,7 @@
 GameScene::GameScene()
 {
 	mCamera = std::make_unique<Camera>();
-	mCamera->SetPosition(0.0f, 0.0f, -10.0f);
-
-	mSun.Diffuse = XMFLOAT3(1.0f, 1.0f, 1.0f);
-	mSun.Direction = Vector3::Normalize(XMFLOAT3(1.0f, 1.0f, -1.0f));
-	mSun.Position = XMFLOAT3(10.0f, 10.0f, -10.0f);  // 태양광은 위치정보가 의미 없다.
+	mCamera->SetPosition(0.0f, 2.0f, -10.0f);
 }
 
 GameScene::~GameScene()
@@ -43,9 +39,19 @@ void GameScene::Update(const GameTimer& timer)
 	cameraCnst.CameraPos = mCamera->GetPosition();
 	mCameraCB->CopyData(0, cameraCnst);
 
+	// 광원과 관련된 상수버퍼를 초기화 및 업데이트한다.
 	LightConstants lightCnst;
-	lightCnst.Ambient = XMFLOAT4(0.4f, 0.4f, 0.4f, 1.0f);
-	lightCnst.Lights[0] = mSun;
+	lightCnst.Ambient = XMFLOAT4(0.7f, 0.7f, 0.7f, 0.7f);
+
+	lightCnst.Lights[0].Diffuse = { 0.8f, 0.8f, 0.8f };
+	lightCnst.Lights[0].Direction = { -1.0f, 1.0f, -1.0f };
+
+	lightCnst.Lights[1].Diffuse = { 0.15f, 0.15f, 0.15f };
+	lightCnst.Lights[1].Direction = { 0.0f, 1.0f, 1.0f };
+
+	lightCnst.Lights[2].Diffuse = { 0.35f, 0.35f, 0.35f };
+	lightCnst.Lights[2].Direction = { 1.0f, 1.0f, -1.0f };
+
 	mLightCB->CopyData(0, lightCnst);
 
 	for (const auto& obj : mGameObjects)
@@ -67,11 +73,10 @@ void GameScene::Draw(ID3D12GraphicsCommandList* cmdList, const GameTimer& timer)
 	auto litCB = mLightCB->Resource();
 	cmdList->SetGraphicsRootConstantBufferView(1, litCB->GetGPUVirtualAddress());
 	
-	for (const auto& [name, pso] : mPipelines)
-	{
-		cmdList->SetPipelineState(pso->GetPSO());
-		pso->Draw(cmdList, mObjectCB->Resource()->GetGPUVirtualAddress(), mObjectCB->GetByteSize());
-	}
+	auto pso = (mShowWireFrame) ? mPipelines["wiredColor"].get() : mPipelines["defaultColor"].get();
+
+	cmdList->SetPipelineState(pso->GetPSO());
+	pso->Draw(cmdList, mObjectCB->Resource()->GetGPUVirtualAddress(), mObjectCB->GetByteSize());
 }
 
 void GameScene::OnProcessMouseDown(HWND hwnd, WPARAM buttonState, int x, int y)
@@ -100,6 +105,17 @@ void GameScene::OnProcessMouseMove(WPARAM buttonState, int x, int y)
 	}
 	mLastMousePos.x = x;
 	mLastMousePos.y = y;
+}
+
+void GameScene::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	switch (uMsg)
+	{
+	case WM_KEYDOWN:
+		if(wParam == 0x47)
+			mShowWireFrame = !mShowWireFrame;
+		break;
+	}
 }
 
 void GameScene::ProcessInputKeyboard(const GameTimer& timer)
@@ -145,12 +161,14 @@ void GameScene::BuildRootSignature(ID3D12Device* device)
 void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
 {
 	mMeshes["car"] = std::make_unique<Mesh>();
-	mMeshes["car"]->LoadFromBinary(device, cmdList, L"Models\\FlyerPlayerShip.bin");
+	mMeshes["car"]->LoadFromBinary(device, cmdList, L"Models\\racing_car.bin");
 
 	auto carObject = std::make_unique<ColorObject>(0, mMeshes["car"].get());
-	carObject->SetMaterial((XMFLOAT4)Colors::Gray, XMFLOAT3(0.1f, 0.1f, 0.1f), 0.25f);
+	carObject->SetPosition(0.0f, 0.0f, 0.0f);
+	carObject->SetMaterial(XMFLOAT4(0.6f, 0.4f, 0.4f, 1.0f), XMFLOAT3(0.1f, 0.1f, 0.1f), 0.125f);
 
 	mPipelines["defaultColor"]->SetObject(carObject.get());
+	mPipelines["wiredColor"]->SetObject(carObject.get());
 	mGameObjects.push_back(std::move(carObject));
 }
 
@@ -169,4 +187,8 @@ void GameScene::BuildShadersAndPSOs(ID3D12Device* device)
 	// Pipeline
 	mPipelines["defaultColor"] = std::make_unique<Pipeline>();
 	mPipelines["defaultColor"]->BuildPipeline(device, mRootSignature.Get(), mShaders["color"].get());
+
+	// Wired Frame Pipeline
+	mPipelines["wiredColor"] = std::make_unique<Pipeline>(true);
+	mPipelines["wiredColor"]->BuildPipeline(device, mRootSignature.Get(), mShaders["color"].get());
 }
