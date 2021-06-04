@@ -45,7 +45,7 @@ void GameScene::Update(const GameTimer& timer)
 
 	// 광원과 관련된 상수버퍼를 초기화 및 업데이트한다.
 	LightConstants lightCnst;
-	lightCnst.Ambient = XMFLOAT4(0.7f, 0.7f, 0.7f, 0.7f);
+	lightCnst.Ambient = XMFLOAT4(0.5f, 0.5f, 0.5f, 0.5f);
 
 	lightCnst.Lights[0].Diffuse = { 0.8f, 0.8f, 0.8f };
 	lightCnst.Lights[0].Direction = { -1.0f, 1.0f, -1.0f };
@@ -146,11 +146,12 @@ void GameScene::ProcessInputMouse(const GameTimer& timer)
 
 		if (delta_x) {
 			float distance = (delta_x > 0.0f) ? 0.1f : -0.1f;
-			float angle = (delta_x > 0.0f) ? 5.0f : -5.0f;
+			float angle = (delta_x > 0.0f) ? 3.0f : -3.0f;
 			mPlayer->RotateY(angle);
 			mPlayer->MoveStrafe(distance, false);
 		}
 	}
+	mPlayer->Update(timer.ElapsedTime());
 }
 
 void GameScene::BuildRootSignature(ID3D12Device* device)
@@ -188,7 +189,7 @@ void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList
 	// 플레이어 객체 생성
 	auto racing_car = std::make_unique<Player>(index++, mMeshes["racing_car"].get());
 	racing_car->SetPosition(0.0f, 0.0f, 0.0f);
-	racing_car->SetMaterial(XMFLOAT4(0.6f, 0.4f, 0.4f, 1.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), 0.125f);
+	racing_car->SetMaterial(XMFLOAT4(0.0f, 0.4f, 0.8f, 1.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), 0.125f);
 	racing_car->EnableBoundBoxRender(index++, device, cmdList);  // 바운딩 박스를 렌더링하도록 오브젝트를 생성한다.
 
 	mPlayer = racing_car.get();

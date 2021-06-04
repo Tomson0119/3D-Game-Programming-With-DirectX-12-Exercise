@@ -17,10 +17,11 @@ void Player::SetMaterial(XMFLOAT4 color, XMFLOAT3 frenel, float roughness)
 	mColor = color;
 }
 
-void Player::Update(ConstantBuffer<ObjectConstants>* objectCB)
+void Player::Update(float elapsedTime)
 {
-	GameObject::Update(objectCB);
 	mMaterial.Color = mColor;
+
+	AdjustCoordinate(elapsedTime);
 }
 
 void Player::AdjustCoordinate(float elapsedTime)

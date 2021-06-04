@@ -17,7 +17,7 @@ public:
 	virtual ~Player();
 
 	virtual void SetMaterial(XMFLOAT4 color, XMFLOAT3 frenel, float roughness);
-	virtual void Update(ConstantBuffer<ObjectConstants>* objectCB);
+	void Update(float elapsedTime);
 	
 	void AdjustCoordinate(float elapsedTime);
 	void UpdateInvincibleState(float elapsedTime);
