@@ -18,9 +18,7 @@ public:
 		Shader* shader);
 
 	void SetObject(GameObject* obj);
-	void Draw(ID3D12GraphicsCommandList* cmdList, D3D12_GPU_VIRTUAL_ADDRESS startAddress, UINT stride);
-
-	ID3D12PipelineState* GetPSO() const { return mPSO.Get(); }
+	void SetAndDraw(ID3D12GraphicsCommandList* cmdList, ConstantBuffer<ObjectConstants>* objCB);
 
 protected:
 	ComPtr<ID3D12PipelineState> mPSO;

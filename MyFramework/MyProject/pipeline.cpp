@@ -61,10 +61,13 @@ void Pipeline::SetObject(GameObject* obj)
 	mRenderObjects.push_back(obj);
 }
 
-void Pipeline::Draw(ID3D12GraphicsCommandList* cmdList, D3D12_GPU_VIRTUAL_ADDRESS startAddress, UINT stride)
+void Pipeline::SetAndDraw(ID3D12GraphicsCommandList* cmdList, ConstantBuffer<ObjectConstants>* objCB)
 {
+	cmdList->SetPipelineState(mPSO.Get());
+
 	for (const auto& item : mRenderObjects) {
-		auto address = startAddress + (UINT64)item->CBIndex() * stride;
+		auto address = objCB->GetGPUVirtualAddress() 
+			+ (UINT64)item->CBIndex() * objCB->GetByteSize();
 		cmdList->SetGraphicsRootConstantBufferView(2, address);
 		item->Draw(cmdList);
 	}
