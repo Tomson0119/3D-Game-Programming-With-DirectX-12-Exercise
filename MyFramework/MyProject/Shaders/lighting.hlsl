@@ -36,8 +36,6 @@ float3 PhongModelLighting(float3 lightDiff, float3 lightVec, float3 normal, floa
     float3 fresnel = CalcReflectPercent(mat.Fresnel, halfVec, lightVec);    
     float3 specular = fresnel * roughness;
     
-    //specular = specular / (specular + 1.0f);
-    
     float3 matDiffuse = mat.Diffuse.rgb;
     
     return (matDiffuse + specular) * lightDiff;
