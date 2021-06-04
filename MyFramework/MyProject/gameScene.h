@@ -5,8 +5,8 @@
 #include "../MyCommon/constantBuffer.h"
 
 #include "mesh.h"
-#include "gameObject.h"
 #include "pipeline.h"
+#include "player.h"
 #include "shader.h"
 
 
@@ -24,9 +24,9 @@ public:
 	void Update(const GameTimer& timer);
 	void Draw(ID3D12GraphicsCommandList* cmdList, const GameTimer& timer);
 
-	void OnProcessMouseDown(HWND hwnd, WPARAM buttonState, int x, int y);
-	void OnProcessMouseUp(WPARAM buttonState, int x, int y);
-	void OnProcessMouseMove(WPARAM buttonState, int x, int y);
+	void OnProcessMouseDown(HWND hwnd, WPARAM buttonState);
+	void OnProcessMouseUp(WPARAM buttonState);
+	void OnProcessMouseMove(WPARAM buttonState);
 	void OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	void ProcessInputKeyboard(const GameTimer& timer);
@@ -53,7 +53,12 @@ private:
 	std::unordered_map<std::string, std::unique_ptr<Mesh>> mMeshes;
 	std::unordered_map<std::string, std::unique_ptr<Shader>> mShaders;
 	std::unordered_map<std::string, std::unique_ptr<Pipeline>> mPipelines;
+
+	std::vector<BoundBoxObject*> mBoundBoxes;
 	std::vector<std::unique_ptr<GameObject>> mGameObjects;
+
+	Player* mPlayer;
+	std::array<GameObject*, 2> mWallObjects;
 
 	POINT mLastMousePos;
 
