@@ -30,6 +30,7 @@ public:
 	void OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	void ProcessInputKeyboard(const GameTimer& timer);
+	void ProcessInputMouse(const GameTimer& timer);
 
 	XMFLOAT4 GetFrameColor() const { return mFrameColor; }
 
