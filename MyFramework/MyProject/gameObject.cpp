@@ -38,7 +38,7 @@ void GameObject::UpdateTransform()
 	mWorld._31 = mLook.x;	  mWorld._32 = mLook.y;		mWorld._33 = mLook.z;
 	mWorld._41 = mPosition.x, mWorld._42 = mPosition.y, mWorld._43 = mPosition.z;
 
-	if (mBBObject) mBBObject->UpdateTransform(mWorld);
+	if (mBBObject) mBBObject->UpdateCoordinate(mWorld);
 }
 
 void GameObject::UpdateBoudingBox()
@@ -72,6 +72,8 @@ void GameObject::Move(float dx, float dy, float dz)
 	mPosition.x += dx;
 	mPosition.y += dy;
 	mPosition.z += dz;
+
+	if (mBBObject) mBBObject->Move(dx, dy, dz);
 }
 
 void GameObject::Move(XMFLOAT3& dir, float dist)
@@ -152,6 +154,7 @@ void GameObject::EnableBoundBoxRender(UINT offset, ID3D12Device* device, ID3D12G
 	mBBObject = new BoundBoxObject(device, cmdList, offset, mOOBB);
 	mBBObject->SetPosition(mOOBB.Center);
 	mBBObject->SetMaterial(XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f), {}, 0.0f);
+	mBBObject->Move(mPosition.x, mPosition.y, mPosition.z);
 }
 
 ObjectConstants GameObject::GetObjectConstants()
@@ -187,6 +190,13 @@ BoundBoxObject::BoundBoxObject(
 BoundBoxObject::~BoundBoxObject()
 {
 	if (mMesh) delete mMesh;
+}
+
+void BoundBoxObject::UpdateCoordinate(const XMFLOAT4X4& world)
+{
+	mWorld._11 = world._11; mWorld._12 = world._12; mWorld._13 = world._13;
+	mWorld._21 = world._21; mWorld._22 = world._22; mWorld._23 = world._23;
+	mWorld._31 = world._31; mWorld._32 = world._32; mWorld._33 = world._33;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////

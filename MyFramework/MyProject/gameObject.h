@@ -72,7 +72,7 @@ public:
 	BoundBoxObject& operator=(const BoundBoxObject& rhs) = delete;
 	virtual ~BoundBoxObject();
 
-	void UpdateTransform(const XMFLOAT4X4& world) { mWorld = world; }
+	void UpdateCoordinate(const XMFLOAT4X4& world);
 };
 
 class ColorObject : public GameObject
