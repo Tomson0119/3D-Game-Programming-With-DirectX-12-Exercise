@@ -171,9 +171,20 @@ namespace Vector3
 		return VectorToFloat3(XMVectorSubtract(XMLoadFloat3(&v1), XMLoadFloat3(&v2)));
 	}
 
+	inline XMFLOAT3 ScalarProduct(XMFLOAT3& v, float scalar)
+	{
+		return VectorToFloat3(XMLoadFloat3(&v) * scalar);
+	}
+
 	inline XMFLOAT3 Cross(XMFLOAT3& v1, XMFLOAT3& v2)
 	{
 		return VectorToFloat3(XMVector3Cross(XMLoadFloat3(&v1), XMLoadFloat3(&v2)));
+	}
+
+	inline float Length(XMFLOAT3& v)
+	{
+		XMFLOAT3 ret = VectorToFloat3(XMVector3Length(XMLoadFloat3(&v)));
+		return ret.x;
 	}
 
 	inline float Dot(XMFLOAT3& v1, XMFLOAT3& v2)
@@ -181,9 +192,28 @@ namespace Vector3
 		return XMVectorGetX(XMVector3Dot(XMLoadFloat3(&v1), XMLoadFloat3(&v2)));
 	}
 
+	inline XMFLOAT3 Add(XMFLOAT3& v1, XMFLOAT3& v2)
+	{
+		return VectorToFloat3(XMLoadFloat3(&v1) + XMLoadFloat3(&v2));
+	}
+
 	inline XMFLOAT3 Add(XMFLOAT3& v1, XMFLOAT3& v2, float distance)
 	{
 		return VectorToFloat3(XMLoadFloat3(&v1) + XMLoadFloat3(&v2) * distance);
+	}
+
+	inline XMFLOAT3 ClampFloat3(XMFLOAT3& input, XMFLOAT3& min, XMFLOAT3& max)
+	{
+		XMFLOAT3 ret;
+		ret.x = (min.x > input.x) ? min.x : ((max.x < input.x) ? max.x : input.x);
+		ret.y = (min.y > input.y) ? min.y : ((max.y < input.y) ? max.y : input.y);
+		ret.z = (min.z > input.z) ? min.z : ((max.z < input.z) ? max.z : input.z);
+		return ret;
+	}
+
+	inline bool Equal(XMFLOAT3& v1, XMFLOAT3& v2)
+	{
+		return XMVector3Equal(XMLoadFloat3(&v1), XMLoadFloat3(&v2));
 	}
 }
 
@@ -192,6 +222,11 @@ namespace Vector4
 	inline XMFLOAT4 Zero()
 	{
 		return XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f);
+	}
+
+	inline bool Equal(XMFLOAT4& v1, XMFLOAT4& v2)
+	{
+		return XMVector4Equal(XMLoadFloat4(&v1), XMLoadFloat4(&v2));
 	}
 }
 
