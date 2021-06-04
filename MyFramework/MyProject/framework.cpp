@@ -58,18 +58,18 @@ void GameFramework::OnProcessMouseInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
 	case WM_LBUTTONDOWN:
 	case WM_RBUTTONDOWN:
 		if (!mScenes.empty())
-			mScenes.top()->OnProcessMouseDown(m_hwnd, wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+			mScenes.top()->OnProcessMouseDown(m_hwnd, wParam);
 		break;
 
 	case WM_LBUTTONUP:
 	case WM_RBUTTONUP:
 		if (!mScenes.empty())
-			mScenes.top()->OnProcessMouseUp(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+			mScenes.top()->OnProcessMouseUp(wParam);
 		break;
 
 	case WM_MOUSEMOVE:
 		if (!mScenes.empty())
-			mScenes.top()->OnProcessMouseMove(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+			mScenes.top()->OnProcessMouseMove(wParam);
 		break;
 	}
 }
