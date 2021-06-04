@@ -31,6 +31,7 @@ public:
 	XMFLOAT4X4 GetProj() const { return mProj; }
 
 	void Move(float dx, float dy, float dz);
+	void Move(XMFLOAT3& dir, float dist);
 	
 	void Pitch(float angle);
 	void RotateY(float angle);

@@ -42,7 +42,7 @@ void Camera::SetLens(float fovY, float aspect, float zn, float zf)
 
 void Camera::LookAt(XMFLOAT3& pos, XMFLOAT3& target, XMFLOAT3& up)
 {
-	mPosition = Vector3::Normalize(pos);
+	mPosition = pos;
 	mLook = Vector3::Normalize(Vector3::Subtract(target, pos));
 	mRight = Vector3::Normalize(Vector3::Cross(up, mLook));
 	mUp = Vector3::Cross(mLook, mRight);
@@ -62,6 +62,12 @@ void Camera::Move(float dx, float dy, float dz)
 	mPosition = Vector3::MultiplyAdd(dy, mUp, mPosition);
 	mPosition = Vector3::MultiplyAdd(dz, mLook, mPosition);
 
+	mViewDirty = true;
+}
+
+void Camera::Move(XMFLOAT3& dir, float dist)
+{
+	mPosition = Vector3::MultiplyAdd(dist, dir, mPosition);
 	mViewDirty = true;
 }
 
