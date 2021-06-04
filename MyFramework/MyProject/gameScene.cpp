@@ -30,6 +30,7 @@ void GameScene::Resize(float aspect)
 void GameScene::Update(const GameTimer& timer)
 {
 	ProcessInputKeyboard(timer);
+	ProcessInputMouse(timer);
 
 	// 카메라의 상태를 업데이트한다.
 	mCamera->UpdateViewMatrix();
@@ -76,7 +77,7 @@ void GameScene::Draw(ID3D12GraphicsCommandList* cmdList, const GameTimer& timer)
 		mPipelines["defaultColor"]->SetAndDraw(cmdList, mObjectCB.get());
 	else
 	{
-		mPipelines["wiredColor"]->SetAndDraw(cmdList, mObjectCB.get());
+		//mPipelines["wiredColor"]->SetAndDraw(cmdList, mObjectCB.get());
 		mPipelines["boundingBox"]->SetAndDraw(cmdList, mObjectCB.get());
 	}
 }
@@ -90,23 +91,10 @@ void GameScene::OnProcessMouseDown(HWND hwnd, WPARAM buttonState)
 
 void GameScene::OnProcessMouseUp(WPARAM buttonState)
 {
-	//ReleaseCapture();
 }
 
 void GameScene::OnProcessMouseMove(WPARAM buttonState)
 {
-	if (GetCapture() != nullptr) {
-		POINT currMousePos;
-		GetCursorPos(&currMousePos);
-		SetCursorPos(mLastMousePos.x, mLastMousePos.y);
-
-		float delta_x = XMConvertToRadians(0.25f * static_cast<float>(currMousePos.x - mLastMousePos.x));
-		float delta_y = XMConvertToRadians(0.25f * static_cast<float>(currMousePos.y - mLastMousePos.y));
-
-		// Rotate camera local axis
-		mCamera->RotateY(delta_x);
-		mCamera->Pitch(delta_y);
-	}
 }
 
 void GameScene::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -144,6 +132,25 @@ void GameScene::ProcessInputKeyboard(const GameTimer& timer)
 
 	if (GetAsyncKeyState(VK_UP) & 0x8000)
 		mPlayer->MoveForward(5.0f * dt);
+}
+
+void GameScene::ProcessInputMouse(const GameTimer& timer)
+{
+	if (GetCapture() != nullptr) {
+		POINT currMousePos;
+		GetCursorPos(&currMousePos);
+		SetCursorPos(mLastMousePos.x, mLastMousePos.y);
+
+		float delta_x = XMConvertToRadians(0.25f * static_cast<float>(currMousePos.x - mLastMousePos.x));
+		float delta_y = XMConvertToRadians(0.25f * static_cast<float>(currMousePos.y - mLastMousePos.y));
+
+		if (delta_x) {
+			float distance = (delta_x > 0.0f) ? 0.1f : -0.1f;
+			float angle = (delta_x > 0.0f) ? 5.0f : -5.0f;
+			mPlayer->RotateY(angle);
+			mPlayer->MoveStrafe(distance, false);
+		}
+	}
 }
 
 void GameScene::BuildRootSignature(ID3D12Device* device)
@@ -211,6 +218,7 @@ void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList
 		mGameObjects.push_back(std::move(road));
 	}
 
+	// 벽
 	for (int i = 0; i < 2; ++i)
 	{
 		auto wall = std::make_unique<GameObject>(index++, mMeshes["box1"].get());
