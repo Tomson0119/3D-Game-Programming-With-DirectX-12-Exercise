@@ -87,7 +87,10 @@ public:
 class CarMesh : public Mesh
 {
 public:
-	CarMesh() { }
+	CarMesh(
+		ID3D12Device* device,
+		ID3D12GraphicsCommandList* cmdList,
+		const std::wstring& path);
 	virtual ~CarMesh() { }
 };
 

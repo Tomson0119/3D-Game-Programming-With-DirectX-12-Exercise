@@ -184,6 +184,10 @@ BoxMesh::BoxMesh(
 {
 	float hx = width * 0.5f, hy = height * 0.5f, hz = depth * 0.5f;
 
+	mOOBB.Center = { 0.0f,0.0f,0.0f };
+	mOOBB.Extents = { hx,hy,hz };
+	mOOBB.Orientation = { 0.0f,0.0f,0.0f,1.0f };
+
 	if (!colored) {
 		std::array<Vertex, 24> vertices =
 		{
@@ -224,7 +228,7 @@ BoxMesh::BoxMesh(
 			Vertex(-hx, -hy, +hz, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f),  // 23
 		};
 
-		std::array<std::uint16_t, 36> indices =
+		std::array<UINT, 36> indices =
 		{
 			// Front
 			0, 1, 2, 0, 2, 3,
@@ -240,7 +244,7 @@ BoxMesh::BoxMesh(
 			20, 21, 22, 20, 22, 23
 		};
 
-		Mesh::CreateResourceInfo(device, cmdList, sizeof(Vertex), sizeof(std::uint16_t),
+		Mesh::CreateResourceInfo(device, cmdList, sizeof(Vertex), sizeof(UINT),
 			vertices.data(), (UINT)vertices.size(), indices.data(), (UINT)indices.size());
 	}
 	else {
@@ -257,7 +261,7 @@ BoxMesh::BoxMesh(
 			ColoredVertex(XMFLOAT3(+hx, -hy, +hz), (XMFLOAT4)Colors::Orange)
 		};
 
-		std::array<std::uint16_t, 36> indices =
+		std::array<UINT, 36> indices =
 		{
 			// Front
 			0, 1, 2, 0, 2, 3,
@@ -273,11 +277,23 @@ BoxMesh::BoxMesh(
 			1, 4, 7, 1, 7, 2
 		};
 
-		Mesh::CreateResourceInfo(device, cmdList, sizeof(ColoredVertex), sizeof(std::uint16_t),
+		Mesh::CreateResourceInfo(device, cmdList, sizeof(ColoredVertex), sizeof(UINT),
 			vertices.data(), (UINT)vertices.size(), indices.data(), (UINT)indices.size());
 	}
 }
 
 BoxMesh::~BoxMesh()
 {
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////
+//
+CarMesh::CarMesh(
+	ID3D12Device* device, 
+	ID3D12GraphicsCommandList* cmdList,
+	const std::wstring& path)
+	: Mesh()
+{
+	LoadFromBinary(device, cmdList, path);
 }
