@@ -17,12 +17,28 @@ GameObject::~GameObject()
 void GameObject::Update(ConstantBuffer<ObjectConstants>* objectCB)
 {
 	objectCB->CopyData(mCBIndex, GetObjectConstants());
+
+	mLook = Vector3::Normalize(mLook);
+	mUp = Vector3::Normalize(Vector3::Cross(mLook, mRight));
+	mRight = Vector3::Cross(mUp, mLook);
+
+	UpdateTransform();
 	UpdateBoudingBox();
 }
 
 void GameObject::Draw(ID3D12GraphicsCommandList* cmdList)
 {
 	if (mMesh) mMesh->Draw(cmdList);
+}
+
+void GameObject::UpdateTransform()
+{
+	mWorld._11 = mRight.x;	  mWorld._12 = mRight.y;	mWorld._13 = mRight.z;
+	mWorld._21 = mUp.x;		  mWorld._22 = mUp.y;		mWorld._23 = mUp.z;
+	mWorld._31 = mLook.x;	  mWorld._32 = mLook.y;		mWorld._33 = mLook.z;
+	mWorld._41 = mPosition.x, mWorld._42 = mPosition.y, mWorld._43 = mPosition.z;
+
+	if (mBBObject) mBBObject->UpdateTransform(mWorld);
 }
 
 void GameObject::UpdateBoudingBox()
@@ -32,14 +48,13 @@ void GameObject::UpdateBoudingBox()
 		mMesh->mOOBB.Transform(mOOBB, XMLoadFloat4x4(&mWorld));
 		XMStoreFloat4(&mOOBB.Orientation, XMQuaternionNormalize(XMLoadFloat4(&mOOBB.Orientation)));
 	}
-	if (mBBObject) mBBObject->UpdateBoudingBox();
+	//if (mBBObject) mBBObject->UpdateBoudingBox();
 }
 
 void GameObject::SetPosition(float x, float y, float z)
 {
-	mWorld._41 = x;
-	mWorld._42 = y;
-	mWorld._43 = z;
+	mPosition = { x,y,z };
+	//UpdateTransform();
 }
 
 void GameObject::SetPosition(XMFLOAT3 pos)
@@ -56,70 +71,91 @@ void GameObject::SetMaterial(XMFLOAT4 color, XMFLOAT3 frenel, float roughness)
 
 void GameObject::Move(float dx, float dy, float dz)
 {
-	if (dx != 0.0f) MoveStrafe(dx);
-	if (dy != 0.0f) MoveUp(dy);
-	if (dz != 0.0f) MoveForward(dz);
-	
-	if (mBBObject) mBBObject->Move(dx, dy, dz);
+	mPosition.x += dx;
+	mPosition.y += dy;
+	mPosition.z += dz;
+
+	//if (mBBObject) mBBObject->Move(dx, dy, dz);
 }
 
-void GameObject::MoveStrafe(float dist)
+void GameObject::Move(XMFLOAT3& dir, float dist)
 {
-	XMFLOAT3 position = GetPosition();
-	XMFLOAT3 right = GetRight();
-	position = Vector3::Add(position, right, dist);
-	SetPosition(position);
-
-	if (mBBObject) mBBObject->MoveStrafe(dist);
+	XMFLOAT3 shift = { 0.0f,0.0f,0.0f };
+	shift = Vector3::Add(shift, dir, dist);
+	Move(shift.x, shift.y, shift.z);
 }
 
-void GameObject::MoveUp(float dist)
+void GameObject::MoveStrafe(float dist, bool local)
 {
-	XMFLOAT3 position = GetPosition();
-	XMFLOAT3 up = GetUp();
-	position = Vector3::Add(position, up, dist);
-	SetPosition(position);
-
-	if (mBBObject) mBBObject->MoveUp(dist);
+	XMFLOAT3 right = (local) ? mRight : XMFLOAT3(1.0f, 0.0f, 0.0f);
+	Move(right, dist);
 }
 
-void GameObject::MoveForward(float dist)
+void GameObject::MoveUp(float dist, bool local)
 {
-	XMFLOAT3 position = GetPosition();
-	XMFLOAT3 look = GetLook();
-	position = Vector3::Add(position, look, dist);
-	SetPosition(position);
+	XMFLOAT3 up = (local) ? mUp : XMFLOAT3(0.0f, 1.0f, 0.0f);
+	Move(up, dist);
+}
 
-	if (mBBObject) mBBObject->MoveForward(dist);
+void GameObject::MoveForward(float dist, bool local)
+{
+	XMFLOAT3 look = (local) ? mLook : XMFLOAT3(0.0f, 0.0f, 1.0f);
+	Move(look, dist);
 }
 
 void GameObject::Rotate(float pitch, float yaw, float roll)
 {
-	XMMATRIX rotate = XMMatrixRotationRollPitchYaw(
-		XMConvertToRadians(pitch), XMConvertToRadians(yaw), XMConvertToRadians(roll));
-	mWorld = Matrix4x4::Multiply(rotate, mWorld);
-
-	if (mBBObject) mBBObject->Rotate(pitch, yaw, roll);
+	if (pitch != 0.0f)
+	{
+		XMMATRIX R = XMMatrixRotationAxis(XMLoadFloat3(&mRight), XMConvertToRadians(pitch));
+		mUp = Vector3::TransformNormal(mUp, R);
+		mLook = Vector3::TransformNormal(mLook, R);
+	}
+	if (yaw != 0.0f)
+	{
+		XMMATRIX R = XMMatrixRotationAxis(XMLoadFloat3(&mUp), XMConvertToRadians(yaw));
+		mLook = Vector3::TransformNormal(mLook, R);
+		mRight = Vector3::TransformNormal(mRight, R);
+	}
+	if (roll != 0.0f)
+	{
+		XMMATRIX R = XMMatrixRotationAxis(XMLoadFloat3(&mLook), XMConvertToRadians(roll));
+		mUp = Vector3::TransformNormal(mUp, R);
+		mRight = Vector3::TransformNormal(mRight, R);
+	}
+	//if (mBBObject) mBBObject->Rotate(pitch, yaw, roll);
 }
 
-void GameObject::Rotate(const XMFLOAT3* axis, float angle)
+void GameObject::Rotate(const XMFLOAT3& axis, float angle)
 {
-	XMMATRIX rotate = XMMatrixRotationAxis(XMLoadFloat3(axis), XMConvertToRadians(angle));
-	mWorld = Matrix4x4::Multiply(rotate, mWorld);
+	XMMATRIX R = XMMatrixRotationAxis(XMLoadFloat3(&axis), XMConvertToRadians(angle));
+	mRight = Vector3::TransformNormal(mRight, R);
+	mUp = Vector3::TransformNormal(mUp, R);
+	mLook = Vector3::TransformNormal(mLook, R);
 
-	if (mBBObject) mBBObject->Rotate(axis, angle);
+	//if (mBBObject) mBBObject->Rotate(axis, angle);
+}
+
+void GameObject::RotateY(float angle)
+{
+	XMMATRIX R = XMMatrixRotationY(XMConvertToRadians(angle));
+	mRight = Vector3::TransformNormal(mRight, R);
+	mUp = Vector3::TransformNormal(mUp, R);
+	mLook = Vector3::TransformNormal(mLook, R);
+
+	//if (mBBObject) mBBObject->RotateY(angle);
 }
 
 void GameObject::Scale(float xScale, float yScale, float zScale)
 {
 
-	if (mBBObject) mBBObject->Scale(xScale, yScale, zScale);
+	//if (mBBObject) mBBObject->Scale(xScale, yScale, zScale);
 }
 
 void GameObject::Scale(float scale)
 {
 
-	if (mBBObject) mBBObject->Scale(scale);
+	//if (mBBObject) mBBObject->Scale(scale);
 }
 
 void GameObject::EnableBoundBoxRender(UINT offset, ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
@@ -128,27 +164,7 @@ void GameObject::EnableBoundBoxRender(UINT offset, ID3D12Device* device, ID3D12G
 	mBBObject->SetPosition(mOOBB.Center);
 	mBBObject->SetMaterial(XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f), {}, 0.0f);
 	
-	mBBObject->Move(mWorld._41, mWorld._42, mWorld._43);  // 본 물체의 위치로 옮긴다.
-}
-
-XMFLOAT3 GameObject::GetPosition()
-{
-	return XMFLOAT3(mWorld._41, mWorld._42, mWorld._43);
-}
-
-XMFLOAT3 GameObject::GetLook()
-{
-	return Vector3::Normalize(XMFLOAT3(mWorld._31, mWorld._32, mWorld._33));
-}
-
-XMFLOAT3 GameObject::GetUp()
-{
-	return Vector3::Normalize(XMFLOAT3(mWorld._21, mWorld._22, mWorld._23));
-}
-
-XMFLOAT3 GameObject::GetRight()
-{
-	return Vector3::Normalize(XMFLOAT3(mWorld._11, mWorld._12, mWorld._13));
+	//mBBObject->Move(mWorld._41, mWorld._42, mWorld._43);  // 본 물체의 위치로 옮긴다.
 }
 
 ObjectConstants GameObject::GetObjectConstants()
