@@ -60,6 +60,9 @@
     <ClCompile Include="mesh.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="player.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -101,12 +104,18 @@
     <ClInclude Include="mesh.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="player.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\color.hlsl">
+    <None Include="Shaders\lighting.hlsl">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="Shaders\lighting.hlsl">
+    <None Include="Shaders\onlyColor.hlsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\defaultColor.hlsl">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

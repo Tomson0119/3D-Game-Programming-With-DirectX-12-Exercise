@@ -201,6 +201,12 @@
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">../MyCommon/stdafx.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">../MyCommon/stdafx.h</PrecompiledHeaderFile>
     </ClCompile>
+    <ClCompile Include="player.cpp">
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">../MyCommon/stdafx.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">../MyCommon/stdafx.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">../MyCommon/stdafx.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">../MyCommon/stdafx.h</PrecompiledHeaderFile>
+    </ClCompile>
     <ClCompile Include="shader.cpp">
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">../MyCommon/stdafx.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">../MyCommon/stdafx.h</PrecompiledHeaderFile>
@@ -221,15 +227,19 @@
     <ClInclude Include="gameScene.h" />
     <ClInclude Include="mesh.h" />
     <ClInclude Include="pipeline.h" />
+    <ClInclude Include="player.h" />
     <ClInclude Include="shader.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\color.hlsl">
+    <None Include="Shaders\lighting.hlsl">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\lighting.hlsl">
+    <None Include="Shaders\defaultColor.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Shaders\onlyColor.hlsl">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>
