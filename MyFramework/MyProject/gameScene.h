@@ -46,7 +46,6 @@ private:
 	void OnProcessCollision(NonePlayerObject* npo);
 	float CheckWallAndPlayerCollision();
 
-
 private:
 	XMFLOAT4 mFrameColor = (XMFLOAT4)Colors::LightSkyBlue;
 
