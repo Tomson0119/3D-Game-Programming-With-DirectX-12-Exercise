@@ -42,6 +42,8 @@ private:
 	void BuildShadersAndPSOs(ID3D12Device* device);
 
 private:
+	void PickAndMoveRandomNPO(float elapsedTime);
+	void OnProcessCollision(NonePlayerObject* npo);
 	float CheckWallAndPlayerCollision();
 
 
@@ -65,8 +67,10 @@ private:
 
 	Player* mPlayer;
 	std::array<GameObject*, 2> mWallObjects;
+	std::array<NonePlayerObject*, 10> mNPOs;
 
 	POINT mLastMousePos;
 
 	bool mShowWireFrame = false;
+	float mScore = 0.0f;
 };
