@@ -21,12 +21,13 @@ public:
 	void BuildObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList);
 
 	void Resize(float aspect);
+	void UpdateConstants();
 	void Update(const GameTimer& timer);
 	void Draw(ID3D12GraphicsCommandList* cmdList, const GameTimer& timer);
 
 	void OnProcessMouseDown(HWND hwnd, WPARAM buttonState);
-	void OnProcessMouseUp(WPARAM buttonState);
-	void OnProcessMouseMove(WPARAM buttonState);
+	void OnProcessMouseUp(WPARAM buttonState) { }
+	void OnProcessMouseMove(WPARAM buttonState) { }
 	void OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	void ProcessInputKeyboard(const GameTimer& timer);
@@ -39,6 +40,10 @@ private:
 	void BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList);
 	void BuildConstantBuffers(ID3D12Device* device);
 	void BuildShadersAndPSOs(ID3D12Device* device);
+
+private:
+	float CheckWallAndPlayerCollision();
+
 
 private:
 	XMFLOAT4 mFrameColor = (XMFLOAT4)Colors::LightSkyBlue;

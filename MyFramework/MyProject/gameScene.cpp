@@ -1,11 +1,13 @@
 #include "../MyCommon/stdafx.h"
 #include "gameScene.h"
 
+#include <sstream>
+
 GameScene::GameScene()
 {
 	mCamera = std::make_unique<Camera>();
 	mCamera->LookAt(
-		XMFLOAT3(0.0f, 5.0f, -10.0f),
+		XMFLOAT3(0.0f, 5.0f, -15.0f),
 		XMFLOAT3(0.0f, 0.0f, 3.0f),
 		XMFLOAT3(0.0f, 1.0f, 0.0f));
 }
@@ -27,14 +29,8 @@ void GameScene::Resize(float aspect)
 	mCamera->SetLens(0.25f * Math::PI, aspect, 1.0f, 1000.0f);
 }
 
-void GameScene::Update(const GameTimer& timer)
+void GameScene::UpdateConstants()
 {
-	ProcessInputKeyboard(timer);
-	ProcessInputMouse(timer);
-
-	// 카메라의 상태를 업데이트한다.
-	mCamera->UpdateViewMatrix();
-
 	// 카메라로부터 상수를 받는다.
 	CameraConstants cameraCnst;
 	cameraCnst.View = Matrix4x4::Transpose(mCamera->GetView());
@@ -60,11 +56,23 @@ void GameScene::Update(const GameTimer& timer)
 
 	for (const auto& obj : mGameObjects)
 		// 오브젝트로부터 상수들을 받아 업데이트한다.
-		obj->Update(mObjectCB.get());
+		obj->UpdateConstants(mObjectCB.get());
 
 	for (const auto& bb : mBoundBoxes)
-		// 게임 오브젝트의 개수만큼 Offset을 지정한다.
-		bb->Update(mObjectCB.get());  
+		bb->UpdateConstants(mObjectCB.get());
+}
+
+void GameScene::Update(const GameTimer& timer)
+{
+	ProcessInputKeyboard(timer);
+	ProcessInputMouse(timer);
+
+	// 카메라의 상태를 업데이트한다.
+	mCamera->UpdateViewMatrix();
+
+	CheckWallAndPlayerCollision();
+
+	UpdateConstants();
 }
 
 void GameScene::Draw(ID3D12GraphicsCommandList* cmdList, const GameTimer& timer)
@@ -89,20 +97,12 @@ void GameScene::OnProcessMouseDown(HWND hwnd, WPARAM buttonState)
 	SetCursor(NULL);
 }
 
-void GameScene::OnProcessMouseUp(WPARAM buttonState)
-{
-}
-
-void GameScene::OnProcessMouseMove(WPARAM buttonState)
-{
-}
-
 void GameScene::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	switch (uMsg)
 	{
 	case WM_KEYDOWN:
-		if(wParam == 0x47)
+		if(wParam == 0x47)  // 'G'
 			mShowWireFrame = !mShowWireFrame;
 		break;
 	}
@@ -136,6 +136,8 @@ void GameScene::ProcessInputKeyboard(const GameTimer& timer)
 
 void GameScene::ProcessInputMouse(const GameTimer& timer)
 {
+	float elapsed = timer.ElapsedTime();
+
 	if (GetCapture() != nullptr) {
 		POINT currMousePos;
 		GetCursorPos(&currMousePos);
@@ -144,14 +146,17 @@ void GameScene::ProcessInputMouse(const GameTimer& timer)
 		float delta_x = XMConvertToRadians(0.25f * static_cast<float>(currMousePos.x - mLastMousePos.x));
 		float delta_y = XMConvertToRadians(0.25f * static_cast<float>(currMousePos.y - mLastMousePos.y));
 
-		if (delta_x) {
+		float bounce = CheckWallAndPlayerCollision();
+		if (delta_x && !bounce) {
 			float distance = (delta_x > 0.0f) ? 0.1f : -0.1f;
 			float angle = (delta_x > 0.0f) ? 3.0f : -3.0f;
 			mPlayer->RotateY(angle);
 			mPlayer->MoveStrafe(distance, false);
 		}
+		else if (bounce)
+			mPlayer->MoveStrafe(bounce * elapsed, false);
 	}
-	mPlayer->Update(timer.ElapsedTime());
+	mPlayer->Update(elapsed);
 }
 
 void GameScene::BuildRootSignature(ID3D12Device* device)
@@ -260,4 +265,19 @@ void GameScene::BuildShadersAndPSOs(ID3D12Device* device)
 	// BoundingBox Pipeline
 	mPipelines["boundingBox"] = std::make_unique<Pipeline>(true);
 	mPipelines["boundingBox"]->BuildPipeline(device, mRootSignature.Get(), mShaders["onlyColor"].get());
+}
+
+float GameScene::CheckWallAndPlayerCollision()
+{
+	for (const auto& wall : mWallObjects)
+	{
+		if (wall->OOBB().Intersects(mPlayer->OOBB()))
+		{
+			if (wall->OOBB().Center.x > mPlayer->OOBB().Center.x)
+				return -1.0f;
+			else
+				return 1.0f;
+		}
+	}
+	return 0.0f;
 }
