@@ -14,10 +14,13 @@ GameObject::~GameObject()
 	if (mBBObject) delete mBBObject;
 }
 
-void GameObject::Update(ConstantBuffer<ObjectConstants>* objectCB)
+void GameObject::UpdateConstants(ConstantBuffer<ObjectConstants>* objectCB)
 {
-	objectCB->CopyData(mCBIndex, GetObjectConstants());
+	objectCB->CopyData(mCBIndex, GetObjectConstants());	
+}
 
+void GameObject::Update(float elapsedTime)
+{
 	mLook = Vector3::Normalize(mLook);
 	mUp = Vector3::Normalize(Vector3::Cross(mLook, mRight));
 	mRight = Vector3::Cross(mUp, mLook);
@@ -52,6 +55,14 @@ void GameObject::UpdateBoudingBox()
 
 void GameObject::SetPosition(float x, float y, float z)
 {
+	if (mBBObject)
+	{
+		float dx = x - mPosition.x;
+		float dy = y - mPosition.y;
+		float dz = z - mPosition.z;
+
+		mBBObject->Move(dx, dy, dz);
+	}
 	mPosition = { x,y,z };
 }
 
@@ -199,17 +210,13 @@ void BoundBoxObject::UpdateCoordinate(const XMFLOAT4X4& world)
 	mWorld._31 = world._31; mWorld._32 = world._32; mWorld._33 = world._33;
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-ColorObject::ColorObject(int offset, Mesh* mesh)
-	: GameObject(offset, mesh)
-{	
-}
 
-ColorObject::~ColorObject()
+///////////////////////////////////////////////////////////////////////////////
+//
+NonePlayerObject::~NonePlayerObject()
 {
 }
 
-
-
-
+void NonePlayerObject::Update(float elapsedTime)
+{
+}

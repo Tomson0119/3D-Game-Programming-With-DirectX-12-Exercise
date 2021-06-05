@@ -11,7 +11,9 @@ public:
 	GameObject& operator=(const GameObject& rhs) = delete;
 	virtual ~GameObject();
 
-	virtual void Update(ConstantBuffer<ObjectConstants>* objectCB);
+	void UpdateConstants(ConstantBuffer<ObjectConstants>* objectCB);
+
+	virtual void Update(float elapsedTime);
 	virtual void Draw(ID3D12GraphicsCommandList* cmdList);
 
 	void UpdateTransform();
@@ -40,10 +42,12 @@ public:
 	void EnableBoundBoxRender(UINT offset, ID3D12Device* device, ID3D12GraphicsCommandList* cmdList);
 
 	UINT CBIndex() const { return mCBIndex; }
+	BoundingOrientedBox OOBB() const { return mOOBB; }
+	XMFLOAT3 GetPos() const { return mPosition; }
 	virtual ObjectConstants GetObjectConstants();
 
 	class BoundBoxObject* GetBoundBoxObject() const;
-
+	
 protected:
 	XMFLOAT3 mPosition = { 0.0f, 0.0f, 0.0f };
 	XMFLOAT3 mRight = { 1.0f, 0.0f, 0.0f };
@@ -75,11 +79,19 @@ public:
 	void UpdateCoordinate(const XMFLOAT4X4& world);
 };
 
-class ColorObject : public GameObject
+class NonePlayerObject : public GameObject
 {
 public:
-	ColorObject(int offset, Mesh* mesh);
-	ColorObject(const ColorObject& rhs) = delete;
-	ColorObject& operator=(const ColorObject& rhs) = delete;
-	virtual ~ColorObject();
+	NonePlayerObject(int offset, Mesh* mesh);
+	NonePlayerObject(const NonePlayerObject& rhs) = delete;
+	NonePlayerObject& operator=(const NonePlayerObject& rhs) = delete;
+	virtual ~NonePlayerObject();
+	
+	virtual void Update(float elapsedTime);
+
+private:
+	bool active = true;
+	float initialSpeed = 0.0f;
+	float acceleration = 0.0f;
+
 };
