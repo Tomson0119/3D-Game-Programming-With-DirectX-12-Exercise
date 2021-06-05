@@ -127,6 +127,11 @@ struct ObjectConstants
 namespace Math
 {
 	const float PI = 3.1415926535f;
+
+	inline int RandInt(int min, int max)
+	{
+		return rand() % (max - min + 1) + min;
+	}
 }
 
 namespace Vector3
