@@ -7,7 +7,7 @@ GameScene::GameScene()
 {
 	mCamera = std::make_unique<Camera>();
 	mCamera->LookAt(
-		XMFLOAT3(0.0f, 5.0f, -15.0f),
+		XMFLOAT3(0.0f, 5.0f, -13.0f),
 		XMFLOAT3(0.0f, 0.0f, 3.0f),
 		XMFLOAT3(0.0f, 1.0f, 0.0f));
 }
@@ -67,12 +67,25 @@ void GameScene::Update(const GameTimer& timer)
 	ProcessInputKeyboard(timer);
 	ProcessInputMouse(timer);
 
-	// 카메라의 상태를 업데이트한다.
 	mCamera->UpdateViewMatrix();
 
-	CheckWallAndPlayerCollision();
+	for (const auto& obj : mGameObjects)
+		obj->Update(timer.ElapsedTime());
+
+	for (const auto& bb : mBoundBoxes)
+		bb->Update(timer.ElapsedTime());
+
+	for (const auto& npo : mNPOs)
+	{
+		if (npo->IsActive() && !mCamera->IsInFrustum(npo->OOBB()))
+			npo->SetActive(false);
+		if (npo->OOBB().Intersects(mPlayer->OOBB()))
+			OnProcessCollision(npo);
+	}
+	PickAndMoveRandomNPO(timer.ElapsedTime());
 
 	UpdateConstants();
+	
 }
 
 void GameScene::Draw(ID3D12GraphicsCommandList* cmdList, const GameTimer& timer)
@@ -85,7 +98,7 @@ void GameScene::Draw(ID3D12GraphicsCommandList* cmdList, const GameTimer& timer)
 		mPipelines["defaultColor"]->SetAndDraw(cmdList, mObjectCB.get());
 	else
 	{
-		//mPipelines["wiredColor"]->SetAndDraw(cmdList, mObjectCB.get());
+		mPipelines["wiredColor"]->SetAndDraw(cmdList, mObjectCB.get());
 		mPipelines["boundingBox"]->SetAndDraw(cmdList, mObjectCB.get());
 	}
 }
@@ -149,14 +162,13 @@ void GameScene::ProcessInputMouse(const GameTimer& timer)
 		float bounce = CheckWallAndPlayerCollision();
 		if (delta_x && !bounce) {
 			float distance = (delta_x > 0.0f) ? 0.1f : -0.1f;
-			float angle = (delta_x > 0.0f) ? 3.0f : -3.0f;
+			float angle = (delta_x > 0.0f) ? 2.0f : -2.0f;
 			mPlayer->RotateY(angle);
 			mPlayer->MoveStrafe(distance, false);
 		}
 		else if (bounce)
 			mPlayer->MoveStrafe(bounce * elapsed, false);
 	}
-	mPlayer->Update(elapsed);
 }
 
 void GameScene::BuildRootSignature(ID3D12Device* device)
@@ -194,7 +206,7 @@ void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList
 	// 플레이어 객체 생성
 	auto racing_car = std::make_unique<Player>(index++, mMeshes["racing_car"].get());
 	racing_car->SetPosition(0.0f, 0.0f, 0.0f);
-	racing_car->SetMaterial(XMFLOAT4(0.0f, 0.4f, 0.8f, 1.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), 0.125f);
+	racing_car->SetMaterial(XMFLOAT4(0.0f, 0.4f, 0.8f, 1.0f), XMFLOAT3(0.1f, 0.1f, 0.1f), 0.125f);
 	racing_car->EnableBoundBoxRender(index++, device, cmdList);  // 바운딩 박스를 렌더링하도록 오브젝트를 생성한다.
 
 	mPlayer = racing_car.get();
@@ -238,7 +250,41 @@ void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList
 		mPipelines["boundingBox"]->SetObject(wall->GetBoundBoxObject());
 		mBoundBoxes.push_back(wall->GetBoundBoxObject());
 		mGameObjects.push_back(std::move(wall));
-	}	
+	}
+
+	struct NPO {
+		std::string MeshName;
+		XMFLOAT4 Color;
+		float MovingSpeed;
+	};
+
+	std::array<NPO, 5> NPOs =
+	{ {
+		{"racing_car", XMFLOAT4(0.9f, 0.0f, 0.3f, 1.0f), 10.0f},
+		{"police_car", XMFLOAT4(1.0f, 0.8f, 0.2f, 1.0f), 14.0f},
+		{"racing_car", XMFLOAT4(0.2f, 0.7f, 0.3f, 1.0f), 18.0f},
+		{"police_car", XMFLOAT4(0.2f, 0.1f, 0.8f, 1.0f), 13.0f},
+		{"police_car", XMFLOAT4(0.6f, 0.2f, 0.8f, 1.0f), 14.5f}
+	}};
+
+	// NPO
+	for (int i = 0; i < 10; ++i)
+	{
+		auto npo = std::make_unique<NonePlayerObject>(index++, mMeshes[NPOs[i % 5].MeshName].get());
+		npo->SetMaterial(NPOs[i%5].Color, XMFLOAT3(0.1f, 0.1f, 0.1f), 0.25f);
+		npo->SetPosition(0.0f, 0.0f, -20.0f);
+		npo->EnableBoundBoxRender(index++, device, cmdList);
+		npo->Rotate(0.0f, 180.0f, 0.0f);
+		npo->SetInitialSpeed(NPOs[i % 5].MovingSpeed);
+		npo->SetMovingDirection(XMFLOAT3(0.0f, 0.0f, -1.0f));
+
+		mNPOs[i] = npo.get();
+		mPipelines["defaultColor"]->SetObject(npo.get());
+		mPipelines["wiredColor"]->SetObject(npo.get());
+		mPipelines["boundingBox"]->SetObject(npo->GetBoundBoxObject());
+		mBoundBoxes.push_back(npo->GetBoundBoxObject());
+		mGameObjects.push_back(std::move(npo));
+	}
 }
 
 void GameScene::BuildConstantBuffers(ID3D12Device* device)
@@ -267,16 +313,67 @@ void GameScene::BuildShadersAndPSOs(ID3D12Device* device)
 	mPipelines["boundingBox"]->BuildPipeline(device, mRootSignature.Get(), mShaders["onlyColor"].get());
 }
 
+void GameScene::PickAndMoveRandomNPO(float fElapsedTime)
+{
+	static float totalTime = 0.0f;
+
+	totalTime += fElapsedTime;
+	if (totalTime > 0.3f)
+	{
+		int n = Math::RandInt(0, mNPOs.size() - 1);
+		float pos_x = -5.6f + 2.8f * Math::RandInt(0, 4);
+
+		if (!mNPOs[n]->IsActive()) {
+			mNPOs[n]->SetActive(true);
+			mNPOs[n]->SetMovingDirection(XMFLOAT3(0.0f, 0.0f, -1.0f));
+			mNPOs[n]->SetPosition(pos_x, 0.0f, 150.0f);
+		}
+		totalTime = 0.0f;
+	}
+}
+
+void GameScene::OnProcessCollision(NonePlayerObject* npo)
+{
+	if (mPlayer->GetState() == STATE::NORMAL)
+	{
+		mPlayer->MakeInvincible();
+
+		for (const auto& npo : mNPOs)
+		{
+			float speed = npo->GetInitialSpeed();
+
+			// 속도를 반전 시켜서 충격 효과를 흉내낸다.
+			// Giant 상태에서 충돌했던 객체는 진행방향이 다르므로
+			// 반전을 시키지 않는다.
+			if (Vector3::Equal(npo->GetMovingDirection(), XMFLOAT3(0.0f, 0.0f, -1.0f)))
+				speed *= -1.0f;
+
+			npo->SetMovingSpeed(speed);
+		}
+		mScore -= 10.0f;
+	}
+	else if (mPlayer->GetState() == STATE::GIANT)
+	{
+		npo->SetMovingDirection(XMFLOAT3(0.0f, 0.0f, 1.0f));
+	}
+}
+
 float GameScene::CheckWallAndPlayerCollision()
 {
+	const auto& player_bb = mPlayer->OOBB();
+
 	for (const auto& wall : mWallObjects)
 	{
-		if (wall->OOBB().Intersects(mPlayer->OOBB()))
+		const auto& wall_bb = wall->OOBB();
+		if (wall_bb.Intersects(mPlayer->OOBB()))
 		{
-			if (wall->OOBB().Center.x > mPlayer->OOBB().Center.x)
-				return -1.0f;
+			float len = std::abs(wall_bb.Extents.x + player_bb.Extents.x);
+			float currLen = player_bb.Center.x - wall_bb.Center.x;
+
+			if (currLen > 0.0f)
+				return len - currLen;
 			else
-				return 1.0f;
+				return std::abs(currLen) - len;
 		}
 	}
 	return 0.0f;
