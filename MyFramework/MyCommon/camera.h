@@ -38,6 +38,8 @@ public:
 
 	virtual void UpdateViewMatrix();
 
+	bool IsInFrustum(BoundingOrientedBox& boundBox);
+
 protected:
 	bool mViewDirty = false;
 
@@ -56,6 +58,10 @@ protected:
 
 	XMFLOAT4X4 mView = Matrix4x4::Identity4x4();
 	XMFLOAT4X4 mProj = Matrix4x4::Identity4x4();
+	XMFLOAT4X4 mInvView = Matrix4x4::Identity4x4();
+
+	BoundingFrustum mFrustumView;
+	BoundingFrustum mFrustumWorld;
 };
 
 //class TopViewCamera : public Camera

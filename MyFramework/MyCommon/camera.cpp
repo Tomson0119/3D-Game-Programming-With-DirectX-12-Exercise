@@ -37,7 +37,9 @@ void Camera::SetLens(float fovY, float aspect, float zn, float zf)
 	mNearZ = zn;
 	mFarZ = zf;
 
-	XMStoreFloat4x4(&mProj, XMMatrixPerspectiveFovLH(mFov.y, mAspect, mNearZ, mFarZ));
+	XMMATRIX P = XMMatrixPerspectiveFovLH(mFov.y, mAspect, mNearZ, mFarZ);
+	XMStoreFloat4x4(&mProj, P);
+	BoundingFrustum::CreateFromMatrix(mFrustumView, P);
 }
 
 void Camera::LookAt(XMFLOAT3& pos, XMFLOAT3& target, XMFLOAT3& up)
@@ -98,28 +100,26 @@ void Camera::UpdateViewMatrix()
 		mUp = Vector3::Normalize(Vector3::Cross(mLook, mRight));
 		mRight = Vector3::Cross(mUp, mLook);
 
-		mView(0, 0) = mRight.x;
-		mView(1, 0) = mRight.y;
-		mView(2, 0) = mRight.z;
-		mView(3, 0) = -Vector3::Dot(mPosition, mRight);
-
-		mView(0, 1) = mUp.x;
-		mView(1, 1) = mUp.y;
-		mView(2, 1) = mUp.z;
-		mView(3, 1) = -Vector3::Dot(mPosition, mUp);
-
-		mView(0, 2) = mLook.x;
-		mView(1, 2) = mLook.y;
-		mView(2, 2) = mLook.z;
+		mView(0, 0) = mRight.x; mView(0, 1) = mUp.x; mView(0, 2) = mLook.x;
+		mView(1, 0) = mRight.y; mView(1, 1) = mUp.y; mView(1, 2) = mLook.y;
+		mView(2, 0) = mRight.z; mView(2, 1) = mUp.z; mView(2, 2) = mLook.z;
+		mView(3, 0) = -Vector3::Dot(mPosition, mRight);		
+		mView(3, 1) = -Vector3::Dot(mPosition, mUp);		
 		mView(3, 2) = -Vector3::Dot(mPosition, mLook);
 
-		mView(0, 3) = 0.0f;
-		mView(1, 3) = 0.0f;
-		mView(2, 3) = 0.0f;
-		mView(3, 3) = 1.0f;
+		XMMATRIX viewMat = XMLoadFloat4x4(&mView);
+		XMMATRIX invViewMat = XMMatrixInverse(&XMMatrixDeterminant(viewMat), viewMat);
+		XMStoreFloat4x4(&mInvView, invViewMat);
+
+		mFrustumView.Transform(mFrustumWorld, XMLoadFloat4x4(&mInvView));
 
 		mViewDirty = false;
 	}
+}
+
+bool Camera::IsInFrustum(BoundingOrientedBox& boundBox)
+{
+	return mFrustumWorld.Intersects(boundBox);
 }
 
 
