@@ -36,10 +36,21 @@ void GameObject::Draw(ID3D12GraphicsCommandList* cmdList)
 
 void GameObject::UpdateTransform()
 {
-	mWorld(0, 0) = mRight.x;	mWorld(0, 1) = mRight.y;	mWorld(0, 2) = mRight.z;
-	mWorld(1, 0) = mUp.x;		mWorld(1, 1) = mUp.y;		mWorld(1, 2) = mUp.z;
-	mWorld(2, 0) = mLook.x;		mWorld(2, 1) = mLook.y;		mWorld(2, 2) = mLook.z;
-	mWorld(3, 0) = mPosition.x, mWorld(3, 1) = mPosition.y, mWorld(3, 2) = mPosition.z;
+	mWorld(0, 0) = mScaling.x * mRight.x; 
+	mWorld(0, 1) = mRight.y;	
+	mWorld(0, 2) = mRight.z;
+
+	mWorld(1, 0) = mUp.x;		
+	mWorld(1, 1) = mScaling.y * mUp.y;		
+	mWorld(1, 2) = mUp.z;
+
+	mWorld(2, 0) = mLook.x;		
+	mWorld(2, 1) = mLook.y;		
+	mWorld(2, 2) = mScaling.z * mLook.z;
+
+	mWorld(3, 0) = mPosition.x;
+	mWorld(3, 1) = mPosition.y;
+	mWorld(3, 2) = mPosition.z;
 
 	if (mBBObject) mBBObject->UpdateCoordinate(mWorld);
 }
@@ -152,12 +163,17 @@ void GameObject::RotateY(float angle)
 
 void GameObject::Scale(float xScale, float yScale, float zScale)
 {
+	mScaling = { xScale, yScale, zScale };
+}
 
+void GameObject::Scale(const XMFLOAT3& scale)
+{
+	Scale(scale.x, scale.y, scale.z);
 }
 
 void GameObject::Scale(float scale)
 {
-
+	Scale(scale, scale, scale);
 }
 
 void GameObject::EnableBoundBoxRender(UINT offset, ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
