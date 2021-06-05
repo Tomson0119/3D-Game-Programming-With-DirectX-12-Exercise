@@ -1,6 +1,7 @@
 #include "../MyCommon/stdafx.h"
 #include "player.h"
 
+
 Player::Player(int offset, Mesh* mesh)
 	: GameObject(offset, mesh)
 {
@@ -19,12 +20,23 @@ void Player::SetMaterial(XMFLOAT4 color, XMFLOAT3 frenel, float roughness)
 
 void Player::Update(float elapsedTime)
 {
-	GameObject::Update(elapsedTime);
+	if (mScalingSpeed)
+	{
+		mScaledSize = Vector3::Add(mScaledSize, mScalingSpeed * elapsedTime);
+
+		//std::wostringstream wss;
+		//wss << mScaledSize.x << ", " << mScaledSize.y << ", " << mScaledSize.z;
+		//MessageBox(nullptr, wss.str().c_str(), L"Hi", MB_OK);
+
+		GameObject::Scale(mScaledSize);
+	}
 
 	mMaterial.Color = mColor;
 	AdjustCoordinate(elapsedTime);
 	UpdateInvincibleState(elapsedTime);
 	UpdateGiantState(elapsedTime);
+
+	GameObject::Update(elapsedTime);
 }
 
 void Player::AdjustCoordinate(float elapsedTime)
