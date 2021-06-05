@@ -148,5 +148,3 @@ void GameFramework::Draw(const GameTimer& timer)
 
 	WaitUntilGPUComplete();
 }
-
-
