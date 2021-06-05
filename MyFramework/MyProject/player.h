@@ -18,6 +18,8 @@ public:
 
 	virtual void SetMaterial(XMFLOAT4 color, XMFLOAT3 frenel, float roughness);
 	void Update(float elapsedTime);
+
+	void SetScalingSpeed(float speed) { mScalingSpeed = speed; }
 	
 	void AdjustCoordinate(float elapsedTime);
 	void UpdateInvincibleState(float elapsedTime);
