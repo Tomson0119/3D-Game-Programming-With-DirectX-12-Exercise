@@ -37,6 +37,7 @@ public:
 	void RotateY(float angle);
 
 	void Scale(float xScale, float yScale, float zScale);
+	void Scale(const XMFLOAT3& scale);
 	void Scale(float scale);
 
 	void EnableBoundBoxRender(UINT offset, ID3D12Device* device, ID3D12GraphicsCommandList* cmdList);
@@ -53,6 +54,7 @@ protected:
 	XMFLOAT3 mRight = { 1.0f, 0.0f, 0.0f };
 	XMFLOAT3 mUp = { 0.0f, 1.0f, 0.0f };
 	XMFLOAT3 mLook = { 0.0f, 0.0f, 1.0f };
+	XMFLOAT3 mScaling = { 1.0f, 1.0f, 1.0f };	
 
 	XMFLOAT4X4 mWorld = Matrix4x4::Identity4x4();
 	Material mMaterial = {};
