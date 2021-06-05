@@ -1,7 +1,6 @@
 #include "../MyCommon/stdafx.h"
 #include "gameScene.h"
 
-#include <sstream>
 
 GameScene::GameScene()
 {
@@ -26,7 +25,7 @@ void GameScene::BuildObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cm
 
 void GameScene::Resize(float aspect)
 {
-	mCamera->SetLens(0.25f * Math::PI, aspect, 1.0f, 1000.0f);
+	mCamera->SetLens(0.25f * Math::PI, aspect, 1.0f, 500.0f);
 }
 
 void GameScene::UpdateConstants()
@@ -64,16 +63,18 @@ void GameScene::UpdateConstants()
 
 void GameScene::Update(const GameTimer& timer)
 {
+	const float dt = timer.ElapsedTime();
+
 	ProcessInputKeyboard(timer);
 	ProcessInputMouse(timer);
 
 	mCamera->UpdateViewMatrix();
 
 	for (const auto& obj : mGameObjects)
-		obj->Update(timer.ElapsedTime());
+		obj->Update(dt);
 
 	for (const auto& bb : mBoundBoxes)
-		bb->Update(timer.ElapsedTime());
+		bb->Update(dt);
 
 	for (const auto& npo : mNPOs)
 	{
@@ -82,10 +83,11 @@ void GameScene::Update(const GameTimer& timer)
 		if (npo->OOBB().Intersects(mPlayer->OOBB()))
 			OnProcessCollision(npo);
 	}
-	PickAndMoveRandomNPO(timer.ElapsedTime());
+	PickAndMoveRandomNPO(dt);
 
-	UpdateConstants();
-	
+	mScore += 5.0f * dt;
+
+	UpdateConstants();	
 }
 
 void GameScene::Draw(ID3D12GraphicsCommandList* cmdList, const GameTimer& timer)
@@ -115,8 +117,12 @@ void GameScene::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
 	switch (uMsg)
 	{
 	case WM_KEYDOWN:
-		if(wParam == 0x47)  // 'G'
+		if (wParam == 'G')
 			mShowWireFrame = !mShowWireFrame;
+		if (wParam == '1') {
+			mPlayer->MakeBigger();
+			mPlayer->SetScalingSpeed(1.0f);
+		}
 		break;
 	}
 }
@@ -149,7 +155,7 @@ void GameScene::ProcessInputKeyboard(const GameTimer& timer)
 
 void GameScene::ProcessInputMouse(const GameTimer& timer)
 {
-	float elapsed = timer.ElapsedTime();
+	float dt = timer.ElapsedTime();
 
 	if (GetCapture() != nullptr) {
 		POINT currMousePos;
@@ -167,7 +173,7 @@ void GameScene::ProcessInputMouse(const GameTimer& timer)
 			mPlayer->MoveStrafe(distance, false);
 		}
 		else if (bounce)
-			mPlayer->MoveStrafe(bounce * elapsed, false);
+			mPlayer->MoveStrafe(bounce * dt, false);
 	}
 }
 
@@ -274,7 +280,6 @@ void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList
 		npo->SetMaterial(NPOs[i%5].Color, XMFLOAT3(0.1f, 0.1f, 0.1f), 0.25f);
 		npo->SetPosition(0.0f, 0.0f, -20.0f);
 		npo->EnableBoundBoxRender(index++, device, cmdList);
-		npo->Rotate(0.0f, 180.0f, 0.0f);
 		npo->SetInitialSpeed(NPOs[i % 5].MovingSpeed);
 		npo->SetMovingDirection(XMFLOAT3(0.0f, 0.0f, -1.0f));
 
