@@ -44,6 +44,8 @@
 #include <memory>
 #include <fstream>
 #include <math.h>
+#include <sstream>
+
 
 #include "dxException.h"
 
@@ -197,6 +199,11 @@ namespace Vector3
 		return XMVectorGetX(XMVector3Dot(XMLoadFloat3(&v1), XMLoadFloat3(&v2)));
 	}
 
+	inline XMFLOAT3 Add(XMFLOAT3& v, float value)
+	{
+		return VectorToFloat3(XMVectorAdd(XMLoadFloat3(&v), XMVectorReplicate(value)));
+	}
+
 	inline XMFLOAT3 Add(XMFLOAT3& v1, XMFLOAT3& v2)
 	{
 		return VectorToFloat3(XMLoadFloat3(&v1) + XMLoadFloat3(&v2));
@@ -258,10 +265,10 @@ namespace Matrix4x4
 		return ret;
 	}
 
-	inline XMFLOAT4X4 Multiply(XMMATRIX& mat1, XMFLOAT4X4& mat2)
+	inline XMFLOAT4X4 Multiply(FXMMATRIX& mat1, XMFLOAT4X4& mat2)
 	{
 		XMFLOAT4X4 ret;
-		XMStoreFloat4x4(&ret, XMMatrixMultiply(mat1, XMLoadFloat4x4(&mat2)));
+		XMStoreFloat4x4(&ret, mat1 * XMLoadFloat4x4(&mat2));
 		return ret;
 	}
 }
