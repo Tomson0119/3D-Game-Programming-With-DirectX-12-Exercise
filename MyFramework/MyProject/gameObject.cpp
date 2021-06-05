@@ -36,10 +36,10 @@ void GameObject::Draw(ID3D12GraphicsCommandList* cmdList)
 
 void GameObject::UpdateTransform()
 {
-	mWorld._11 = mRight.x;	  mWorld._12 = mRight.y;	mWorld._13 = mRight.z;
-	mWorld._21 = mUp.x;		  mWorld._22 = mUp.y;		mWorld._23 = mUp.z;
-	mWorld._31 = mLook.x;	  mWorld._32 = mLook.y;		mWorld._33 = mLook.z;
-	mWorld._41 = mPosition.x, mWorld._42 = mPosition.y, mWorld._43 = mPosition.z;
+	mWorld(0, 0) = mRight.x;	mWorld(0, 1) = mRight.y;	mWorld(0, 2) = mRight.z;
+	mWorld(1, 0) = mUp.x;		mWorld(1, 1) = mUp.y;		mWorld(1, 2) = mUp.z;
+	mWorld(2, 0) = mLook.x;		mWorld(2, 1) = mLook.y;		mWorld(2, 2) = mLook.z;
+	mWorld(3, 0) = mPosition.x, mWorld(3, 1) = mPosition.y, mWorld(3, 2) = mPosition.z;
 
 	if (mBBObject) mBBObject->UpdateCoordinate(mWorld);
 }
@@ -203,20 +203,42 @@ BoundBoxObject::~BoundBoxObject()
 	if (mMesh) delete mMesh;
 }
 
+void BoundBoxObject::Update(float elapsedTime)
+{
+	GameObject::UpdateTransform();
+}
+
 void BoundBoxObject::UpdateCoordinate(const XMFLOAT4X4& world)
 {
-	mWorld._11 = world._11; mWorld._12 = world._12; mWorld._13 = world._13;
-	mWorld._21 = world._21; mWorld._22 = world._22; mWorld._23 = world._23;
-	mWorld._31 = world._31; mWorld._32 = world._32; mWorld._33 = world._33;
+	mRight = { world(0, 0), world(0, 1), world(0, 2) };
+	mUp    = { world(1, 0), world(1, 1), world(1, 2) };
+	mLook  = { world(2, 0), world(2, 1), world(2, 2) };
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////
 //
+NonePlayerObject::NonePlayerObject(int offset, Mesh* mesh)
+	: GameObject(offset, mesh)
+{
+}
+
 NonePlayerObject::~NonePlayerObject()
 {
 }
 
+void NonePlayerObject::SetInitialSpeed(float speed)
+{
+	mInitialSpeed = speed;
+	mCurrSpeed = speed;
+}
+
 void NonePlayerObject::Update(float elapsedTime)
 {
+	if (mActive)
+	{
+		if (mCurrSpeed) Move(mMovingDirection, mCurrSpeed * elapsedTime);
+	}
+	mCurrSpeed += mAcceleration;
+	GameObject::Update(elapsedTime);
 }

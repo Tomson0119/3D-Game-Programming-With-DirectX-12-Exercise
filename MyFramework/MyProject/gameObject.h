@@ -76,6 +76,7 @@ public:
 	BoundBoxObject& operator=(const BoundBoxObject& rhs) = delete;
 	virtual ~BoundBoxObject();
 
+	virtual void Update(float elapsedTime);
 	void UpdateCoordinate(const XMFLOAT4X4& world);
 };
 
@@ -87,11 +88,23 @@ public:
 	NonePlayerObject& operator=(const NonePlayerObject& rhs) = delete;
 	virtual ~NonePlayerObject();
 	
+	void SetInitialSpeed(float speed);
+	void SetMovingDirection(XMFLOAT3& dir) { mMovingDirection = dir; }
+	void SetMovingSpeed(float speed) { mCurrSpeed = speed; }
+	void SetAcceleration(float acel) { mAcceleration = acel; }
+	void SetActive(bool flag) { mActive = flag; }
+
 	virtual void Update(float elapsedTime);
 
-private:
-	bool active = true;
-	float initialSpeed = 0.0f;
-	float acceleration = 0.0f;
+	bool IsActive() const { return mActive; }
+	float GetInitialSpeed() const { return mInitialSpeed; }
+	XMFLOAT3 GetMovingDirection() const { return mMovingDirection; }
 
+private:
+	XMFLOAT3 mMovingDirection = { };
+
+	bool mActive = true;
+	float mInitialSpeed = 0.0f;
+	float mCurrSpeed = 0.0f;
+	float mAcceleration = 0.1f;
 };
