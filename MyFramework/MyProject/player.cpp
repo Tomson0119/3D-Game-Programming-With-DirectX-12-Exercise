@@ -19,9 +19,12 @@ void Player::SetMaterial(XMFLOAT4 color, XMFLOAT3 frenel, float roughness)
 
 void Player::Update(float elapsedTime)
 {
-	mMaterial.Color = mColor;
+	GameObject::Update(elapsedTime);
 
+	mMaterial.Color = mColor;
 	AdjustCoordinate(elapsedTime);
+	UpdateInvincibleState(elapsedTime);
+	UpdateGiantState(elapsedTime);
 }
 
 void Player::AdjustCoordinate(float elapsedTime)

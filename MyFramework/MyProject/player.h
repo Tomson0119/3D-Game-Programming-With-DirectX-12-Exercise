@@ -26,6 +26,8 @@ public:
 	void MakeBigger() { mCurrState = STATE::GIANT; }
 	void MakeInvincible() { mCurrState = STATE::INVINCIBLE; }
 
+	STATE GetState() const { return mCurrState; }
+
 private:
 	XMFLOAT3 mScaledSize = { 1.0f,1.0f,1.0f };
 	float mScalingSpeed = 0.0f;
