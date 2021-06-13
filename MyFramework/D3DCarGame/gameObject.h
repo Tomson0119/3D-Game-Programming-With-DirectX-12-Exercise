@@ -1,7 +1,7 @@
 #pragma once
 
 #include "mesh.h"
-#include "../MyCommon/constantBuffer.h"
+#include "constantBuffer.h"
 
 class GameObject
 {

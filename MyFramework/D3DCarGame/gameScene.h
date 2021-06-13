@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../MyCommon/gameTimer.h"
-#include "../MyCommon/camera.h"
-#include "../MyCommon/constantBuffer.h"
+#include "gameTimer.h"
+#include "camera.h"
+#include "constantBuffer.h"
 
 #include "mesh.h"
 #include "pipeline.h"

@@ -13,12 +13,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="소스 파일\Helper">
-      <UniqueIdentifier>{71dc7f78-5a0d-42f4-a9c7-9326c032e885}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="헤더 파일\Helper">
-      <UniqueIdentifier>{6a3fdb0e-0d15-4c97-92bc-75bc43a94756}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Shaders">
       <UniqueIdentifier>{776e30bf-02db-42b6-88e5-1e559eb07ea0}</UniqueIdentifier>
     </Filter>
@@ -30,23 +24,8 @@
     <ClCompile Include="framework.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="..\MyCommon\stdafx.cpp">
-      <Filter>소스 파일\Helper</Filter>
-    </ClCompile>
-    <ClCompile Include="..\MyCommon\gameTimer.cpp">
-      <Filter>소스 파일\Helper</Filter>
-    </ClCompile>
-    <ClCompile Include="..\MyCommon\dxException.cpp">
-      <Filter>소스 파일\Helper</Filter>
-    </ClCompile>
-    <ClCompile Include="..\MyCommon\d3dFramework.cpp">
-      <Filter>소스 파일\Helper</Filter>
-    </ClCompile>
     <ClCompile Include="gameScene.cpp">
       <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="..\MyCommon\camera.cpp">
-      <Filter>소스 파일\Helper</Filter>
     </ClCompile>
     <ClCompile Include="pipeline.cpp">
       <Filter>소스 파일</Filter>
@@ -63,40 +42,34 @@
     <ClCompile Include="player.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="camera.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="d3dFramework.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="dxException.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="gameTimer.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="..\MyCommon\basewin.h">
-      <Filter>헤더 파일\Helper</Filter>
-    </ClInclude>
-    <ClInclude Include="..\MyCommon\d3dFramework.h">
-      <Filter>헤더 파일\Helper</Filter>
-    </ClInclude>
-    <ClInclude Include="..\MyCommon\dxException.h">
-      <Filter>헤더 파일\Helper</Filter>
-    </ClInclude>
-    <ClInclude Include="..\MyCommon\stdafx.h">
-      <Filter>헤더 파일\Helper</Filter>
-    </ClInclude>
-    <ClInclude Include="..\MyCommon\gameTimer.h">
-      <Filter>헤더 파일\Helper</Filter>
-    </ClInclude>
     <ClInclude Include="gameScene.h">
       <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="..\MyCommon\camera.h">
-      <Filter>헤더 파일\Helper</Filter>
     </ClInclude>
     <ClInclude Include="pipeline.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="shader.h">
       <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="..\MyCommon\constantBuffer.h">
-      <Filter>헤더 파일\Helper</Filter>
     </ClInclude>
     <ClInclude Include="gameObject.h">
       <Filter>헤더 파일</Filter>
@@ -105,6 +78,27 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="player.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="basewin.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="camera.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="constantBuffer.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="d3dFramework.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="dxException.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="gameTimer.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="stdafx.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

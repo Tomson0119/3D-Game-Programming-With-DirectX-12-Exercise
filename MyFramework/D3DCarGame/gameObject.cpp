@@ -1,4 +1,4 @@
-#include "../MyCommon/stdafx.h"
+#include "stdafx.h"
 #include "gameObject.h"
 
 

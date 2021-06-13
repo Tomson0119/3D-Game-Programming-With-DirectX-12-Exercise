@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../MyCommon/d3dFramework.h"
+#include "d3dFramework.h"
 #include "gameScene.h"
 
 extern DXGI_SAMPLE_DESC gMsaaStateDesc;
