@@ -57,6 +57,9 @@
     <ClCompile Include="stdafx.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="heightMapImage.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="basewin.h">
@@ -101,5 +104,19 @@
     <ClInclude Include="stdafx.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="heightMapImage.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\defaultColor.hlsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\lighting.hlsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\onlyColor.hlsl">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>
