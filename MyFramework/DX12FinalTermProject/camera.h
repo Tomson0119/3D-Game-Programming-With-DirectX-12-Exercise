@@ -32,6 +32,10 @@ public:
 
 	void Move(float dx, float dy, float dz);
 	void Move(XMFLOAT3& dir, float dist);
+
+	void Strafe(float dist);
+	void Walk(float dist);
+	void Upward(float dist);
 	
 	void Pitch(float angle);
 	void RotateY(float angle);

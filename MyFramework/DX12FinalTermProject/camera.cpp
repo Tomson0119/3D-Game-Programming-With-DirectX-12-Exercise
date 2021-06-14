@@ -73,6 +73,21 @@ void Camera::Move(XMFLOAT3& dir, float dist)
 	mViewDirty = true;
 }
 
+void Camera::Strafe(float dist)
+{
+	Move(dist, 0.0f, 0.0f);
+}
+
+void Camera::Walk(float dist)
+{
+	Move(0.0f, 0.0f, dist);
+}
+
+void Camera::Upward(float dist)
+{
+	Move(XMFLOAT3(0.0f, 1.0f, 0.0f), dist);
+}
+
 void Camera::Pitch(float angle)
 {
 	XMMATRIX R = XMMatrixRotationAxis(XMLoadFloat3(&mRight), angle);
