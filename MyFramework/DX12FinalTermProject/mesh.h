@@ -1,5 +1,7 @@
 #pragma once
 
+#include "heightMapImage.h"
+
 struct Vertex
 {
 	Vertex() = default;
@@ -64,33 +66,30 @@ public:
 
 class BoxMesh : public Mesh
 {
-private:
-	struct ColoredVertex
-	{
-		ColoredVertex() = default;
-		ColoredVertex(XMFLOAT3 pos, XMFLOAT4 color)
-			: Position(pos), Color(color) { }
-
-		XMFLOAT3 Position;
-		XMFLOAT4 Color;
-	};
-
 public:
 	BoxMesh(
 		ID3D12Device* device,
 		ID3D12GraphicsCommandList* cmdList,
-		float width, float height, float depth,
-		bool colored=false);
+		float width, float height, float depth);
 	virtual ~BoxMesh();
 };
 
-class CarMesh : public Mesh
+class GridMesh : public Mesh
 {
 public:
-	CarMesh(
+	GridMesh(
 		ID3D12Device* device,
 		ID3D12GraphicsCommandList* cmdList,
-		const std::wstring& path);
-	virtual ~CarMesh() { }
-};
+		int width, int depth,
+		const XMFLOAT3& scale,
+		const std::wstring& heightMapFile=L"");
 
+	virtual ~GridMesh();
+
+private:
+	std::unique_ptr<HeightMapImage> mHeightMap;
+
+	int mWidth = 0;
+	int mDepth = 0;
+	XMFLOAT3 mScale = {};
+};

@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "mesh.h"
 
+
 Mesh::Mesh()
 {
 
@@ -178,8 +179,7 @@ void Mesh::LoadFromBinary(
 BoxMesh::BoxMesh(
 	ID3D12Device* device,
 	ID3D12GraphicsCommandList* cmdList,
-	float width, float height, float depth,
-	bool colored)
+	float width, float height, float depth)
 	: Mesh()
 {
 	float hx = width * 0.5f, hy = height * 0.5f, hz = depth * 0.5f;
@@ -188,112 +188,139 @@ BoxMesh::BoxMesh(
 	mOOBB.Extents = { hx,hy,hz };
 	mOOBB.Orientation = { 0.0f,0.0f,0.0f,1.0f };
 
-	if (!colored) {
-		std::array<Vertex, 24> vertices =
-		{
-			// Front
-			Vertex(-hx, +hy, -hz, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f),  // 0
-			Vertex(+hx, +hy, -hz, 0.0f, 0.0f, -1.0f, 1.0f, 0.0f),  // 1
-			Vertex(+hx, -hy, -hz, 0.0f, 0.0f, -1.0f, 1.0f, 1.0f),  // 2
-			Vertex(-hx, -hy, -hz, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f),  // 3
+	std::array<Vertex, 24> vertices =
+	{
+		// Front
+		Vertex(-hx, +hy, -hz, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f),  // 0
+		Vertex(+hx, +hy, -hz, 0.0f, 0.0f, -1.0f, 1.0f, 0.0f),  // 1
+		Vertex(+hx, -hy, -hz, 0.0f, 0.0f, -1.0f, 1.0f, 1.0f),  // 2
+		Vertex(-hx, -hy, -hz, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f),  // 3
 
-			// Back
-			Vertex(+hx, +hy, +hz, 0.0f, 0.0f, +1.0f, 0.0f, 0.0f),  // 4
-			Vertex(-hx, +hy, +hz, 0.0f, 0.0f, +1.0f, 1.0f, 0.0f),  // 5
-			Vertex(-hx, -hy, +hz, 0.0f, 0.0f, +1.0f, 1.0f, 1.0f),  // 6
-			Vertex(+hx, -hy, +hz, 0.0f, 0.0f, +1.0f, 0.0f, 1.0f),  // 7
+		// Back
+		Vertex(+hx, +hy, +hz, 0.0f, 0.0f, +1.0f, 0.0f, 0.0f),  // 4
+		Vertex(-hx, +hy, +hz, 0.0f, 0.0f, +1.0f, 1.0f, 0.0f),  // 5
+		Vertex(-hx, -hy, +hz, 0.0f, 0.0f, +1.0f, 1.0f, 1.0f),  // 6
+		Vertex(+hx, -hy, +hz, 0.0f, 0.0f, +1.0f, 0.0f, 1.0f),  // 7
 
-			// Left
-			Vertex(-hx, +hy, +hz, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f),  // 8
-			Vertex(-hx, +hy, -hz, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f),  // 9
-			Vertex(-hx, -hy, -hz, -1.0f, 0.0f, 0.0f, 1.0f, 1.0f),  // 10
-			Vertex(-hx, -hy, +hz, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f),  // 11
+		// Left
+		Vertex(-hx, +hy, +hz, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f),  // 8
+		Vertex(-hx, +hy, -hz, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f),  // 9
+		Vertex(-hx, -hy, -hz, -1.0f, 0.0f, 0.0f, 1.0f, 1.0f),  // 10
+		Vertex(-hx, -hy, +hz, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f),  // 11
 
-			// Right
-			Vertex(+hx, +hy, -hz, +1.0f, 0.0f, 0.0f, 0.0f, 0.0f),  // 12
-			Vertex(+hx, +hy, +hz, +1.0f, 0.0f, 0.0f, 1.0f, 0.0f),  // 13
-			Vertex(+hx, -hy, +hz, +1.0f, 0.0f, 0.0f, 1.0f, 1.0f),  // 14
-			Vertex(+hx, -hy, -hz, +1.0f, 0.0f, 0.0f, 0.0f, 1.0f),  // 15
+		// Right
+		Vertex(+hx, +hy, -hz, +1.0f, 0.0f, 0.0f, 0.0f, 0.0f),  // 12
+		Vertex(+hx, +hy, +hz, +1.0f, 0.0f, 0.0f, 1.0f, 0.0f),  // 13
+		Vertex(+hx, -hy, +hz, +1.0f, 0.0f, 0.0f, 1.0f, 1.0f),  // 14
+		Vertex(+hx, -hy, -hz, +1.0f, 0.0f, 0.0f, 0.0f, 1.0f),  // 15
 
-			// Top
-			Vertex(-hx, +hy, +hz, 0.0f, +1.0f, 0.0f, 0.0f, 0.0f),  // 16
-			Vertex(+hx, +hy, +hz, 0.0f, +1.0f, 0.0f, 1.0f, 0.0f),  // 17
-			Vertex(+hx, +hy, -hz, 0.0f, +1.0f, 0.0f, 1.0f, 1.0f),  // 18
-			Vertex(-hx, +hy, -hz, 0.0f, +1.0f, 0.0f, 0.0f, 1.0f),  // 19
+		// Top
+		Vertex(-hx, +hy, +hz, 0.0f, +1.0f, 0.0f, 0.0f, 0.0f),  // 16
+		Vertex(+hx, +hy, +hz, 0.0f, +1.0f, 0.0f, 1.0f, 0.0f),  // 17
+		Vertex(+hx, +hy, -hz, 0.0f, +1.0f, 0.0f, 1.0f, 1.0f),  // 18
+		Vertex(-hx, +hy, -hz, 0.0f, +1.0f, 0.0f, 0.0f, 1.0f),  // 19
 
-			// Bottom
-			Vertex(-hx, -hy, -hz, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f),  // 20
-			Vertex(+hx, -hy, -hz, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f),  // 21
-			Vertex(+hx, -hy, +hz, 0.0f, -1.0f, 0.0f, 1.0f, 1.0f),  // 22
-			Vertex(-hx, -hy, +hz, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f),  // 23
-		};
+		// Bottom
+		Vertex(-hx, -hy, -hz, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f),  // 20
+		Vertex(+hx, -hy, -hz, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f),  // 21
+		Vertex(+hx, -hy, +hz, 0.0f, -1.0f, 0.0f, 1.0f, 1.0f),  // 22
+		Vertex(-hx, -hy, +hz, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f),  // 23
+	};
 
-		std::array<UINT, 36> indices =
-		{
-			// Front
-			0, 1, 2, 0, 2, 3,
-			// Back
-			4, 5, 6, 4, 6, 7,
-			// Left
-			8, 9, 10, 8, 10, 11,
-			// Right
-			12, 13, 14, 12, 14, 15,
-			// Top
-			16, 17, 18, 16, 18, 19,
-			// Bottom
-			20, 21, 22, 20, 22, 23
-		};
+	std::array<UINT, 36> indices =
+	{
+		// Front
+		0, 1, 2, 0, 2, 3,
+		// Back
+		4, 5, 6, 4, 6, 7,
+		// Left
+		8, 9, 10, 8, 10, 11,
+		// Right
+		12, 13, 14, 12, 14, 15,
+		// Top
+		16, 17, 18, 16, 18, 19,
+		// Bottom
+		20, 21, 22, 20, 22, 23
+	};
 
-		Mesh::CreateResourceInfo(device, cmdList, sizeof(Vertex), sizeof(UINT),
-			vertices.data(), (UINT)vertices.size(), indices.data(), (UINT)indices.size());
-	}
-	else {
-		std::array<ColoredVertex, 8> vertices =
-		{
-			ColoredVertex(XMFLOAT3(-hx, +hy, -hz), (XMFLOAT4)Colors::Red),
-			ColoredVertex(XMFLOAT3(+hx, +hy, -hz), (XMFLOAT4)Colors::Blue),
-			ColoredVertex(XMFLOAT3(+hx, -hy, -hz), (XMFLOAT4)Colors::Yellow),
-			ColoredVertex(XMFLOAT3(-hx, -hy, -hz), (XMFLOAT4)Colors::Green),
-
-			ColoredVertex(XMFLOAT3(+hx, +hy, +hz), (XMFLOAT4)Colors::Purple),
-			ColoredVertex(XMFLOAT3(-hx, +hy, +hz), (XMFLOAT4)Colors::Black),
-			ColoredVertex(XMFLOAT3(-hx, -hy, +hz), (XMFLOAT4)Colors::Gray),
-			ColoredVertex(XMFLOAT3(+hx, -hy, +hz), (XMFLOAT4)Colors::Orange)
-		};
-
-		std::array<UINT, 36> indices =
-		{
-			// Front
-			0, 1, 2, 0, 2, 3,
-			// Back
-			4, 5, 6, 4, 6, 7,
-			// Top
-			0, 5, 4, 0, 4, 1,
-			// Bottom
-			3, 7, 6, 3, 2, 7,
-			// Left
-			0, 6, 5, 0, 3, 6,
-			// Right
-			1, 4, 7, 1, 7, 2
-		};
-
-		Mesh::CreateResourceInfo(device, cmdList, sizeof(ColoredVertex), sizeof(UINT),
-			vertices.data(), (UINT)vertices.size(), indices.data(), (UINT)indices.size());
-	}
+	Mesh::CreateResourceInfo(device, cmdList, sizeof(Vertex), sizeof(UINT),
+		vertices.data(), (UINT)vertices.size(), indices.data(), (UINT)indices.size());
 }
 
 BoxMesh::~BoxMesh()
 {
 }
 
-
-///////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-CarMesh::CarMesh(
-	ID3D12Device* device, 
+GridMesh::GridMesh(
+	ID3D12Device* device,
 	ID3D12GraphicsCommandList* cmdList,
-	const std::wstring& path)
-	: Mesh()
+	int width, int depth,
+	const XMFLOAT3& scale,
+	const std::wstring& heightMapFile)
+	: mWidth(width), mDepth(depth), mScale(scale)
 {
-	LoadFromBinary(device, cmdList, path);
+	int xCount = mWidth + 1;
+	int zCount = mDepth + 1;
+
+	if (heightMapFile != L"")
+		mHeightMap = std::make_unique<HeightMapImage>(heightMapFile, xCount, zCount, scale);
+
+	UINT vertexCount = xCount * zCount;
+	UINT indiceCount = ((xCount * 2) * (zCount - 1)) + (zCount - 1 - 1);
+
+	float du = 1.0f / mWidth;
+	float dv = 1.0f / mDepth;
+
+	int xStart = -mWidth / 2;
+	int zStart = -mDepth / 2;
+
+	std::vector<Vertex> vertices(vertexCount);
+	for (int i = 0, z = zStart; z < (zStart + zCount); ++z)
+	{
+		for (int x = xStart; x < (xStart + xCount); ++x)
+		{
+			bool reverse = (z&1) ?
+			float height = (mHeightMap) ? mHeightMap->GetHeight(x, z) : 0.0f;
+			vertices[i].Position = XMFLOAT3((x * mScale.x), height, (z * mScale.z));
+			vertices[i].Normal = (mHeightMap) ? mHeightMap->GetNormal(x, z) : XMFLOAT3(0.0f, 1.0f, 0.0f);
+			vertices[i].TexCoord.x = (x - xStart) * du;
+			vertices[i++].TexCoord.y = 1.0f - (z - zStart) * dv;
+		}
+	}
+
+	std::vector<UINT> indices(indiceCount);
+	for (int i = 0, z = 0; z < zCount - 1; ++z)
+	{
+		if (!(z & 1))
+		{
+			for (int x = 0; x < xCount; ++x)
+			{
+				if ((x == 0) && (z > 0)) 
+					indices[i++] = (UINT)(x + (z * xCount));
+				indices[i++] = (UINT)(x + (z * xCount));
+				indices[i++] = (UINT)(x + ((z + 1) * xCount));
+			}
+		}
+		else
+		{
+			for (int x = xCount - 1; x >= 0; --x)
+			{
+				if (x == (xCount - 1))
+					indices[i++] = (UINT)(x + (z * xCount));
+				indices[i++] = (UINT)(x + (z * xCount));
+				indices[i++] = (UINT)(x + ((z + 1) * xCount));
+			}
+		}
+	}
+
+	Mesh::CreateResourceInfo(device, cmdList, sizeof(Vertex), sizeof(UINT),
+		vertices.data(), (UINT)vertices.size(), indices.data(), (UINT)indices.size());
+
+	mPrimitiveTopology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
+}
+
+GridMesh::~GridMesh()
+{
 }
