@@ -5,10 +5,7 @@
 GameScene::GameScene()
 {
 	mCamera = std::make_unique<Camera>();
-	mCamera->LookAt(
-		XMFLOAT3(0.0f, 5.0f, -13.0f),
-		XMFLOAT3(0.0f, 0.0f, 3.0f),
-		XMFLOAT3(0.0f, 1.0f, 0.0f));
+	mCamera->SetPosition(0.0f, 2.0f, -15.0f);
 }
 
 GameScene::~GameScene()
@@ -62,10 +59,15 @@ void GameScene::Update(const GameTimer& timer)
 {
 	const float dt = timer.ElapsedTime();
 
-	ProcessInputKeyboard(timer);
-	ProcessInputMouse(timer);
+	OnKeyboardInput(timer);
+	OnMouseInput(timer);
 
 	mCamera->UpdateViewMatrix();
+
+	for (const auto& obj : mGameObjects)
+		obj->Update(dt);
+
+	UpdateConstants();
 }
 
 void GameScene::Draw(ID3D12GraphicsCommandList* cmdList, const GameTimer& timer)
@@ -79,28 +81,72 @@ void GameScene::Draw(ID3D12GraphicsCommandList* cmdList, const GameTimer& timer)
 	else
 	{
 		mPipelines["wiredColor"]->SetAndDraw(cmdList, mObjectCB.get());
-		mPipelines["boundingBox"]->SetAndDraw(cmdList, mObjectCB.get());
+		//mPipelines["boundingBox"]->SetAndDraw(cmdList, mObjectCB.get());
 	}
 }
 
 void GameScene::OnProcessMouseDown(HWND hwnd, WPARAM buttonState)
 {
-	
+	SetCapture(hwnd);
+	GetCursorPos(&mLastMousePos);
+}
+
+void GameScene::OnProcessMouseUp(WPARAM buttonState)
+{
+	ReleaseCapture();
 }
 
 void GameScene::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	
+	switch (uMsg)
+	{
+	case WM_KEYDOWN:
+		if (wParam == 'G')
+			mShowWireFrame = !mShowWireFrame;
+		break;
+	}
 }
 
-void GameScene::ProcessInputKeyboard(const GameTimer& timer)
+void GameScene::OnKeyboardInput(const GameTimer& timer)
 {
+	const float dt = timer.ElapsedTime();
+
+	if (GetAsyncKeyState('W') & 0x8000)
+		mCamera->Walk(10.0f * dt);
+
+	if (GetAsyncKeyState('A') & 0x8000)
+		mCamera->Strafe(-10.0f * dt);
 	
+	if (GetAsyncKeyState('S') & 0x8000)
+		mCamera->Walk(-10.0f * dt);
+
+	if (GetAsyncKeyState('D') & 0x8000)
+		mCamera->Strafe(10.0f * dt);
+
+	if (GetAsyncKeyState(VK_SPACE) & 0x8000)
+		mCamera->Upward(10.0f * dt);
+
+	if (GetAsyncKeyState(VK_CONTROL) & 0x8000)
+		mCamera->Upward(-10.0f * dt);
 }
 
-void GameScene::ProcessInputMouse(const GameTimer& timer)
+void GameScene::OnMouseInput(const GameTimer& timer)
 {
-	
+	const float dt = timer.ElapsedTime();
+
+	if (GetCapture() != nullptr)
+	{
+		POINT currMousePos;
+		GetCursorPos(&currMousePos);
+		
+		float delta_x = XMConvertToRadians(0.25f * static_cast<float>(currMousePos.x - mLastMousePos.x));
+		float delta_y = XMConvertToRadians(0.25f * static_cast<float>(currMousePos.y - mLastMousePos.y));
+
+		mCamera->RotateY(delta_x);
+		mCamera->Pitch(delta_y);
+
+		mLastMousePos = currMousePos;
+	}
 }
 
 void GameScene::BuildRootSignature(ID3D12Device* device)
@@ -128,7 +174,48 @@ void GameScene::BuildRootSignature(ID3D12Device* device)
 
 void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
 {
+	/*mMeshes["body"] = std::make_unique<Mesh>();
+	mMeshes["body"]->LoadFromBinary(device, cmdList, L"Models\\Gun.bin");
+	mMeshes["slide"] = std::make_unique<Mesh>();
+	mMeshes["slide"]->LoadFromBinary(device, cmdList, L"Models\\Slide.bin");
+
+	auto pistol = std::make_unique<GameObject>(0, mMeshes["body"].get());
+	pistol->SetPosition(0.0f, 0.0f, 0.0f);
+	pistol->SetMaterial(XMFLOAT4(1.0f, 0.4f, 0.0f, 1.0f), XMFLOAT3(0.1f, 0.1f, 0.1f), 0.125f);
+
+	auto slide = std::make_unique<GameObject>(1, mMeshes["slide"].get());
+	slide->SetPosition(0.0f, 2.0f, 0.0f);
+	slide->SetMaterial(XMFLOAT4(1.0f, 0.4f, 0.0f, 1.0f), XMFLOAT3(0.1f, 0.1f, 0.1f), 0.125f);
+
+	mPipelines["defaultColor"]->SetObject(pistol.get());
+	mPipelines["defaultColor"]->SetObject(slide.get());
 	
+	mPipelines["wiredColor"]->SetObject(pistol.get());
+	mPipelines["wiredColor"]->SetObject(slide.get());
+
+	mGameObjects.emplace_back(std::move(pistol));
+	mGameObjects.emplace_back(std::move(slide));*/
+
+	mMeshes["grid"] = std::make_unique<GridMesh>(device, cmdList, 10, 10, XMFLOAT3(1.0f, 1.0f, 1.0f));
+	mMeshes["box"] = std::make_unique<BoxMesh>(device, cmdList, 2.0f, 2.0f, 2.0f);
+
+	auto grid = std::make_unique<GameObject>(0, mMeshes["grid"].get());
+	grid->SetPosition(0.0f, 0.0f, 0.0f);
+	grid->SetMaterial(XMFLOAT4(0.0f, 0.2f, 0.0f, 1.0f), XMFLOAT3(0.1f, 0.1f, 0.1f), 0.125f);
+
+	mPipelines["defaultColor"]->SetObject(grid.get());
+	mPipelines["wiredColor"]->SetObject(grid.get());
+
+	mGameObjects.emplace_back(std::move(grid));
+
+	auto box = std::make_unique<GameObject>(1, mMeshes["box"].get());
+	box->SetPosition(0.0f, 0.0f, 0.0f);
+	box->SetMaterial(XMFLOAT4(1.0f, 0.4f, 0.0f, 1.0f), XMFLOAT3(0.4f, 0.4f, 0.4f), 0.5f);
+
+	mPipelines["defaultColor"]->SetObject(box.get());
+	mPipelines["wiredColor"]->SetObject(box.get());
+	mGameObjects.emplace_back(std::move(box));
+
 }
 
 void GameScene::BuildConstantBuffers(ID3D12Device* device)
@@ -140,5 +227,12 @@ void GameScene::BuildConstantBuffers(ID3D12Device* device)
 
 void GameScene::BuildShadersAndPSOs(ID3D12Device* device)
 {
-	
+	mShaders["defaultColor"] = std::make_unique<ColorShader>(L"Shaders\\defaultColor.hlsl");
+	mShaders["onlyColor"] = std::make_unique<ColorShader>(L"Shaders\\onlyColor.hlsl");
+
+	mPipelines["defaultColor"] = std::make_unique<Pipeline>();
+	mPipelines["defaultColor"]->BuildPipeline(device, mRootSignature.Get(), mShaders["defaultColor"].get());
+
+	mPipelines["wiredColor"] = std::make_unique<Pipeline>(true);
+	mPipelines["wiredColor"]->BuildPipeline(device, mRootSignature.Get(), mShaders["onlyColor"].get());
 }

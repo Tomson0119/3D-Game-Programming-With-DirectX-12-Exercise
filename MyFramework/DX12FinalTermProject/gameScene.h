@@ -26,12 +26,12 @@ public:
 	void Draw(ID3D12GraphicsCommandList* cmdList, const GameTimer& timer);
 
 	void OnProcessMouseDown(HWND hwnd, WPARAM buttonState);
-	void OnProcessMouseUp(WPARAM buttonState) { }
+	void OnProcessMouseUp(WPARAM buttonState);
 	void OnProcessMouseMove(WPARAM buttonState) { }
 	void OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
-	void ProcessInputKeyboard(const GameTimer& timer);
-	void ProcessInputMouse(const GameTimer& timer);
+	void OnKeyboardInput(const GameTimer& timer);
+	void OnMouseInput(const GameTimer& timer);
 
 	XMFLOAT4 GetFrameColor() const { return mFrameColor; }
 
@@ -40,11 +40,6 @@ private:
 	void BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList);
 	void BuildConstantBuffers(ID3D12Device* device);
 	void BuildShadersAndPSOs(ID3D12Device* device);
-
-private:
-	void PickAndMoveRandomNPO(float elapsedTime);
-	void OnProcessCollision(NonePlayerObject* npo);
-	float CheckWallAndPlayerCollision();
 
 private:
 	XMFLOAT4 mFrameColor = (XMFLOAT4)Colors::LightSkyBlue;
