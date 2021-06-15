@@ -77,11 +77,14 @@ void GameScene::Draw(ID3D12GraphicsCommandList* cmdList, const GameTimer& timer)
 	cmdList->SetGraphicsRootConstantBufferView(1, mLightCB->GetGPUVirtualAddress());
 	
 	if (!mShowWireFrame)
+	{
+		mPipelines["defaultLit"]->SetAndDraw(cmdList, mObjectCB.get());
 		mPipelines["defaultColor"]->SetAndDraw(cmdList, mObjectCB.get());
+	}
 	else
 	{
+		mPipelines["wiredLit"]->SetAndDraw(cmdList, mObjectCB.get());
 		mPipelines["wiredColor"]->SetAndDraw(cmdList, mObjectCB.get());
-		//mPipelines["boundingBox"]->SetAndDraw(cmdList, mObjectCB.get());
 	}
 }
 
@@ -196,11 +199,11 @@ void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList
 	mGameObjects.emplace_back(std::move(pistol));
 	mGameObjects.emplace_back(std::move(slide));*/
 
-	mMeshes["grid"] = std::make_unique<GridMesh>(device, cmdList, 100, 100, 100, 100,
+	mMeshes["grid"] = std::make_unique<HeightMapGridMesh>(device, cmdList, 14, 14, 7, 7,
 		XMFLOAT3(1.0f, 1.0f, 1.0f), L"Resources\\HeightMap.raw");
 	mMeshes["box"] = std::make_unique<BoxMesh>(device, cmdList, 2.0f, 2.0f, 2.0f);
 
-	auto grid = std::make_unique<GameObject>(0, mMeshes["grid"].get());
+	auto grid = std::make_unique<TerrainObject>(0, mMeshes["grid"].get());
 	grid->SetPosition(0.0f, 0.0f, 0.0f);
 	grid->SetMaterial(XMFLOAT4(0.5f, 0.5f, 0.0f, 1.0f), XMFLOAT3(0.1f, 0.1f, 0.1f), 0.125f);
 
@@ -213,10 +216,9 @@ void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList
 	box->SetPosition(0.0f, 0.0f, 0.0f);
 	box->SetMaterial(XMFLOAT4(1.0f, 0.4f, 0.0f, 1.0f), XMFLOAT3(0.4f, 0.4f, 0.4f), 0.5f);
 
-	mPipelines["defaultColor"]->SetObject(box.get());
-	mPipelines["wiredColor"]->SetObject(box.get());
+	mPipelines["defaultLit"]->SetObject(box.get());
+	mPipelines["wiredLit"]->SetObject(box.get());
 	mGameObjects.emplace_back(std::move(box));
-
 }
 
 void GameScene::BuildConstantBuffers(ID3D12Device* device)
@@ -228,12 +230,19 @@ void GameScene::BuildConstantBuffers(ID3D12Device* device)
 
 void GameScene::BuildShadersAndPSOs(ID3D12Device* device)
 {
-	mShaders["defaultColor"] = std::make_unique<ColorShader>(L"Shaders\\defaultColor.hlsl");
-	mShaders["onlyColor"] = std::make_unique<ColorShader>(L"Shaders\\onlyColor.hlsl");
+	mShaders["defaultLit"] = std::make_unique<DefaultShader>(L"Shaders\\defaultLit.hlsl");
+	mShaders["defaultColor"] = std::make_unique<DefaultShader>(L"Shaders\\defaultColor.hlsl");
+	mShaders["diffuse"] = std::make_unique<DiffuseShader>(L"Shaders\\diffuse.hlsl");
 
-	mPipelines["defaultColor"] = std::make_unique<Pipeline>();
-	mPipelines["defaultColor"]->BuildPipeline(device, mRootSignature.Get(), mShaders["defaultColor"].get());
+	mPipelines["defaultLit"] = std::make_unique<Pipeline>(false);
+	mPipelines["defaultLit"]->BuildPipeline(device, mRootSignature.Get(), mShaders["defaultLit"].get());
+
+	mPipelines["wiredLit"] = std::make_unique<Pipeline>(true);
+	mPipelines["wiredLit"]->BuildPipeline(device, mRootSignature.Get(), mShaders["defaultColor"].get());
+
+	mPipelines["defaultColor"] = std::make_unique<Pipeline>(false);
+	mPipelines["defaultColor"]->BuildPipeline(device, mRootSignature.Get(), mShaders["diffuse"].get());
 
 	mPipelines["wiredColor"] = std::make_unique<Pipeline>(true);
-	mPipelines["wiredColor"]->BuildPipeline(device, mRootSignature.Get(), mShaders["onlyColor"].get());
+	mPipelines["wiredColor"]->BuildPipeline(device, mRootSignature.Get(), mShaders["diffuse"].get());
 }
