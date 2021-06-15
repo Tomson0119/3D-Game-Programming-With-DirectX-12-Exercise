@@ -9,13 +9,12 @@ class GameFramework : public D3DFramework
 {
 public:
 	GameFramework();
+	GameFramework(UINT width, UINT height);
 	GameFramework(const GameFramework& rhs) = delete;
 	GameFramework& operator=(const GameFramework& rhs) = delete;
 	virtual ~GameFramework();
 
 	virtual bool InitFramework() override;
-
-	void SetFrameSize(UINT width, UINT height) { mFrameWidth = width; mFrameHeight = height; }
 
 private:
 	virtual void OnResize() override;

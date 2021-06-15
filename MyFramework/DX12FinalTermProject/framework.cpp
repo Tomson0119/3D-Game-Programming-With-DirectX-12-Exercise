@@ -15,6 +15,13 @@ GameFramework::GameFramework()
 	mScenes.emplace(std::make_unique<GameScene>());
 }
 
+GameFramework::GameFramework(UINT width, UINT height)
+	: GameFramework()
+{
+	mFrameWidth = width;
+	mFrameHeight = height;
+}
+
 GameFramework::~GameFramework()
 {
 	size_t size = mScenes.size();
