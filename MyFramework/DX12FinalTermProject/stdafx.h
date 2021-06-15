@@ -43,7 +43,7 @@
 #include <string>
 #include <memory>
 #include <fstream>
-#include <math.h>
+#include <cmath>
 #include <sstream>
 
 
@@ -133,6 +133,11 @@ namespace Math
 	inline int RandInt(int min, int max)
 	{
 		return rand() % (max - min + 1) + min;
+	}
+
+	inline float ClampFloat(float x, float min, float max)
+	{
+		return (x < min) ? min : ((x > max) ? max : x);
 	}
 }
 
@@ -239,6 +244,20 @@ namespace Vector4
 	inline bool Equal(XMFLOAT4& v1, XMFLOAT4& v2)
 	{
 		return XMVector4Equal(XMLoadFloat4(&v1), XMLoadFloat4(&v2));
+	}
+
+	inline XMFLOAT4 Add(XMFLOAT4& v1, XMFLOAT4& v2)
+	{
+		XMFLOAT4 ret;
+		XMStoreFloat4(&ret, XMVectorAdd(XMLoadFloat4(&v1), XMLoadFloat4(&v2)));
+		return ret;
+	}
+
+	inline XMFLOAT4 Multiply(float scalar, XMFLOAT4& v)
+	{
+		XMFLOAT4 ret;
+		XMStoreFloat4(&ret, scalar * XMLoadFloat4(&v));
+		return ret;
 	}
 }
 
