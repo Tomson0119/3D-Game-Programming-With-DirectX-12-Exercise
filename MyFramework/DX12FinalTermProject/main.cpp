@@ -5,9 +5,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int mCmdShow)
 {
 	try
 	{
-		GameFramework app;
+		GameFramework app(1000, 800);
 		if (!app.InitFramework())
-			return 0;
+			return 0;		
 		app.Run();
 	}
 	catch (DxException& error)
