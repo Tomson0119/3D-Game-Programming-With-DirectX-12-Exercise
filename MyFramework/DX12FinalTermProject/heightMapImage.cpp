@@ -36,6 +36,9 @@ float HeightMapImage::GetHeight(float fx, float fz, bool reverse)
 
 	int x = (int)fx, z = (int)fz;
 	float xPercent = fx - x, zPercent = fz - z;
+	
+	if (x >= mWidth - 1 || z >= mDepth - 1)
+		return (float)mPixels[x + (z * mWidth)];
 
 	float bl = (float)mPixels[x + (z * mWidth)];
 	float br = (float)mPixels[x + 1 + (z * mWidth)];
@@ -61,23 +64,43 @@ float HeightMapImage::GetHeight(float fx, float fz, bool reverse)
 	float bottomHeight = bl * (1.0f - xPercent) + br * xPercent;
 	float height = bottomHeight * (1.0f - zPercent) + topHeight * zPercent;
 
-	return height * mScale.y;
+	return height * mScale.y * 0.1f;
 }
 
-XMFLOAT3 HeightMapImage::GetNormal(int x, int z)
+XMFLOAT3 HeightMapImage::GetNormal(float fx, float fz, bool reverse)
 {
-	if (x < 0.0f || z < 0.0f || x >= mWidth || z >= mDepth)
+	if (fx < 0.0f || fz < 0.0f || fx >= mWidth || fz >= mDepth)
 		return XMFLOAT3(0.0f, 1.0f, 0.0f);
 
-	int index = x + (z * mWidth);
-	int xAdd = (x < (mWidth - 1)) ? 1 : -1;
-	int zAdd = (z < (mDepth - 1)) ? mWidth : -mWidth;
+	int x = (int)fx, z = (int)fz;
+	float xPercent = fx - x, zPercent = fz - z;
 
-	float y1 = (float)mPixels[index] * mScale.y;
-	float y2 = (float)mPixels[index + xAdd] * mScale.y;
-	float y3 = (float)mPixels[index + zAdd] * mScale.y;
+	if (x >= mWidth - 1 || z >= mDepth - 1)
+		return XMFLOAT3(0.0f, 1.0f, 0.0f);
 
-	XMFLOAT3 edge1 = XMFLOAT3(0.0f, y3 - y2, mScale.z);
+	float bl = (float)mPixels[x + (z * mWidth)];
+	float br = (float)mPixels[x + 1 + (z * mWidth)];
+	float tl = (float)mPixels[x + ((z + 1) * mWidth)];
+	float tr = (float)mPixels[x + 1 + ((z + 1) * mWidth)];
+
+	float y1 = 0.0f, y2 = 0.0f, y3 = 0.0f;
+
+	if (reverse)
+	{
+		if (zPercent >= xPercent)
+			y1 = tl, y2 = bl, y3 = tr;
+		else
+			y1 = br, y2 = bl, y3 = tr;
+	}
+	else
+	{
+		if (zPercent < 1.0f - xPercent)
+			y1 = bl, y2 = tl, y3 = br;
+		else
+			y1 = tr, y2 = br, y3 = tl;
+	}
+
+	XMFLOAT3 edge1 = XMFLOAT3(0.0f, y3 - y1, mScale.z);
 	XMFLOAT3 edge2 = XMFLOAT3(mScale.x, y2 - y1, 0.0f);
 
 	return Vector3::Cross(edge1, edge2);

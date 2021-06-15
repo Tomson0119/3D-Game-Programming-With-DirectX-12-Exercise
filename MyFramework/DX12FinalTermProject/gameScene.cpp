@@ -196,12 +196,13 @@ void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList
 	mGameObjects.emplace_back(std::move(pistol));
 	mGameObjects.emplace_back(std::move(slide));*/
 
-	mMeshes["grid"] = std::make_unique<GridMesh>(device, cmdList, 10, 10, XMFLOAT3(1.0f, 1.0f, 1.0f));
+	mMeshes["grid"] = std::make_unique<GridMesh>(device, cmdList, 100, 100, 100, 100,
+		XMFLOAT3(1.0f, 1.0f, 1.0f), L"Resources\\HeightMap.raw");
 	mMeshes["box"] = std::make_unique<BoxMesh>(device, cmdList, 2.0f, 2.0f, 2.0f);
 
 	auto grid = std::make_unique<GameObject>(0, mMeshes["grid"].get());
 	grid->SetPosition(0.0f, 0.0f, 0.0f);
-	grid->SetMaterial(XMFLOAT4(0.0f, 0.2f, 0.0f, 1.0f), XMFLOAT3(0.1f, 0.1f, 0.1f), 0.125f);
+	grid->SetMaterial(XMFLOAT4(0.5f, 0.5f, 0.0f, 1.0f), XMFLOAT3(0.1f, 0.1f, 0.1f), 0.125f);
 
 	mPipelines["defaultColor"]->SetObject(grid.get());
 	mPipelines["wiredColor"]->SetObject(grid.get());
@@ -220,7 +221,7 @@ void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList
 
 void GameScene::BuildConstantBuffers(ID3D12Device* device)
 {
-	mObjectCB = std::make_unique<ConstantBuffer<ObjectConstants>>(device, mGameObjects.size());
+	mObjectCB = std::make_unique<ConstantBuffer<ObjectConstants>>(device, (UINT)mGameObjects.size());
 	mCameraCB = std::make_unique<ConstantBuffer<CameraConstants>>(device, 1);
 	mLightCB = std::make_unique<ConstantBuffer<LightConstants>>(device, 1);
 }

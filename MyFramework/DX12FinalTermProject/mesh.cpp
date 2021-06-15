@@ -257,50 +257,62 @@ GridMesh::GridMesh(
 	ID3D12Device* device,
 	ID3D12GraphicsCommandList* cmdList,
 	int width, int depth,
+	int divw, int divd,
 	const XMFLOAT3& scale,
 	const std::wstring& heightMapFile)
 	: mWidth(width), mDepth(depth), mScale(scale)
 {
-	int xCount = mWidth + 1;
-	int zCount = mDepth + 1;
 
 	if (heightMapFile != L"")
-		mHeightMap = std::make_unique<HeightMapImage>(heightMapFile, xCount, zCount, scale);
+		mHeightMap = std::make_unique<HeightMapImage>(heightMapFile, mWidth + 1, mDepth + 1, scale);
+
+	UINT xCount = divw + 1;
+	UINT zCount = divd + 1;
 
 	UINT vertexCount = xCount * zCount;
 	UINT indiceCount = ((xCount * 2) * (zCount - 1)) + (zCount - 1 - 1);
 
-	float du = 1.0f / mWidth;
-	float dv = 1.0f / mDepth;
+	float du = 1.0f / divw;
+	float dv = 1.0f / divd;
 
-	int xStart = -mWidth / 2;
-	int zStart = -mDepth / 2;
+	float dx = mWidth * du;
+	float dz = mDepth * dv;
+
+	float hw = 0.5f * mWidth;
+	float hd = 0.5f * mDepth;
 
 	std::vector<Vertex> vertices(vertexCount);
-	for (int i = 0, z = zStart; z < (zStart + zCount); ++z)
+	size_t k = 0;
+	for (UINT z = 0; z < zCount; ++z)
 	{
-		for (int x = xStart; x < (xStart + xCount); ++x)
+		for (UINT x = 0; x < xCount; ++x)
 		{
-			bool reverse = (z&1) ?
-			float height = (mHeightMap) ? mHeightMap->GetHeight(x, z) : 0.0f;
-			vertices[i].Position = XMFLOAT3((x * mScale.x), height, (z * mScale.z));
-			vertices[i].Normal = (mHeightMap) ? mHeightMap->GetNormal(x, z) : XMFLOAT3(0.0f, 1.0f, 0.0f);
-			vertices[i].TexCoord.x = (x - xStart) * du;
-			vertices[i++].TexCoord.y = 1.0f - (z - zStart) * dv;
+			float xpos = -hw + dx * x;
+			float zpos = -hd + dz * z;
+
+			bool reverse = (z & 1) ? true : false;
+			float height = (mHeightMap) ? mHeightMap->GetHeight(xpos + hw, zpos + hd, reverse) : 0.0f;			
+			XMFLOAT3 normal = (mHeightMap) ? mHeightMap->GetNormal(xpos + hw, zpos + hd, reverse) : XMFLOAT3(0.0f, 1.0f, 0.0f);
+
+			vertices[k].Position = XMFLOAT3((xpos * mScale.x), height, (zpos * mScale.z));
+			vertices[k].Normal = normal;
+			vertices[k].TexCoord.x = x * du;
+			vertices[k++].TexCoord.y = 1.0f - z * dv;
 		}
 	}
 
-	std::vector<UINT> indices(indiceCount);
-	for (int i = 0, z = 0; z < zCount - 1; ++z)
+	std::vector<UINT> indices(indiceCount);	
+	k = 0;
+	for (UINT z = 0; z < zCount - 1; ++z)
 	{
 		if (!(z & 1))
 		{
-			for (int x = 0; x < xCount; ++x)
+			for (UINT x = 0; x < xCount; ++x)
 			{
 				if ((x == 0) && (z > 0)) 
-					indices[i++] = (UINT)(x + (z * xCount));
-				indices[i++] = (UINT)(x + (z * xCount));
-				indices[i++] = (UINT)(x + ((z + 1) * xCount));
+					indices[k++] = x + (z * xCount);
+				indices[k++] = x + (z * xCount);
+				indices[k++] = x + ((z + 1) * xCount);
 			}
 		}
 		else
@@ -308,9 +320,9 @@ GridMesh::GridMesh(
 			for (int x = xCount - 1; x >= 0; --x)
 			{
 				if (x == (xCount - 1))
-					indices[i++] = (UINT)(x + (z * xCount));
-				indices[i++] = (UINT)(x + (z * xCount));
-				indices[i++] = (UINT)(x + ((z + 1) * xCount));
+					indices[k++] = x + (z * xCount);
+				indices[k++] = x + (z * xCount);
+				indices[k++] = x + ((z + 1) * xCount);
 			}
 		}
 	}

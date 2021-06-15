@@ -11,7 +11,7 @@ public:
 	virtual ~HeightMapImage();
 
 	float GetHeight(float fx, float fz, bool reverse);
-	XMFLOAT3 GetNormal(int x, int z);
+	XMFLOAT3 GetNormal(float fx, float fz, bool reverse);
 
 	std::vector<BYTE> GetPixels() const { return mPixels; }
 

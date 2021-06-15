@@ -81,6 +81,7 @@ public:
 		ID3D12Device* device,
 		ID3D12GraphicsCommandList* cmdList,
 		int width, int depth,
+		int divw, int divd,
 		const XMFLOAT3& scale,
 		const std::wstring& heightMapFile=L"");
 
