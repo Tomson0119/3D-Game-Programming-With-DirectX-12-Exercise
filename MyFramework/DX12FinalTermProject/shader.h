@@ -25,13 +25,29 @@ protected:
 	ComPtr<ID3DBlob> PS = nullptr;
 };
 
-class ColorShader : public Shader
+///////////////////////////////////////////////////////////////////////////////////////////
+//
+class DefaultShader : public Shader
 {
 public:
-	ColorShader(const std::wstring& path);
-	ColorShader(const ColorShader& rhs) = delete;
-	ColorShader& operator=(const ColorShader& rhs) = delete;
-	virtual ~ColorShader() { }
+	DefaultShader(const std::wstring& path);
+	DefaultShader(const DefaultShader& rhs) = delete;
+	DefaultShader& operator=(const DefaultShader& rhs) = delete;
+	virtual ~DefaultShader() { }
+
+	virtual void Compile(const std::wstring& path) override;
+	virtual void BuildInputLayout() override;
+};
+
+///////////////////////////////////////////////////////////////////////////////////////////
+//
+class DiffuseShader : public Shader
+{
+public:
+	DiffuseShader(const std::wstring& path);
+	DiffuseShader(const DiffuseShader& rhs) = delete;
+	DiffuseShader& operator=(const DiffuseShader& rhs) = delete;
+	virtual ~DiffuseShader() { }
 
 	virtual void Compile(const std::wstring& path) override;
 	virtual void BuildInputLayout() override;
