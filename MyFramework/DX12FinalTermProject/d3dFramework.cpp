@@ -487,13 +487,6 @@ void D3DFramework::ChangeFullScreenState()
 
 	mSwapChain->GetFullscreenState(&mFullScreen, NULL);
 	mSwapChain->SetFullscreenState(!mFullScreen, NULL);
-
-	if (mFullScreen)
-	{
-		std::wostringstream wss;
-		wss << mFrameWidth << " " << mFrameHeight;
-		MessageBox(nullptr, wss.str().c_str(), L"Hi", MB_OK);
-	}
 }
 
 ID3D12Resource* D3DFramework::CurrentBackBuffer() const
