@@ -440,17 +440,7 @@ void D3DFramework::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
 			break;
 
 		case VK_F9:
-			mSwapChain->GetFullscreenState(&mFullScreen, NULL);
-
-			if (!mFullScreen)
-				ShowWindow(m_hwnd, SW_MAXIMIZE); // 윈도우를 최대화한다.
-
-			mSwapChain->SetFullscreenState(!mFullScreen, NULL);
-
-			if(mFullScreen)
-				ShowWindow(m_hwnd, SW_RESTORE); // 윈도우를 복구한다.
-
-			OnResize();
+			ChangeFullScreenState();
 			break;
 		}
 	}
@@ -481,6 +471,28 @@ void D3DFramework::UpdateFrameStates()
 
 		frameCount = 0;
 		elapsed += 1.0f;
+	}
+}
+
+void D3DFramework::ChangeFullScreenState()
+{
+	HWND display = GetDesktopWindow();
+	RECT rect{ };
+
+	GetWindowRect(display, &rect);
+	mFrameWidth = rect.right - rect.left;
+	mFrameHeight = rect.bottom - rect.top;
+
+	OnResize();
+
+	mSwapChain->GetFullscreenState(&mFullScreen, NULL);
+	mSwapChain->SetFullscreenState(!mFullScreen, NULL);
+
+	if (mFullScreen)
+	{
+		std::wostringstream wss;
+		wss << mFrameWidth << " " << mFrameHeight;
+		MessageBox(nullptr, wss.str().c_str(), L"Hi", MB_OK);
 	}
 }
 

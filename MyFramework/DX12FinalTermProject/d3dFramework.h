@@ -33,6 +33,7 @@ private:
 	void QueryVideoMemory(IDXGIAdapter1* adapter);
 
 	void UpdateFrameStates();
+	void ChangeFullScreenState();
 
 protected:
 	void WaitUntilGPUComplete();
