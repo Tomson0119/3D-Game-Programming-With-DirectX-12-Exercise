@@ -253,86 +253,87 @@ BoxMesh::~BoxMesh()
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-GridMesh::GridMesh(
+HeightMapGridMesh::HeightMapGridMesh(
 	ID3D12Device* device,
 	ID3D12GraphicsCommandList* cmdList,
+	int xStart, int zStart,
 	int width, int depth,
-	int divw, int divd,
 	const XMFLOAT3& scale,
-	const std::wstring& heightMapFile)
-	: mWidth(width), mDepth(depth), mScale(scale)
+	XMFLOAT4& color,
+	HeightMapImage* context)
+	: Mesh(), mWidth(width), mDepth(depth), mScale(scale)
 {
+	const UINT verticesCount = width * depth;
+	const UINT indicesCount = (width * 2) * (depth - 1) + (depth - 1 - 1);
 
-	if (heightMapFile != L"")
-		mHeightMap = std::make_unique<HeightMapImage>(heightMapFile, mWidth + 1, mDepth + 1, scale);
+	std::vector<DiffuseVertex> vertices(verticesCount);
+	std::vector<UINT> indices(indicesCount);
 
-	UINT xCount = divw + 1;
-	UINT zCount = divd + 1;
-
-	UINT vertexCount = xCount * zCount;
-	UINT indiceCount = ((xCount * 2) * (zCount - 1)) + (zCount - 1 - 1);
-
-	float du = 1.0f / divw;
-	float dv = 1.0f / divd;
-
-	float dx = mWidth * du;
-	float dz = mDepth * dv;
-
-	float hw = 0.5f * mWidth;
-	float hd = 0.5f * mDepth;
-
-	std::vector<Vertex> vertices(vertexCount);
 	size_t k = 0;
-	for (UINT z = 0; z < zCount; ++z)
+	for (int z = zStart; z < (zStart + depth); ++z)
 	{
-		for (UINT x = 0; x < xCount; ++x)
+		for (int x = xStart; x < (xStart + width); ++x)
 		{
-			float xpos = -hw + dx * x;
-			float zpos = -hd + dz * z;
-
-			bool reverse = (z & 1) ? true : false;
-			float height = (mHeightMap) ? mHeightMap->GetHeight(xpos + hw, zpos + hd, reverse) : 0.0f;			
-			XMFLOAT3 normal = (mHeightMap) ? mHeightMap->GetNormal(xpos + hw, zpos + hd, reverse) : XMFLOAT3(0.0f, 1.0f, 0.0f);
-
-			vertices[k].Position = XMFLOAT3((xpos * mScale.x), height, (zpos * mScale.z));
-			vertices[k].Normal = normal;
-			vertices[k].TexCoord.x = x * du;
-			vertices[k++].TexCoord.y = 1.0f - z * dv;
+			vertices[k].Position = XMFLOAT3((x * mScale.x), GetHeight(x, z, context), (z * mScale.z));
+			vertices[k++].Color = Vector4::Add(color, GetColor(x, z, context));
 		}
-	}
+	}		
 
-	std::vector<UINT> indices(indiceCount);	
 	k = 0;
-	for (UINT z = 0; z < zCount - 1; ++z)
+	for (UINT z = 0; z < depth - 1; ++z)
 	{
 		if (!(z & 1))
 		{
-			for (UINT x = 0; x < xCount; ++x)
+			for (UINT x = 0; x < width; ++x)
 			{
-				if ((x == 0) && (z > 0)) 
-					indices[k++] = x + (z * xCount);
-				indices[k++] = x + (z * xCount);
-				indices[k++] = x + ((z + 1) * xCount);
+				if ((x == 0) && (z > 0))
+					indices[k++] = x + (z * width);
+				indices[k++] = x + (z * width);
+				indices[k++] = x + ((z + 1) * width);
 			}
 		}
 		else
 		{
-			for (int x = xCount - 1; x >= 0; --x)
+			for (int x = width - 1; x >= 0; --x)
 			{
-				if (x == (xCount - 1))
-					indices[k++] = x + (z * xCount);
-				indices[k++] = x + (z * xCount);
-				indices[k++] = x + ((z + 1) * xCount);
+				if (x == (width - 1))
+					indices[k++] = x + (z * width);
+				indices[k++] = x + (z * width);
+				indices[k++] = x + ((z + 1) * width);
 			}
 		}
 	}
 
-	Mesh::CreateResourceInfo(device, cmdList, sizeof(Vertex), sizeof(UINT),
+	Mesh::CreateResourceInfo(device, cmdList, sizeof(DiffuseVertex), sizeof(UINT),
 		vertices.data(), (UINT)vertices.size(), indices.data(), (UINT)indices.size());
 
 	mPrimitiveTopology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
 }
 
-GridMesh::~GridMesh()
+HeightMapGridMesh::~HeightMapGridMesh()
 {
+}
+
+float HeightMapGridMesh::GetHeight(int x, int z, HeightMapImage* context) const
+{
+	float height = context->GetPixelValue(x + (z * mWidth));
+	XMFLOAT3 scale = context->GetScale();
+	return height * scale.y;
+}
+
+XMFLOAT4 HeightMapGridMesh::GetColor(int x, int z, HeightMapImage* context) const
+{
+	XMFLOAT3 litDir = Vector3::Normalize(XMFLOAT3(-1.0f, 1.0f, 1.0f));
+	XMFLOAT3 scale = context->GetScale();
+	XMFLOAT4 incidentLitColor = XMFLOAT4(0.9f, 0.8f, 0.4f, 1.0f);
+	
+	float reflect = Vector3::Dot(context->GetNormal(x, z), litDir);
+	reflect += Vector3::Dot(context->GetNormal(x + 1, z), litDir);
+	reflect += Vector3::Dot(context->GetNormal(x + 1, z + 1), litDir);
+	reflect += Vector3::Dot(context->GetNormal(x, z + 1), litDir);
+
+	reflect = (reflect / 4.0f) + 0.05f;
+	reflect = Math::ClampFloat(reflect, 0.25f, 1.0f);
+	
+	return Vector4::Multiply(reflect, incidentLitColor);
 }

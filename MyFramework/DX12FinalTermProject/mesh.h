@@ -10,7 +10,9 @@ struct Vertex
 		   float u,  float v)
 		: Position(x, y, z), Normal(nx, ny, nz), TexCoord(u, v) { }
 
-	Vertex(XMFLOAT3 pos, XMFLOAT3 normal, XMFLOAT2 texC)
+	Vertex(const XMFLOAT3& pos,
+		   const XMFLOAT3& normal,
+		   const XMFLOAT2& texC)
 		: Position(pos), Normal(normal), TexCoord(texC) { }
 
 	XMFLOAT3 Position;
@@ -18,6 +20,23 @@ struct Vertex
 	XMFLOAT2 TexCoord;
 };
 
+struct DiffuseVertex
+{
+	DiffuseVertex() = default;
+	DiffuseVertex(float x, float y, float z,
+				  const XMFLOAT4& color)
+		: Position(x, y, z), Color(color) { }
+	DiffuseVertex(const XMFLOAT3& pos,
+				  const XMFLOAT4& color)
+		: Position(pos), Color(color) { }
+
+	XMFLOAT3 Position;
+	XMFLOAT4 Color;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+//
 class Mesh 
 {
 public:
@@ -64,6 +83,9 @@ public:
 	BoundingOrientedBox mOOBB;
 };
 
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+//
 class BoxMesh : public Mesh
 {
 public:
@@ -74,23 +96,29 @@ public:
 	virtual ~BoxMesh();
 };
 
-class GridMesh : public Mesh
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+class HeightMapGridMesh : public Mesh
 {
 public:
-	GridMesh(
+	HeightMapGridMesh(
 		ID3D12Device* device,
 		ID3D12GraphicsCommandList* cmdList,
+		int xStart, int zStart,
 		int width, int depth,
-		int divw, int divd,
 		const XMFLOAT3& scale,
-		const std::wstring& heightMapFile=L"");
+		XMFLOAT4& color,
+		HeightMapImage* context);
 
-	virtual ~GridMesh();
+	virtual ~HeightMapGridMesh();
 
+	float GetHeight(int x, int z, HeightMapImage* context) const;
+	XMFLOAT4 GetColor(int x, int z, HeightMapImage* context) const;
+	
 private:
-	std::unique_ptr<HeightMapImage> mHeightMap;
+	XMFLOAT3 mScale = {};
 
 	int mWidth = 0;
-	int mDepth = 0;
-	XMFLOAT3 mScale = {};
+	int mDepth = 0;	
 };
