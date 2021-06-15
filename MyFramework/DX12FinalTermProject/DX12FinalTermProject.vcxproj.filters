@@ -109,13 +109,16 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\defaultColor.hlsl">
+    <None Include="Shaders\defaultLit.hlsl">
       <Filter>Shaders</Filter>
     </None>
     <None Include="Shaders\lighting.hlsl">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="Shaders\onlyColor.hlsl">
+    <None Include="Shaders\diffuse.hlsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\defaultColor.hlsl">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>
