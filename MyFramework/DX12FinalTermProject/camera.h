@@ -1,5 +1,11 @@
 #pragma once
 
+enum class CameraMode : int
+{
+	FIRST_PERSON_CAMERA = 0,
+	THIRD_PERSON_CAMERA
+};
+
 class Camera
 {
 public:
@@ -66,6 +72,8 @@ protected:
 
 	BoundingFrustum mFrustumView;
 	BoundingFrustum mFrustumWorld;
+
+	CameraMode mMode = CameraMode::THIRD_PERSON_CAMERA;
 };
 
 //class TopViewCamera : public Camera
