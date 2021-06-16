@@ -8,13 +8,10 @@ HeightMapImage::HeightMapImage(const std::wstring& path,
 	const int imgSize = width * depth;
 
 	BYTE* pixels = new BYTE[imgSize];
-	HANDLE file = CreateFile(path.c_str(), GENERIC_READ, 0, NULL,
-		OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_ATTRIBUTE_READONLY, NULL);
+	std::ifstream file{ path, std::ios::binary };
+	file.read(reinterpret_cast<char*>(pixels), imgSize);
+	file.close();
 	
-	DWORD read{ };
-	assert(ReadFile(file, pixels, imgSize, &read, NULL) && "Fail to read height map");
-	CloseHandle(file);
-
 	mPixels.resize(imgSize);
 	for (size_t z = 0; z < mDepth; ++z)
 	{
