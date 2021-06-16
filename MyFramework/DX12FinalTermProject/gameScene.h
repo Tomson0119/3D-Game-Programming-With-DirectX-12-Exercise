@@ -58,7 +58,7 @@ private:
 
 	std::vector<std::unique_ptr<GameObject>> mGameObjects;
 
-	Player* mPlayer;
+	Player* mPlayer = nullptr;
 
 	POINT mLastMousePos;
 

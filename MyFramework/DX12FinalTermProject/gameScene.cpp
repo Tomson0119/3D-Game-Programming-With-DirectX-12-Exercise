@@ -62,7 +62,7 @@ void GameScene::Update(const GameTimer& timer)
 	OnKeyboardInput(timer);
 	OnMouseInput(timer);
 
-	mCamera->UpdateViewMatrix();
+	mCamera->Update(dt);
 
 	for (const auto& obj : mGameObjects)
 		obj->Update(dt);
@@ -104,8 +104,23 @@ void GameScene::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
 	switch (uMsg)
 	{
 	case WM_KEYDOWN:
-		if (wParam == 'G')
+		switch (wParam)
+		{
+		case 'G':
 			mShowWireFrame = !mShowWireFrame;
+			break;
+
+		case '1':
+			if (mPlayer) mPlayer->ChangeCameraMode((int)CameraMode::FIRST_PERSON_CAMERA);
+			break;
+
+		case '2':
+			if (mPlayer) mPlayer->ChangeCameraMode((int)CameraMode::THIRD_PERSON_CAMERA);
+			break;
+		case '3':
+			if (mPlayer) mPlayer->ChangeCameraMode((int)CameraMode::TOP_DOWN_CAMERA);
+			break;
+		}
 		break;
 	}
 }
@@ -115,32 +130,32 @@ void GameScene::OnKeyboardInput(const GameTimer& timer)
 	const float dt = timer.ElapsedTime();
 
 	if (GetAsyncKeyState('W') & 0x8000) {
-		mCamera->Walk(10.0f * dt);
+		//mCamera->Walk(10.0f * dt);
 		mPlayer->Walk(10.0f * dt);
 	}
 
 	if (GetAsyncKeyState('A') & 0x8000) {
-		mCamera->Strafe(-10.0f * dt);
+		//mCamera->Strafe(-10.0f * dt);
 		mPlayer->Strafe(-10.0f * dt);
 	}
 	
 	if (GetAsyncKeyState('S') & 0x8000) {
-		mCamera->Walk(-10.0f * dt);
+		//mCamera->Walk(-10.0f * dt);
 		mPlayer->Walk(-10.0f * dt);
 	}
 
 	if (GetAsyncKeyState('D') & 0x8000) {
-		mCamera->Strafe(10.0f * dt);
+		//mCamera->Strafe(10.0f * dt);
 		mPlayer->Strafe(10.0f * dt);
 	}
 
 	if (GetAsyncKeyState(VK_SPACE) & 0x8000) {
-		mCamera->Upward(10.0f * dt);
+		//mCamera->Upward(10.0f * dt);
 		mPlayer->Upward(10.0f * dt, false);
 	}
 
 	if (GetAsyncKeyState(VK_CONTROL) & 0x8000) {
-		mCamera->Upward(-10.0f * dt);
+		//mCamera->Upward(-10.0f * dt);
 		mPlayer->Upward(10.0f * dt, false);
 	}
 }
@@ -157,8 +172,8 @@ void GameScene::OnMouseInput(const GameTimer& timer)
 		float delta_x = 0.25f * static_cast<float>(currMousePos.x - mLastMousePos.x);
 		float delta_y = 0.25f * static_cast<float>(currMousePos.y - mLastMousePos.y);
 
-		mCamera->RotateY(delta_x);
-		mCamera->Pitch(delta_y);
+		//mCamera->RotateY(delta_x);
+		//mCamera->Pitch(delta_y);
 
 		mPlayer->RotateY(delta_x);
 		mPlayer->Pitch(delta_y);
@@ -192,45 +207,23 @@ void GameScene::BuildRootSignature(ID3D12Device* device)
 
 void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
 {
-	/*mMeshes["body"] = std::make_unique<Mesh>();
-	mMeshes["body"]->LoadFromBinary(device, cmdList, L"Models\\Gun.bin");
-	mMeshes["slide"] = std::make_unique<Mesh>();
-	mMeshes["slide"]->LoadFromBinary(device, cmdList, L"Models\\Slide.bin");
-
-	auto pistol = std::make_unique<GameObject>(0, mMeshes["body"].get());
-	pistol->SetPosition(0.0f, 0.0f, 0.0f);
-	pistol->SetMaterial(XMFLOAT4(1.0f, 0.4f, 0.0f, 1.0f), XMFLOAT3(0.1f, 0.1f, 0.1f), 0.125f);
-
-	auto slide = std::make_unique<GameObject>(1, mMeshes["slide"].get());
-	slide->SetPosition(0.0f, 2.0f, 0.0f);
-	slide->SetMaterial(XMFLOAT4(1.0f, 0.4f, 0.0f, 1.0f), XMFLOAT3(0.1f, 0.1f, 0.1f), 0.125f);
-
-	mPipelines["defaultColor"]->SetObject(pistol.get());
-	mPipelines["defaultColor"]->SetObject(slide.get());
-	
-	mPipelines["wiredColor"]->SetObject(pistol.get());
-	mPipelines["wiredColor"]->SetObject(slide.get());
-
-	mGameObjects.emplace_back(std::move(pistol));
-	mGameObjects.emplace_back(std::move(slide));*/
-
-	mMeshes["box"] = std::make_unique<BoxMesh>(device, cmdList, 2.0f, 2.0f, 2.0f);
-
+	// Terrain
 	auto terrain = std::make_unique<TerrainObject>(0);
 	terrain->BuildTerrainMeshes(device, cmdList, 257, 257, 257, 257,
-		XMFLOAT3(2.0f, 0.5f, 2.0f), XMFLOAT4(0.0f, 0.4f, 0.0f, 1.0f),
+		XMFLOAT3(2.0f, 0.5f, 2.0f), XMFLOAT4(0.2f, 0.4f, 0.0f, 1.0f),
 		L"Resources\\heightmap1.raw");
 
-	mPipelines["defaultColor"]->SetObject(terrain.get());
-	mPipelines["wiredColor"]->SetObject(terrain.get());
-
-	mGameObjects.emplace_back(std::move(terrain));
+	// Player(Box)
+	mMeshes["box"] = std::make_unique<BoxMesh>(device, cmdList, 2.0f, 2.0f, 2.0f);
 
 	auto box = std::make_unique<TerrainPlayer>(1, mMeshes["box"].get(), mCamera.get(), terrain.get());
-	box->SetPosition(0.0f, 0.0f, 0.0f);
-	box->SetMaterial(XMFLOAT4(1.0f, 0.4f, 0.0f, 1.0f), XMFLOAT3(0.4f, 0.4f, 0.4f), 0.5f);
-	
+	box->SetMaterial(XMFLOAT4(0.8f, 0.6f, 0.0f, 1.0f), XMFLOAT3(0.4f, 0.4f, 0.4f), 0.125f);
 	mPlayer = box.get();
+
+	// Setting Pipelines and Objects container
+	mPipelines["defaultColor"]->SetObject(terrain.get());
+	mPipelines["wiredColor"]->SetObject(terrain.get());
+	mGameObjects.emplace_back(std::move(terrain));
 
 	mPipelines["defaultLit"]->SetObject(box.get());
 	mPipelines["wiredLit"]->SetObject(box.get());
