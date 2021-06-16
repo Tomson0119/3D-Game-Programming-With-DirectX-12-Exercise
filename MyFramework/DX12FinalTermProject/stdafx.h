@@ -173,6 +173,11 @@ namespace Vector3
 		return VectorToFloat3(XMVector3TransformNormal(XMLoadFloat3(&src), mat));
 	}
 
+	inline XMFLOAT3 TransformCoord(XMFLOAT3& src, XMFLOAT4X4& mat)
+	{
+		return VectorToFloat3(XMVector3TransformCoord(XMLoadFloat3(&src), XMLoadFloat4x4(&mat)));
+	}
+
 	inline XMFLOAT3 Normalize(XMFLOAT3& v)
 	{
 		return VectorToFloat3(XMVector3Normalize(XMLoadFloat3(&v)));
