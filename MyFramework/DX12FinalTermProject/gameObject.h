@@ -44,7 +44,10 @@ public:
 	void Scale(float scale);
 
 	XMFLOAT3 GetPosition() const { return mPosition; }
-
+	XMFLOAT3 GetRight() const { return mRight; }
+	XMFLOAT3 GetLook() const { return mLook; }
+	XMFLOAT3 GetUp() const { return mUp; }
+	
 	UINT CBIndex() const { return mCBIndex; }
 	virtual ObjectConstants GetObjectConstants();
 	
