@@ -114,23 +114,35 @@ void GameScene::OnKeyboardInput(const GameTimer& timer)
 {
 	const float dt = timer.ElapsedTime();
 
-	if (GetAsyncKeyState('W') & 0x8000)
+	if (GetAsyncKeyState('W') & 0x8000) {
 		mCamera->Walk(10.0f * dt);
+		mPlayer->Walk(10.0f * dt);
+	}
 
-	if (GetAsyncKeyState('A') & 0x8000)
+	if (GetAsyncKeyState('A') & 0x8000) {
 		mCamera->Strafe(-10.0f * dt);
+		mPlayer->Strafe(-10.0f * dt);
+	}
 	
-	if (GetAsyncKeyState('S') & 0x8000)
+	if (GetAsyncKeyState('S') & 0x8000) {
 		mCamera->Walk(-10.0f * dt);
+		mPlayer->Walk(-10.0f * dt);
+	}
 
-	if (GetAsyncKeyState('D') & 0x8000)
+	if (GetAsyncKeyState('D') & 0x8000) {
 		mCamera->Strafe(10.0f * dt);
+		mPlayer->Strafe(10.0f * dt);
+	}
 
-	if (GetAsyncKeyState(VK_SPACE) & 0x8000)
+	if (GetAsyncKeyState(VK_SPACE) & 0x8000) {
 		mCamera->Upward(10.0f * dt);
+		mPlayer->Upward(10.0f * dt, false);
+	}
 
-	if (GetAsyncKeyState(VK_CONTROL) & 0x8000)
+	if (GetAsyncKeyState(VK_CONTROL) & 0x8000) {
 		mCamera->Upward(-10.0f * dt);
+		mPlayer->Upward(10.0f * dt, false);
+	}
 }
 
 void GameScene::OnMouseInput(const GameTimer& timer)
@@ -142,11 +154,14 @@ void GameScene::OnMouseInput(const GameTimer& timer)
 		POINT currMousePos;
 		GetCursorPos(&currMousePos);
 		
-		float delta_x = XMConvertToRadians(0.25f * static_cast<float>(currMousePos.x - mLastMousePos.x));
-		float delta_y = XMConvertToRadians(0.25f * static_cast<float>(currMousePos.y - mLastMousePos.y));
+		float delta_x = 0.25f * static_cast<float>(currMousePos.x - mLastMousePos.x);
+		float delta_y = 0.25f * static_cast<float>(currMousePos.y - mLastMousePos.y);
 
 		mCamera->RotateY(delta_x);
 		mCamera->Pitch(delta_y);
+
+		mPlayer->RotateY(delta_x);
+		mPlayer->Pitch(delta_y);
 
 		mLastMousePos = currMousePos;
 	}
@@ -199,22 +214,23 @@ void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList
 	mGameObjects.emplace_back(std::move(pistol));
 	mGameObjects.emplace_back(std::move(slide));*/
 
-	mMeshes["grid"] = std::make_unique<HeightMapGridMesh>(device, cmdList, 14, 14, 7, 7,
-		XMFLOAT3(1.0f, 1.0f, 1.0f), L"Resources\\HeightMap.raw");
 	mMeshes["box"] = std::make_unique<BoxMesh>(device, cmdList, 2.0f, 2.0f, 2.0f);
 
-	auto grid = std::make_unique<TerrainObject>(0, mMeshes["grid"].get());
-	grid->SetPosition(0.0f, 0.0f, 0.0f);
-	grid->SetMaterial(XMFLOAT4(0.5f, 0.5f, 0.0f, 1.0f), XMFLOAT3(0.1f, 0.1f, 0.1f), 0.125f);
+	auto terrain = std::make_unique<TerrainObject>(0);
+	terrain->BuildTerrainMeshes(device, cmdList, 257, 257, 257, 257,
+		XMFLOAT3(2.0f, 0.5f, 2.0f), XMFLOAT4(0.0f, 0.4f, 0.0f, 1.0f),
+		L"Resources\\heightmap1.raw");
 
-	mPipelines["defaultColor"]->SetObject(grid.get());
-	mPipelines["wiredColor"]->SetObject(grid.get());
+	mPipelines["defaultColor"]->SetObject(terrain.get());
+	mPipelines["wiredColor"]->SetObject(terrain.get());
 
-	mGameObjects.emplace_back(std::move(grid));
+	mGameObjects.emplace_back(std::move(terrain));
 
-	auto box = std::make_unique<GameObject>(1, mMeshes["box"].get());
+	auto box = std::make_unique<TerrainPlayer>(1, mMeshes["box"].get(), mCamera.get(), terrain.get());
 	box->SetPosition(0.0f, 0.0f, 0.0f);
 	box->SetMaterial(XMFLOAT4(1.0f, 0.4f, 0.0f, 1.0f), XMFLOAT3(0.4f, 0.4f, 0.4f), 0.5f);
+	
+	mPlayer = box.get();
 
 	mPipelines["defaultLit"]->SetObject(box.get());
 	mPipelines["wiredLit"]->SetObject(box.get());
