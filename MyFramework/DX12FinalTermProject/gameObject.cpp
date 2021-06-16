@@ -2,16 +2,20 @@
 #include "gameObject.h"
 
 
-GameObject::GameObject(int offset, Mesh* mesh)
+GameObject::GameObject(int offset)
+	: mCBIndex((UINT)offset)
 {
-	mCBIndex = (UINT)offset;
-	mMesh = mesh;
+}
+
+GameObject::GameObject(int offset, Mesh* mesh)
+	: GameObject(offset)
+{
+	if(mesh) mMeshes.emplace_back(mesh);
 	UpdateBoudingBox();
 }
 
 GameObject::~GameObject()
 {
-	if (mBBObject) delete mBBObject;
 }
 
 void GameObject::UpdateConstants(ConstantBuffer<ObjectConstants>* objectCB)
@@ -31,7 +35,8 @@ void GameObject::Update(float elapsedTime)
 
 void GameObject::Draw(ID3D12GraphicsCommandList* cmdList)
 {
-	if (mMesh) mMesh->Draw(cmdList);
+	for (const auto& mesh : mMeshes)
+		mesh->Draw(cmdList);
 }
 
 void GameObject::UpdateTransform()
@@ -51,29 +56,18 @@ void GameObject::UpdateTransform()
 	mWorld(3, 0) = mPosition.x;
 	mWorld(3, 1) = mPosition.y;
 	mWorld(3, 2) = mPosition.z;
-
-	if (mBBObject) mBBObject->UpdateCoordinate(mWorld);
 }
 
 void GameObject::UpdateBoudingBox()
 {
-	if (mMesh)
-	{
-		mMesh->mOOBB.Transform(mOOBB, XMLoadFloat4x4(&mWorld));
+	for(const auto& mesh : mMeshes) {
+		mesh->mOOBB.Transform(mOOBB, XMLoadFloat4x4(&mWorld));
 		XMStoreFloat4(&mOOBB.Orientation, XMQuaternionNormalize(XMLoadFloat4(&mOOBB.Orientation)));
 	}
 }
 
 void GameObject::SetPosition(float x, float y, float z)
 {
-	if (mBBObject)
-	{
-		float dx = x - mPosition.x;
-		float dy = y - mPosition.y;
-		float dz = z - mPosition.z;
-
-		mBBObject->Move(dx, dy, dz);
-	}
 	mPosition = { x,y,z };
 }
 
@@ -94,8 +88,6 @@ void GameObject::Move(float dx, float dy, float dz)
 	mPosition.x += dx;
 	mPosition.y += dy;
 	mPosition.z += dz;
-
-	if (mBBObject) mBBObject->Move(dx, dy, dz);
 }
 
 void GameObject::Move(XMFLOAT3& dir, float dist)
@@ -105,19 +97,19 @@ void GameObject::Move(XMFLOAT3& dir, float dist)
 	Move(shift.x, shift.y, shift.z);
 }
 
-void GameObject::MoveStrafe(float dist, bool local)
+void GameObject::Strafe(float dist, bool local)
 {
 	XMFLOAT3 right = (local) ? mRight : XMFLOAT3(1.0f, 0.0f, 0.0f);
 	Move(right, dist);
 }
 
-void GameObject::MoveUp(float dist, bool local)
+void GameObject::Upward(float dist, bool local)
 {
 	XMFLOAT3 up = (local) ? mUp : XMFLOAT3(0.0f, 1.0f, 0.0f);
 	Move(up, dist);
 }
 
-void GameObject::MoveForward(float dist, bool local)
+void GameObject::Walk(float dist, bool local)
 {
 	XMFLOAT3 look = (local) ? mLook : XMFLOAT3(0.0f, 0.0f, 1.0f);
 	Move(look, dist);
@@ -153,10 +145,17 @@ void GameObject::Rotate(const XMFLOAT3& axis, float angle)
 	mLook = Vector3::TransformNormal(mLook, R);
 }
 
-void GameObject::RotateY(float angle)
+void GameObject::RotateY(float angle, bool local)
 {
 	XMMATRIX R = XMMatrixRotationY(XMConvertToRadians(angle));
 	mRight = Vector3::TransformNormal(mRight, R);
+	mUp = Vector3::TransformNormal(mUp, R);
+	mLook = Vector3::TransformNormal(mLook, R);
+}
+
+void GameObject::Pitch(float angle, bool local)
+{
+	XMMATRIX R = XMMatrixRotationAxis(XMLoadFloat3(&mRight), XMConvertToRadians(angle));
 	mUp = Vector3::TransformNormal(mUp, R);
 	mLook = Vector3::TransformNormal(mLook, R);
 }
@@ -176,59 +175,12 @@ void GameObject::Scale(float scale)
 	Scale(scale, scale, scale);
 }
 
-void GameObject::EnableBoundBoxRender(UINT offset, ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
-{
-	mBBObject = new BoundBoxObject(device, cmdList, offset, mOOBB);
-	mBBObject->SetPosition(mOOBB.Center);
-	mBBObject->SetMaterial(XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f), {}, 0.0f);
-	mBBObject->Move(mPosition.x, mPosition.y, mPosition.z);
-}
-
 ObjectConstants GameObject::GetObjectConstants()
 {
 	ObjectConstants objCnst = {};
 	objCnst.World = Matrix4x4::Transpose(mWorld);
 	objCnst.Mat = mMaterial;
 	return objCnst;
-}
-
-BoundBoxObject* GameObject::GetBoundBoxObject() const
-{
-	if (mBBObject) return mBBObject;
-	return nullptr;
-}
-
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-BoundBoxObject::BoundBoxObject(
-	ID3D12Device* device,
-	ID3D12GraphicsCommandList* cmdList,
-	UINT offset, const BoundingOrientedBox& bb)
-	: GameObject(offset, nullptr)
-{
-	float width = 2.0f * bb.Extents.x;
-	float height = 2.0f * bb.Extents.y;
-	float depth = 2.0f * bb.Extents.z;
-
-	mMesh = new BoxMesh(device, cmdList, width, height, depth);
-}
-
-BoundBoxObject::~BoundBoxObject()
-{
-	if (mMesh) delete mMesh;
-}
-
-void BoundBoxObject::Update(float elapsedTime)
-{
-	GameObject::UpdateTransform();
-}
-
-void BoundBoxObject::UpdateCoordinate(const XMFLOAT4X4& world)
-{
-	mRight = { world(0, 0), world(0, 1), world(0, 2) };
-	mUp    = { world(1, 0), world(1, 1), world(1, 2) };
-	mLook  = { world(2, 0), world(2, 1), world(2, 2) };
 }
 
 
@@ -257,4 +209,71 @@ void NonePlayerObject::Update(float elapsedTime)
 	}
 	mCurrSpeed += mAcceleration;
 	GameObject::Update(elapsedTime);
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+TerrainObject::TerrainObject(int offset)
+	: GameObject(offset, nullptr)
+{
+
+}
+
+TerrainObject::~TerrainObject()
+{
+	for (const auto& mesh : mMeshes)
+		delete mesh;
+	mMeshes.clear();
+}
+
+void TerrainObject::BuildTerrainMeshes(
+	ID3D12Device* device, 
+	ID3D12GraphicsCommandList* cmdList, 
+	int width, int depth, int blockWidth, int blockDepth,
+	const XMFLOAT3& scale, 
+	XMFLOAT4& color, 
+	const std::wstring& path)
+{
+	mWidth = width;
+	mDepth = depth;
+	mScale = scale;
+
+	int xQuadPerBlock = blockWidth - 1;
+	int zQuadPerBlock = blockDepth - 1;
+
+	mHeightMapImage = std::make_unique<HeightMapImage>(path, mWidth, mDepth, mScale);
+
+	long xBlocks = (mWidth - 1) / xQuadPerBlock;
+	long zBlocks = (mDepth - 1) / zQuadPerBlock;
+
+	for (const auto& mesh : mMeshes)
+		delete mesh;
+	mMeshes.clear();
+	
+	HeightMapGridMesh* gridMesh = nullptr;
+	for (int z = 0, zStart = 0; z < zBlocks; ++z)
+	{
+		for (int x = 0, xStart = 0; x < xBlocks; ++x)
+		{
+			xStart = x * (blockWidth - 1);
+			zStart = z * (blockDepth - 1);
+
+			gridMesh = new HeightMapGridMesh(device, cmdList, xStart, zStart,
+				blockWidth, blockDepth, scale, color, mHeightMapImage.get());
+			SetMesh(gridMesh);
+		}
+	}
+}
+
+float TerrainObject::GetHeight(float x, float z) const
+{
+	assert(mHeightMapImage && "HeightMapImage doesn't exist");
+	return mHeightMapImage->GetHeight(x / mScale.x, z / mScale.z) * mScale.y;
+}
+
+XMFLOAT3 TerrainObject::GetNormal(float x, float z) const
+{
+	assert(mHeightMapImage && "HeightMapImage doesn't exist");
+	return mHeightMapImage->GetNormal((int)(x / mScale.x), (int)(z / mScale.z));
 }
