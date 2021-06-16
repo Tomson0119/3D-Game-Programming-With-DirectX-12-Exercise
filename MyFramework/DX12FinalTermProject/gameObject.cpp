@@ -10,8 +10,7 @@ GameObject::GameObject(int offset)
 GameObject::GameObject(int offset, Mesh* mesh)
 	: GameObject(offset)
 {
-	if(mesh) mMeshes.emplace_back(mesh);
-	UpdateBoudingBox();
+	if (mesh) SetMesh(mesh);
 }
 
 GameObject::~GameObject()
@@ -60,10 +59,7 @@ void GameObject::UpdateTransform()
 
 void GameObject::UpdateBoudingBox()
 {
-	for(const auto& mesh : mMeshes) {
-		mesh->mOOBB.Transform(mOOBB, XMLoadFloat4x4(&mWorld));
-		XMStoreFloat4(&mOOBB.Orientation, XMQuaternionNormalize(XMLoadFloat4(&mOOBB.Orientation)));
-	}
+	
 }
 
 void GameObject::SetPosition(float x, float y, float z)
@@ -145,7 +141,7 @@ void GameObject::Rotate(const XMFLOAT3& axis, float angle)
 	mLook = Vector3::TransformNormal(mLook, R);
 }
 
-void GameObject::RotateY(float angle, bool local)
+void GameObject::RotateY(float angle)
 {
 	XMMATRIX R = XMMatrixRotationY(XMConvertToRadians(angle));
 	mRight = Vector3::TransformNormal(mRight, R);
@@ -181,34 +177,6 @@ ObjectConstants GameObject::GetObjectConstants()
 	objCnst.World = Matrix4x4::Transpose(mWorld);
 	objCnst.Mat = mMaterial;
 	return objCnst;
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-//
-NonePlayerObject::NonePlayerObject(int offset, Mesh* mesh)
-	: GameObject(offset, mesh)
-{
-}
-
-NonePlayerObject::~NonePlayerObject()
-{
-}
-
-void NonePlayerObject::SetInitialSpeed(float speed)
-{
-	mInitialSpeed = speed;
-	mCurrSpeed = speed;
-}
-
-void NonePlayerObject::Update(float elapsedTime)
-{
-	if (mActive)
-	{
-		if (mCurrSpeed) Move(mMovingDirection, mCurrSpeed * elapsedTime);
-	}
-	mCurrSpeed += mAcceleration;
-	GameObject::Update(elapsedTime);
 }
 
 

@@ -21,31 +21,31 @@ public:
 	void UpdateBoudingBox();
 
 	void SetMesh(Mesh* mesh) { mMeshes.emplace_back(mesh); }
-	void SetPosition(float x, float y, float z);
-	void SetPosition(XMFLOAT3 pos);
+	virtual void SetPosition(float x, float y, float z);
+	virtual void SetPosition(XMFLOAT3 pos);
 
 	virtual void SetMaterial(XMFLOAT4 color, XMFLOAT3 frenel, float roughness);
 
 	void Move(float dx, float dy, float dz);
 	void Move(XMFLOAT3& dir, float dist);
 
-	void Strafe(float dist, bool local=true);
-	void Upward(float dist, bool local=true);
-	void Walk(float dist, bool local=true);
+	virtual void Strafe(float dist, bool local=true);
+	virtual void Upward(float dist, bool local=true);
+	virtual void Walk(float dist, bool local=true);
 
 	void Rotate(float pitch, float yaw, float roll);
 	void Rotate(const XMFLOAT3& axis, float angle);
 
-	void RotateY(float angle, bool local=true);
-	void Pitch(float angle, bool local=true);
+	virtual void RotateY(float angle);
+	virtual void Pitch(float angle, bool local=true);
 
 	void Scale(float xScale, float yScale, float zScale);
 	void Scale(const XMFLOAT3& scale);
 	void Scale(float scale);
 
+	XMFLOAT3 GetPosition() const { return mPosition; }
+
 	UINT CBIndex() const { return mCBIndex; }
-	BoundingOrientedBox OOBB() const { return mOOBB; }
-	XMFLOAT3 GetPos() const { return mPosition; }
 	virtual ObjectConstants GetObjectConstants();
 	
 protected:
@@ -53,47 +53,13 @@ protected:
 	XMFLOAT3 mRight = { 1.0f, 0.0f, 0.0f };
 	XMFLOAT3 mUp = { 0.0f, 1.0f, 0.0f };
 	XMFLOAT3 mLook = { 0.0f, 0.0f, 1.0f };
-	XMFLOAT3 mScaling = { 1.0f, 1.0f, 1.0f };	
+	XMFLOAT3 mScaling = { 1.0f, 1.0f, 1.0f };
 
 	XMFLOAT4X4 mWorld = Matrix4x4::Identity4x4();
 	Material mMaterial = {};
 
 	std::vector<Mesh*> mMeshes;
 	UINT mCBIndex = 0;
-
-	BoundingOrientedBox mOOBB = {};
-};
-
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-class NonePlayerObject : public GameObject
-{
-public:
-	NonePlayerObject(int offset, Mesh* mesh);
-	NonePlayerObject(const NonePlayerObject& rhs) = delete;
-	NonePlayerObject& operator=(const NonePlayerObject& rhs) = delete;
-	virtual ~NonePlayerObject();
-	
-	void SetInitialSpeed(float speed);
-	void SetMovingDirection(XMFLOAT3& dir) { mMovingDirection = dir; }
-	void SetMovingSpeed(float speed) { mCurrSpeed = speed; }
-	void SetAcceleration(float acel) { mAcceleration = acel; }
-	void SetActive(bool flag) { mActive = flag; }
-
-	virtual void Update(float elapsedTime);
-
-	bool IsActive() const { return mActive; }
-	float GetInitialSpeed() const { return mInitialSpeed; }
-	XMFLOAT3 GetMovingDirection() const { return mMovingDirection; }
-
-private:
-	XMFLOAT3 mMovingDirection = { };
-
-	bool mActive = true;
-	float mInitialSpeed = 0.0f;
-	float mCurrSpeed = 0.0f;
-	float mAcceleration = 0.1f;
 };
 
 
