@@ -56,15 +56,11 @@ private:
 	std::unordered_map<std::string, std::unique_ptr<Shader>> mShaders;
 	std::unordered_map<std::string, std::unique_ptr<Pipeline>> mPipelines;
 
-	std::vector<BoundBoxObject*> mBoundBoxes;
 	std::vector<std::unique_ptr<GameObject>> mGameObjects;
 
 	Player* mPlayer;
-	std::array<GameObject*, 2> mWallObjects;
-	std::array<NonePlayerObject*, 10> mNPOs;
 
 	POINT mLastMousePos;
 
 	bool mShowWireFrame = false;
-	float mScore = 0.0f;
 };
