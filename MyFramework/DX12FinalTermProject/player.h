@@ -11,16 +11,6 @@ public:
 	Player& operator=(const Player& rhs) = delete;
 	virtual ~Player();
 
-	virtual void SetPosition(float x, float y, float z);
-	virtual void SetPosition(XMFLOAT3 pos);
-
-	virtual void Strafe(float dist, bool local=true);
-	virtual void Upward(float dist, bool local=true);
-	virtual void Walk(float dist, bool local=true);
-
-	virtual void RotateY(float angle);
-	virtual void Pitch(float angle, bool local=true);
-
 public:
 	void SetCamera(Camera* camera) { mCamera = camera; mCamera->SetPlayer(this); }
 	void SetPlayerContext(void* context) { mPlayerUpdateContext = context; }
@@ -33,7 +23,7 @@ public:
 	XMFLOAT3 GetGravity() const { return mGravity; }
 
 public:
-	virtual void ChangeCameraMode(int cameraMode);
+	virtual Camera* ChangeCameraMode(int cameraMode);
 	virtual void OnPlayerUpdate(float elapsedTime) { }
 	virtual void OnCameraUpdate(float elapsedTime) { }
 
@@ -62,7 +52,7 @@ public:
 	TerrainPlayer& operator=(const TerrainPlayer& rhs) = delete;
 	virtual ~TerrainPlayer();
 
-	virtual void ChangeCameraMode(int cameraMode) override;
+	virtual Camera* ChangeCameraMode(int cameraMode) override;
 
 	virtual void OnPlayerUpdate(float elapsedTime) override;
 	virtual void OnCameraUpdate(float elapsedTime) override;

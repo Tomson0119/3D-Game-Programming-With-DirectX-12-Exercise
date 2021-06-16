@@ -1,5 +1,7 @@
 #include "stdafx.h"
 #include "camera.h"
+#include "player.h"
+
 
 Camera::Camera()
 {
@@ -20,13 +22,6 @@ void Camera::SetPosition(const XMFLOAT3& pos)
 {
 	mPosition = pos;
 	mViewDirty = true;
-}
-
-void Camera::ChangeMode(int mode)
-{
-	mMode = (CameraMode)mode;
-	// Do stuffs when mode has changed.
-	// ....
 }
 
 void Camera::SetLens(float fovY, float aspect, float zn, float zf)
@@ -158,20 +153,90 @@ bool Camera::IsInFrustum(BoundingOrientedBox& boundBox)
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 FirstPersonCamera::FirstPersonCamera()
+	: Camera()
 {
+	mMode = CameraMode::FIRST_PERSON_CAMERA;
 }
 
 FirstPersonCamera::~FirstPersonCamera()
 {
 }
 
+void FirstPersonCamera::Pitch(float angle)
+{
+	Camera::Pitch(angle);
+}
+
+void FirstPersonCamera::RotateY(float angle)
+{
+	Camera::RotateY(angle);
+}
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 ThirdPersonCamera::ThirdPersonCamera()
+	: Camera()
 {
+	mMode = CameraMode::THIRD_PERSON_CAMERA;
 }
 
 ThirdPersonCamera::~ThirdPersonCamera()
 {
 }
+
+void ThirdPersonCamera::Update(float elapsedTime)
+{
+	if (mPlayer)
+	{
+		XMFLOAT4X4 R = Matrix4x4::Identity4x4();
+		XMFLOAT3 right = mPlayer->GetRight();
+		XMFLOAT3 up = mPlayer->GetUp();
+		XMFLOAT3 look = mPlayer->GetLook();
+
+		R(0, 0) = right.x;  R(0, 1) = right.y;  R(0, 2) = right.z;
+		R(1, 0) = up.x;		R(1, 1) = up.y;		R(1, 2) = up.z;
+		R(2, 0) = look.x;	R(2, 1) = look.y;	R(2, 2) = look.z;
+
+		XMFLOAT3 offset = Vector3::TransformCoord(mOffset, R);
+		XMFLOAT3 position = Vector3::Add(mPlayer->GetPosition(), offset);
+		XMFLOAT3 direction = Vector3::Subtract(position, mPosition);
+
+		float length = Vector3::Length(direction);
+		direction = Vector3::Normalize(direction);
+		float timeLagScale = (mTimeLag) ? elapsedTime * (1.0f / mTimeLag) : 1.0f;
+		float distance = length * timeLagScale;
+
+		if (distance > length) distance = length;
+		if (length < 0.01f) distance = length;
+		if (distance > 0.0f)
+		{
+			mPosition = Vector3::Add(mPosition, direction, distance);
+			LookAt(mPlayer->GetPosition());
+		}
+	}
+}
+
+void ThirdPersonCamera::Pitch(float angle)
+{
+}
+
+void ThirdPersonCamera::RotateY(float angle)
+{
+
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+TopDownCamera::TopDownCamera()
+	: Camera()
+{
+	mMode = CameraMode::TOP_DOWN_CAMERA;
+}
+
+TopDownCamera::~TopDownCamera()
+{
+
+}
+

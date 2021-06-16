@@ -13,50 +13,33 @@ Player::~Player()
 {
 }
 
-void Player::SetPosition(float x, float y, float z)
-{
-	GameObject::SetPosition(x, y, z);
-	if (mCamera) {
-		XMFLOAT3 cameraOffset = mCamera->GetOffset();
-		mCamera->SetPosition(x + cameraOffset.x, y + cameraOffset.y, z + cameraOffset.z);
-	}
-}
-
-void Player::SetPosition(XMFLOAT3 pos)
-{
-	SetPosition(pos.x, pos.y, pos.z);
-}
-
-void Player::Strafe(float dist, bool local)
-{
-	GameObject::Strafe(dist, local);
-	//if (mCamera) mCamera->Strafe(dist);
-}
-
-void Player::Upward(float dist, bool local)
-{
-	GameObject::Upward(dist, local);
-	//if (mCamera) mCamera->Upward(dist);
-}
-
-void Player::Walk(float dist, bool local)
-{
-	GameObject::Walk(dist, local);
-	//if (mCamera) mCamera->Walk(dist);
-}
-
-void Player::RotateY(float angle)
-{
-	GameObject::RotateY(angle);
-}
-
-void Player::Pitch(float angle, bool local)
+Camera* Player::ChangeCameraMode(int cameraMode)
 {	
-	GameObject::Pitch(angle);
-}
+	if (mCamera && (int)mCamera->GetMode() == cameraMode)
+		return mCamera;
 
-void Player::ChangeCameraMode(int cameraMode)
-{
+	Camera* newCamera = nullptr;
+	switch (cameraMode)
+	{
+	case (int)CameraMode::FIRST_PERSON_CAMERA:
+		newCamera = new FirstPersonCamera();
+		break;
+
+	case (int)CameraMode::THIRD_PERSON_CAMERA:
+		newCamera = new ThirdPersonCamera();
+		break;
+
+	case (int)CameraMode::TOP_DOWN_CAMERA:
+		newCamera = new TopDownCamera();
+		break;
+	}
+
+	if (newCamera)
+	{
+		newCamera->SetMode(cameraMode);
+		newCamera->SetPlayer(this);
+	}
+	return newCamera;
 }
 
 
@@ -82,24 +65,43 @@ TerrainPlayer::~TerrainPlayer()
 {
 }
 
-void TerrainPlayer::ChangeCameraMode(int cameraMode)
+Camera* TerrainPlayer::ChangeCameraMode(int cameraMode)
 {
-	if (!mCamera) return;
-	mCamera->ChangeMode(cameraMode);
+	if (cameraMode == (int)mCamera->GetMode())
+		return mCamera;
+
+	mCamera = Player::ChangeCameraMode(cameraMode);
+
 	switch (mCamera->GetMode())
 	{
 	case CameraMode::FIRST_PERSON_CAMERA:
+		mFriction = 2.0f;
+		mGravity = { 0.0f, 0.0f, 0.0f };
+		mMaxVelocityXZ = 2.5f;
+		mMaxVelocityY = 40.0f;
+
 		mCamera->SetOffset(0.0f, 2.0f, 0.0f);
+		mCamera->SetTimeLag(0.0f);
 		break;
 
 	case CameraMode::THIRD_PERSON_CAMERA:
+		mFriction = 20.0f;
+		mGravity = { 0.0f, 0.0f, 0.0f };
+		mMaxVelocityXZ = 25.5f;
+		mMaxVelocityY = 40.0f;
+
 		mCamera->SetOffset(0.0f, 2.0f, -10.0f);
+		mCamera->SetTimeLag(0.25f);
 		break;
 
 	case CameraMode::TOP_DOWN_CAMERA:
 		mCamera->SetOffset(-10.0f, 10.0f, -10.0f);
 		break;
 	}
+
+	mCamera->SetPosition(Vector3::Add(mPosition, mCamera->GetOffset()));
+
+	return mCamera;
 }
 
 void TerrainPlayer::OnPlayerUpdate(float elapsedTime)

@@ -22,8 +22,8 @@ public:
 	void SetOffset(const XMFLOAT3& offset) { mOffset = offset; }
 
 	void SetPlayer(class Player* player) { mPlayer = player; }
-
-	void ChangeMode(int mode);
+	void SetMode(int mode) { mMode = (CameraMode)mode; }
+	void SetTimeLag(float lag) { mTimeLag = lag; }
 
 	void SetLens(float fovY, float aspect, float zn, float zf);
 	void LookAt(XMFLOAT3& pos, XMFLOAT3& target, XMFLOAT3& up);
@@ -76,6 +76,7 @@ protected:
 	XMFLOAT3 mLook = { 0.0f, 0.0f, 1.0f };
 
 	XMFLOAT3 mOffset = { 0.0f,0.0f,0.0f };
+	float mTimeLag = 0.0f;
 
 	float mFarZ = 0.0f;
 	float mNearZ = 0.0f;
@@ -122,6 +123,10 @@ public:
 	ThirdPersonCamera(const ThirdPersonCamera& rhs) = delete;
 	ThirdPersonCamera& operator=(const ThirdPersonCamera& rhs) = delete;
 	virtual ~ThirdPersonCamera();
+
+	virtual void Update(const float elapsedTime) override;
+	virtual void Pitch(float angle) override;
+	virtual void RotateY(float angle) override;
 };
 
 
