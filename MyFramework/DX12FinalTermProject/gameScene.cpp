@@ -5,7 +5,6 @@
 GameScene::GameScene()
 {
 	mCamera = std::make_unique<Camera>();
-	mCamera->SetPosition(0.0f, 2.0f, -15.0f);
 }
 
 GameScene::~GameScene()
@@ -111,14 +110,17 @@ void GameScene::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
 			break;
 
 		case '1':
-			if (mPlayer) mPlayer->ChangeCameraMode((int)CameraMode::FIRST_PERSON_CAMERA);
+			if (mPlayer) 
+				mCamera.reset(mPlayer->ChangeCameraMode((int)CameraMode::FIRST_PERSON_CAMERA));
 			break;
 
 		case '2':
-			if (mPlayer) mPlayer->ChangeCameraMode((int)CameraMode::THIRD_PERSON_CAMERA);
+			if (mPlayer)
+				mCamera.reset(mPlayer->ChangeCameraMode((int)CameraMode::THIRD_PERSON_CAMERA));
 			break;
 		case '3':
-			if (mPlayer) mPlayer->ChangeCameraMode((int)CameraMode::TOP_DOWN_CAMERA);
+			if (mPlayer)
+				mCamera.reset(mPlayer->ChangeCameraMode((int)CameraMode::TOP_DOWN_CAMERA));
 			break;
 		}
 		break;
@@ -130,32 +132,26 @@ void GameScene::OnKeyboardInput(const GameTimer& timer)
 	const float dt = timer.ElapsedTime();
 
 	if (GetAsyncKeyState('W') & 0x8000) {
-		//mCamera->Walk(10.0f * dt);
 		mPlayer->Walk(10.0f * dt);
 	}
 
 	if (GetAsyncKeyState('A') & 0x8000) {
-		//mCamera->Strafe(-10.0f * dt);
 		mPlayer->Strafe(-10.0f * dt);
 	}
 	
 	if (GetAsyncKeyState('S') & 0x8000) {
-		//mCamera->Walk(-10.0f * dt);
 		mPlayer->Walk(-10.0f * dt);
 	}
 
 	if (GetAsyncKeyState('D') & 0x8000) {
-		//mCamera->Strafe(10.0f * dt);
 		mPlayer->Strafe(10.0f * dt);
 	}
 
 	if (GetAsyncKeyState(VK_SPACE) & 0x8000) {
-		//mCamera->Upward(10.0f * dt);
 		mPlayer->Upward(10.0f * dt, false);
 	}
 
 	if (GetAsyncKeyState(VK_CONTROL) & 0x8000) {
-		//mCamera->Upward(-10.0f * dt);
 		mPlayer->Upward(10.0f * dt, false);
 	}
 }
@@ -171,9 +167,6 @@ void GameScene::OnMouseInput(const GameTimer& timer)
 		
 		float delta_x = 0.25f * static_cast<float>(currMousePos.x - mLastMousePos.x);
 		float delta_y = 0.25f * static_cast<float>(currMousePos.y - mLastMousePos.y);
-
-		//mCamera->RotateY(delta_x);
-		//mCamera->Pitch(delta_y);
 
 		mPlayer->RotateY(delta_x);
 		mPlayer->Pitch(delta_y);
