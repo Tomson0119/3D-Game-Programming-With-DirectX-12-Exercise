@@ -22,6 +22,13 @@ void Camera::SetPosition(const XMFLOAT3& pos)
 	mViewDirty = true;
 }
 
+void Camera::ChangeMode(int mode)
+{
+	mMode = (CameraMode)mode;
+	// Do stuffs when mode has changed.
+	// ....
+}
+
 void Camera::SetLens(float fovY, float aspect, float zn, float zf)
 {
 	mNearWindow.y = 2.0f * tanf(fovY * 0.5f) * zn;
@@ -50,6 +57,11 @@ void Camera::LookAt(XMFLOAT3& pos, XMFLOAT3& target, XMFLOAT3& up)
 	mUp = Vector3::Cross(mLook, mRight);
 
 	mViewDirty = true;
+}
+
+void Camera::LookAt(XMFLOAT3& target)
+{
+	LookAt(mPosition, target, XMFLOAT3(0.0f, 1.0f, 0.0f));
 }
 
 XMFLOAT4X4 Camera::GetView() const
@@ -107,6 +119,11 @@ void Camera::RotateY(float angle)
 	mViewDirty = true;
 }
 
+void Camera::Update(const float elapsedTime)
+{
+	UpdateViewMatrix();
+}
+
 void Camera::UpdateViewMatrix()
 {
 	if (mViewDirty)
@@ -135,4 +152,26 @@ void Camera::UpdateViewMatrix()
 bool Camera::IsInFrustum(BoundingOrientedBox& boundBox)
 {
 	return mFrustumWorld.Intersects(boundBox);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+FirstPersonCamera::FirstPersonCamera()
+{
+}
+
+FirstPersonCamera::~FirstPersonCamera()
+{
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+ThirdPersonCamera::ThirdPersonCamera()
+{
+}
+
+ThirdPersonCamera::~ThirdPersonCamera()
+{
 }

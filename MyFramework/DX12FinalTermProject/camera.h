@@ -3,7 +3,8 @@
 enum class CameraMode : int
 {
 	FIRST_PERSON_CAMERA = 0,
-	THIRD_PERSON_CAMERA
+	THIRD_PERSON_CAMERA,
+	TOP_DOWN_CAMERA
 };
 
 class Camera
@@ -14,27 +15,19 @@ public:
 	Camera& operator=(const Camera& rhs) = delete;
 	virtual ~Camera();
 
-	XMFLOAT3 GetPosition() const { return mPosition; }
-	XMFLOAT3 GetRight() const { return mRight; }
-	XMFLOAT3 GetUp() const { return mUp; }
-	XMFLOAT3 GetLook() const { return mLook; }
-
-	float GetNearZ() const { return mNearZ; }
-	float GetFarZ() const { return mFarZ; }
-	float GetAspect() const { return mAspect; }
-	
-	XMFLOAT2 GetFov() const { return mFov; }
-	XMFLOAT2 GetNearWindow() const { return mNearWindow; }
-	XMFLOAT2 GetFarWindow() const { return mFarWindow; }
-
 	void SetPosition(float x, float y, float z);
 	void SetPosition(const XMFLOAT3& pos);
 
+	void SetOffset(float x, float y, float z) { mOffset = { x,y,z }; }
+	void SetOffset(const XMFLOAT3& offset) { mOffset = offset; }
+
+	void SetPlayer(class Player* player) { mPlayer = player; }
+
+	void ChangeMode(int mode);
+
 	void SetLens(float fovY, float aspect, float zn, float zf);
 	void LookAt(XMFLOAT3& pos, XMFLOAT3& target, XMFLOAT3& up);
-
-	XMFLOAT4X4 GetView() const;
-	XMFLOAT4X4 GetProj() const { return mProj; }
+	void LookAt(XMFLOAT3& target);
 
 	void Move(float dx, float dy, float dz);
 	void Move(XMFLOAT3& dir, float dist);
@@ -42,13 +35,37 @@ public:
 	void Strafe(float dist);
 	void Walk(float dist);
 	void Upward(float dist);
-	
-	void Pitch(float angle);
-	void RotateY(float angle);
 
+	virtual void Pitch(float angle);
+	virtual void RotateY(float angle);
+
+	virtual void Update(const float elapsedTime);
 	virtual void UpdateViewMatrix();
 
 	bool IsInFrustum(BoundingOrientedBox& boundBox);
+
+
+public:
+	XMFLOAT3 GetPosition() const { return mPosition; }
+	XMFLOAT3 GetRight() const { return mRight; }
+	XMFLOAT3 GetUp() const { return mUp; }
+	XMFLOAT3 GetLook() const { return mLook; }
+
+	XMFLOAT3 GetOffset() const { return mOffset; }
+
+	float GetNearZ() const { return mNearZ; }
+	float GetFarZ() const { return mFarZ; }
+	float GetAspect() const { return mAspect; }
+
+	XMFLOAT2 GetFov() const { return mFov; }
+	XMFLOAT2 GetNearWindow() const { return mNearWindow; }
+	XMFLOAT2 GetFarWindow() const { return mFarWindow; }
+
+	XMFLOAT4X4 GetView() const;
+	XMFLOAT4X4 GetProj() const { return mProj; }
+
+	CameraMode GetMode() const { return mMode; }
+
 
 protected:
 	bool mViewDirty = false;
@@ -58,13 +75,15 @@ protected:
 	XMFLOAT3 mUp = { 0.0f, 1.0f, 0.0f };
 	XMFLOAT3 mLook = { 0.0f, 0.0f, 1.0f };
 
+	XMFLOAT3 mOffset = { 0.0f,0.0f,0.0f };
+
 	float mFarZ = 0.0f;
 	float mNearZ = 0.0f;
 	float mAspect = 0.0f;
-	
+
 	XMFLOAT2 mFov = { 0.0f, 0.0f };
 	XMFLOAT2 mNearWindow = { 0.0f, 0.0f };
-	XMFLOAT2 mFarWindow = { 0.0f, 0.0f };	
+	XMFLOAT2 mFarWindow = { 0.0f, 0.0f };
 
 	XMFLOAT4X4 mView = Matrix4x4::Identity4x4();
 	XMFLOAT4X4 mProj = Matrix4x4::Identity4x4();
@@ -73,27 +92,46 @@ protected:
 	BoundingFrustum mFrustumView;
 	BoundingFrustum mFrustumWorld;
 
+	class Player* mPlayer = nullptr;
+
 	CameraMode mMode = CameraMode::THIRD_PERSON_CAMERA;
 };
 
-//class TopViewCamera : public Camera
-//{
-//public:
-//	TopViewCamera(float radius, float theta, float phi);
-//	TopViewCamera(const Camera& rhs) = delete;
-//	TopViewCamera& operator=(const Camera& rhs) = delete;
-//	virtual ~TopViewCamera();
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-//	void SetTarget(const XMFLOAT3& target);
-//	void RotateTheta(float dx);
-//	void RotatePhi(float dy);
+class FirstPersonCamera : public Camera
+{
+public:
+	FirstPersonCamera();
+	FirstPersonCamera(const FirstPersonCamera& rhs) = delete;
+	FirstPersonCamera& operator=(const FirstPersonCamera& rhs) = delete;
+	virtual ~FirstPersonCamera();
+
+	virtual void Pitch(float angle) override;
+	virtual void RotateY(float angle) override;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-//	virtual void UpdateViewMatrix();
+class ThirdPersonCamera : public Camera
+{
+public:
+	ThirdPersonCamera();
+	ThirdPersonCamera(const ThirdPersonCamera& rhs) = delete;
+	ThirdPersonCamera& operator=(const ThirdPersonCamera& rhs) = delete;
+	virtual ~ThirdPersonCamera();
+};
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-//private:
-//	XMFLOAT3 mTarget = Vector3::Zero();
-//
-//	float mRadius = 0.0f;
-//	float mPhi = 0.0f;
-//	float mTheta = 0.0f;
-//};
+class TopDownCamera : public Camera
+{
+public:
+	TopDownCamera();
+	TopDownCamera(const TopDownCamera& rhs) = delete;
+	TopDownCamera& operator=(const TopDownCamera& rhs) = delete;
+	virtual ~TopDownCamera();
+};
