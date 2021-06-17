@@ -162,16 +162,6 @@ FirstPersonCamera::~FirstPersonCamera()
 {
 }
 
-void FirstPersonCamera::Pitch(float angle)
-{
-	Camera::Pitch(angle);
-}
-
-void FirstPersonCamera::RotateY(float angle)
-{
-	Camera::RotateY(angle);
-}
-
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -179,6 +169,7 @@ ThirdPersonCamera::ThirdPersonCamera()
 	: Camera()
 {
 	mMode = CameraMode::THIRD_PERSON_CAMERA;
+
 }
 
 ThirdPersonCamera::~ThirdPersonCamera()
@@ -212,18 +203,16 @@ void ThirdPersonCamera::Update(float elapsedTime)
 		if (distance > 0.0f)
 		{
 			mPosition = Vector3::Add(mPosition, direction, distance);
-			LookAt(mPlayer->GetPosition());
+			ThirdPersonCamera::LookAt(mPlayer->GetPosition());
 		}
 	}
+	Camera::Update(elapsedTime);
 }
 
-void ThirdPersonCamera::Pitch(float angle)
+void ThirdPersonCamera::LookAt(XMFLOAT3& target)
 {
-}
-
-void ThirdPersonCamera::RotateY(float angle)
-{
-
+	XMFLOAT3 up = (mPlayer) ? mPlayer->GetUp() : XMFLOAT3(0.0f, 1.0f, 0.0f);
+	Camera::LookAt(mPosition, target, up);
 }
 
 

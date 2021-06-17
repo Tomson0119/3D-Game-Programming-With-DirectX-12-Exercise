@@ -27,7 +27,7 @@ public:
 
 	void SetLens(float fovY, float aspect, float zn, float zf);
 	void LookAt(XMFLOAT3& pos, XMFLOAT3& target, XMFLOAT3& up);
-	void LookAt(XMFLOAT3& target);
+	virtual void LookAt(XMFLOAT3& target);
 
 	void Move(float dx, float dy, float dz);
 	void Move(XMFLOAT3& dir, float dist);
@@ -108,9 +108,6 @@ public:
 	FirstPersonCamera(const FirstPersonCamera& rhs) = delete;
 	FirstPersonCamera& operator=(const FirstPersonCamera& rhs) = delete;
 	virtual ~FirstPersonCamera();
-
-	virtual void Pitch(float angle) override;
-	virtual void RotateY(float angle) override;
 };
 
 
@@ -125,8 +122,7 @@ public:
 	virtual ~ThirdPersonCamera();
 
 	virtual void Update(const float elapsedTime) override;
-	virtual void Pitch(float angle) override;
-	virtual void RotateY(float angle) override;
+	virtual void LookAt(XMFLOAT3& target) override;
 };
 
 
