@@ -34,7 +34,7 @@ public:
 public:
 	virtual Camera* ChangeCameraMode(int cameraMode);
 
-	virtual void Update(float elapsedTime) override;
+	virtual void Update(float elapsedTime, XMFLOAT4X4* parent) override;
 	virtual void OnPlayerUpdate(float elapsedTime) { }
 	virtual void OnCameraUpdate(float elapsedTime) { }
 

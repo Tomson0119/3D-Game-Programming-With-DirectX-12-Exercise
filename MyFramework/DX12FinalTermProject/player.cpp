@@ -122,7 +122,7 @@ Camera* Player::ChangeCameraMode(int cameraMode)
 	return newCamera;
 }
 
-void Player::Update(float elapsedTime)
+void Player::Update(float elapsedTime, XMFLOAT4X4* parent)
 {
 	mVelocity = Vector3::Add(mVelocity, mGravity);
 
@@ -160,7 +160,7 @@ void Player::Update(float elapsedTime)
 	velocity = Vector3::ScalarProduct(mVelocity, -deceleration);
 	mVelocity = Vector3::Add(mVelocity, Vector3::Normalize(velocity));
 
-	GameObject::Update(elapsedTime);
+	GameObject::Update(elapsedTime, parent);
 }
 
 
