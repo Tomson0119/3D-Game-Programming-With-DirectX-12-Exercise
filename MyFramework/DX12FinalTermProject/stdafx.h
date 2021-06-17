@@ -43,8 +43,8 @@
 #include <string>
 #include <memory>
 #include <fstream>
+#include <iostream>
 #include <cmath>
-#include <sstream>
 
 
 #include "dxException.h"
@@ -233,9 +233,19 @@ namespace Vector3
 		return ret;
 	}
 
+	inline XMFLOAT3 Absf(XMFLOAT3& v)
+	{
+		return XMFLOAT3(std::abs(v.x), std::abs(v.y), std::abs(v.z));
+	}
+
 	inline bool Equal(XMFLOAT3& v1, XMFLOAT3& v2)
 	{
 		return XMVector3Equal(XMLoadFloat3(&v1), XMLoadFloat3(&v2));
+	}
+
+	inline bool Less(XMFLOAT3& v, float x)
+	{
+		return XMVector3Less(XMLoadFloat3(&v), XMVectorReplicate(x));
 	}
 }
 
