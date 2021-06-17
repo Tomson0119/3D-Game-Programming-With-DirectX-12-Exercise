@@ -21,6 +21,7 @@ void GameScene::BuildObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cm
 
 void GameScene::Resize(float aspect)
 {
+	mAspect = aspect;
 	mCamera->SetLens(0.25f * Math::PI, aspect, 1.0f, 500.0f);
 }
 
@@ -123,6 +124,7 @@ void GameScene::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
 				mCamera.reset(mPlayer->ChangeCameraMode((int)CameraMode::TOP_DOWN_CAMERA));
 			break;
 		}
+		Resize(mAspect);
 		break;
 	}
 }
@@ -132,27 +134,19 @@ void GameScene::OnKeyboardInput(const GameTimer& timer)
 	const float dt = timer.ElapsedTime();
 
 	if (GetAsyncKeyState('W') & 0x8000) {
-		mPlayer->Walk(10.0f * dt);
+		mPlayer->Walk(5.0f);
 	}
 
 	if (GetAsyncKeyState('A') & 0x8000) {
-		mPlayer->Strafe(-10.0f * dt);
+		mPlayer->Strafe(-5.0f);
 	}
 	
 	if (GetAsyncKeyState('S') & 0x8000) {
-		mPlayer->Walk(-10.0f * dt);
+		mPlayer->Walk(-5.0f);
 	}
 
 	if (GetAsyncKeyState('D') & 0x8000) {
-		mPlayer->Strafe(10.0f * dt);
-	}
-
-	if (GetAsyncKeyState(VK_SPACE) & 0x8000) {
-		mPlayer->Upward(10.0f * dt, false);
-	}
-
-	if (GetAsyncKeyState(VK_CONTROL) & 0x8000) {
-		mPlayer->Upward(10.0f * dt, false);
+		mPlayer->Strafe(5.0f);
 	}
 }
 
@@ -169,7 +163,7 @@ void GameScene::OnMouseInput(const GameTimer& timer)
 		float delta_y = 0.25f * static_cast<float>(currMousePos.y - mLastMousePos.y);
 
 		mPlayer->RotateY(delta_x);
-		mPlayer->Pitch(delta_y);
+		//mPlayer->Pitch(delta_y);
 
 		mLastMousePos = currMousePos;
 	}
@@ -209,9 +203,12 @@ void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList
 	// Player(Box)
 	mMeshes["box"] = std::make_unique<BoxMesh>(device, cmdList, 2.0f, 2.0f, 2.0f);
 
-	auto box = std::make_unique<TerrainPlayer>(1, mMeshes["box"].get(), mCamera.get(), terrain.get());
+	auto box = std::make_unique<TerrainPlayer>(1, mMeshes["box"].get(), terrain.get());
 	box->SetMaterial(XMFLOAT4(0.8f, 0.6f, 0.0f, 1.0f), XMFLOAT3(0.4f, 0.4f, 0.4f), 0.125f);
+
 	mPlayer = box.get();
+	mCamera.reset(mPlayer->ChangeCameraMode((int)CameraMode::THIRD_PERSON_CAMERA));
+	Resize(mAspect);  // Resetting Lens
 
 	// Setting Pipelines and Objects container
 	mPipelines["defaultColor"]->SetObject(terrain.get());

@@ -62,5 +62,6 @@ private:
 
 	POINT mLastMousePos;
 
+	float mAspect = 0.0f;
 	bool mShowWireFrame = false;
 };
