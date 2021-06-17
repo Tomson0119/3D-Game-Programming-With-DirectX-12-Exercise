@@ -111,17 +111,23 @@ void GameScene::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
 			break;
 
 		case '1':
-			if (mPlayer) 
-				mCamera.reset(mPlayer->ChangeCameraMode((int)CameraMode::FIRST_PERSON_CAMERA));
+			if (mPlayer) {
+				auto newCamera = mPlayer->ChangeCameraMode((int)CameraMode::FIRST_PERSON_CAMERA);
+				if(newCamera) mCamera.reset(newCamera);
+			}
 			break;
 
 		case '2':
-			if (mPlayer)
-				mCamera.reset(mPlayer->ChangeCameraMode((int)CameraMode::THIRD_PERSON_CAMERA));
+			if (mPlayer) {
+				auto newCamera = mPlayer->ChangeCameraMode((int)CameraMode::THIRD_PERSON_CAMERA);
+				if(newCamera) mCamera.reset(newCamera);
+			}
 			break;
 		case '3':
-			if (mPlayer)
-				mCamera.reset(mPlayer->ChangeCameraMode((int)CameraMode::TOP_DOWN_CAMERA));
+			if (mPlayer) {
+				auto newCamera = mPlayer->ChangeCameraMode((int)CameraMode::TOP_DOWN_CAMERA);
+				if(newCamera) mCamera.reset(newCamera);
+			}
 			break;
 		}
 		Resize(mAspect);
@@ -163,7 +169,7 @@ void GameScene::OnMouseInput(const GameTimer& timer)
 		float delta_y = 0.25f * static_cast<float>(currMousePos.y - mLastMousePos.y);
 
 		mPlayer->RotateY(delta_x);
-		//mPlayer->Pitch(delta_y);
+		mPlayer->Pitch(delta_y);
 
 		mLastMousePos = currMousePos;
 	}
