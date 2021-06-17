@@ -65,7 +65,7 @@ void GameScene::Update(const GameTimer& timer)
 	mCamera->Update(dt);
 
 	for (const auto& obj : mGameObjects)
-		obj->Update(dt);
+		obj->Update(dt, nullptr);
 
 	UpdateConstants();
 }
