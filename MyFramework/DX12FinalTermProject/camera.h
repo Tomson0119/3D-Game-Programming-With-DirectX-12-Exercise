@@ -109,9 +109,6 @@ public:
 	virtual ~FirstPersonCamera();
 
 	virtual void Update(const float elapsedTime) override;
-
-	virtual void Pitch(float angle) override;
-	virtual void RotateY(float angle) override;
 };
 
 

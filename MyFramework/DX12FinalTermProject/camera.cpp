@@ -174,16 +174,6 @@ void FirstPersonCamera::Update(const float elapsedTime)
 	}
 }
 
-void FirstPersonCamera::Pitch(float angle)
-{
-	Camera::Pitch(angle);
-}
-
-void FirstPersonCamera::RotateY(float angle)
-{
-	Camera::RotateY(angle);
-}
-
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 //
