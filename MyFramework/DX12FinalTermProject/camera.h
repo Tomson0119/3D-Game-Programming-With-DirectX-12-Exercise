@@ -29,8 +29,8 @@ public:
 	void LookAt(XMFLOAT3& pos, XMFLOAT3& target, XMFLOAT3& up);
 	virtual void LookAt(XMFLOAT3& target);
 
-	void Move(float dx, float dy, float dz);
-	void Move(XMFLOAT3& dir, float dist);
+	virtual void Move(float dx, float dy, float dz);
+	virtual void Move(XMFLOAT3& dir, float dist);
 
 	void Strafe(float dist);
 	void Walk(float dist);
@@ -43,7 +43,6 @@ public:
 	virtual void UpdateViewMatrix();
 
 	bool IsInFrustum(BoundingOrientedBox& boundBox);
-
 
 public:
 	XMFLOAT3 GetPosition() const { return mPosition; }
@@ -108,6 +107,11 @@ public:
 	FirstPersonCamera(const FirstPersonCamera& rhs) = delete;
 	FirstPersonCamera& operator=(const FirstPersonCamera& rhs) = delete;
 	virtual ~FirstPersonCamera();
+
+	virtual void Update(const float elapsedTime) override;
+
+	virtual void Pitch(float angle) override;
+	virtual void RotateY(float angle) override;
 };
 
 
@@ -135,4 +139,6 @@ public:
 	TopDownCamera(const TopDownCamera& rhs) = delete;
 	TopDownCamera& operator=(const TopDownCamera& rhs) = delete;
 	virtual ~TopDownCamera();
+
+	virtual void Update(const float elapsedTime) override;
 };

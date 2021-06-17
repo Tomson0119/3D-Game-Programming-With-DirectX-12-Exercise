@@ -162,6 +162,28 @@ FirstPersonCamera::~FirstPersonCamera()
 {
 }
 
+void FirstPersonCamera::Update(const float elapsedTime)
+{
+	if (mPlayer)
+	{
+		mPosition = Vector3::Add(mPlayer->GetPosition(), GetOffset());
+		mLook = mPlayer->GetLook();
+		mRight = mPlayer->GetRight();
+		mUp = mPlayer->GetUp();
+		Camera::Update(elapsedTime);
+	}
+}
+
+void FirstPersonCamera::Pitch(float angle)
+{
+	Camera::Pitch(angle);
+}
+
+void FirstPersonCamera::RotateY(float angle)
+{
+	Camera::RotateY(angle);
+}
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -169,7 +191,6 @@ ThirdPersonCamera::ThirdPersonCamera()
 	: Camera()
 {
 	mMode = CameraMode::THIRD_PERSON_CAMERA;
-
 }
 
 ThirdPersonCamera::~ThirdPersonCamera()
@@ -229,3 +250,13 @@ TopDownCamera::~TopDownCamera()
 
 }
 
+void TopDownCamera::Update(float elapsedTime)
+{
+	if (mPlayer)
+	{
+		XMFLOAT3 offset = Vector3::Add(mPlayer->GetPosition(), GetOffset());
+		SetPosition(offset);
+		LookAt(mPlayer->GetPosition());
+	}
+	Camera::Update(elapsedTime);
+}
