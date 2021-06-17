@@ -12,7 +12,13 @@ public:
 	virtual ~Player();
 
 public:
-	void SetCamera(Camera* camera) { mCamera = camera; mCamera->SetPlayer(this); }
+	void Walk(float dist, bool updateVelocity=true);
+	void Strafe(float dist, bool updateVelocity=true);
+	void Upward(float dist, bool updateVelocity=true);
+
+	void Move(XMFLOAT3& shift, bool updateVelocity);
+
+	void SetCamera(Camera* camera) { mCamera = camera; }
 	void SetPlayerContext(void* context) { mPlayerUpdateContext = context; }
 	void SetCameraContext(void* context) { mCameraUpdateContext = context; }
 
@@ -24,6 +30,8 @@ public:
 
 public:
 	virtual Camera* ChangeCameraMode(int cameraMode);
+
+	virtual void Update(float elapsedTime) override;
 	virtual void OnPlayerUpdate(float elapsedTime) { }
 	virtual void OnCameraUpdate(float elapsedTime) { }
 
@@ -47,7 +55,7 @@ protected:
 class TerrainPlayer : public Player
 {
 public:
-	TerrainPlayer(int offset, Mesh* mesh, Camera* camera, void* context);
+	TerrainPlayer(int offset, Mesh* mesh, void* context);
 	TerrainPlayer(const TerrainPlayer& rhs) = delete;
 	TerrainPlayer& operator=(const TerrainPlayer& rhs) = delete;
 	virtual ~TerrainPlayer();
