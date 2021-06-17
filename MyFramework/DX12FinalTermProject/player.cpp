@@ -16,14 +16,14 @@ Player::~Player()
 void Player::Walk(float dist, bool updateVelocity)
 {
 	XMFLOAT3 shift = { 0.0f,0.0f,0.0f };
-	shift = Vector3::Add(shift, mCamera->GetLook(), dist);
+	shift = Vector3::Add(shift, mLook, dist);
 	Move(shift, updateVelocity);
 }
 
 void Player::Strafe(float dist, bool updateVelocity)
 {
 	XMFLOAT3 shift = { 0.0f,0.0f,0.0f };
-	shift = Vector3::Add(shift, mCamera->GetRight(), dist);
+	shift = Vector3::Add(shift, mRight, dist);
 	Move(shift, updateVelocity);
 }
 
@@ -45,11 +45,58 @@ void Player::Move(XMFLOAT3& shift, bool updateVelocity)
 	}
 }
 
+void Player::RotateY(float angle)
+{
+	if (mCamera)
+	{
+		switch (mCamera->GetMode())
+		{
+		case CameraMode::FIRST_PERSON_CAMERA:
+			mCamera->RotateY(angle);
+			break;
+
+		case CameraMode::THIRD_PERSON_CAMERA:
+			mCamera->RotateY(angle);
+			break;
+
+		case CameraMode::TOP_DOWN_CAMERA:
+			break;
+		}
+	}
+	GameObject::RotateY(angle);
+}
+
+void Player::Pitch(float angle)
+{
+	if (mCamera)
+	{
+		switch (mCamera->GetMode())
+		{
+		case CameraMode::FIRST_PERSON_CAMERA:
+			XMFLOAT3 look = GetLook();
+			XMFLOAT3 forward = { 0.0f, 0.0f, 1.0f };
+
+			float radian = std::acosf(Vector3::Dot(look, forward));
+			float degree = XMConvertToDegrees(radian);
+
+			XMFLOAT3 cross = Vector3::Cross(look, forward);
+			bool lookingUp = (cross.x > 0.0f) ? true : false;
+			
+			if (degree < 45.0f ||
+				lookingUp && angle > 0.0f ||
+				!lookingUp && angle < 0.0f)  // 각도 제한
+				GameObject::Pitch(angle);
+			
+			break;
+		}
+	}
+}
+
 
 Camera* Player::ChangeCameraMode(int cameraMode)
 {	
 	if (mCamera && (int)mCamera->GetMode() == cameraMode)
-		return mCamera;
+		return nullptr;  // 같은 모드이면 아무것도 보내지 않는다.
 
 	Camera* newCamera = nullptr;
 	switch (cameraMode)
@@ -98,11 +145,12 @@ void Player::Update(float elapsedTime)
 	if(mPlayerUpdateContext)
 		OnPlayerUpdate(elapsedTime);
 	
-	if (mCamera->GetMode() == CameraMode::THIRD_PERSON_CAMERA)
+	int mode = (int)mCamera->GetMode();
+	if (mode == (int)CameraMode::THIRD_PERSON_CAMERA)
 		mCamera->Update(elapsedTime);
 	if (mCameraUpdateContext)
 		OnCameraUpdate(elapsedTime);
-	if (mCamera->GetMode() == CameraMode::THIRD_PERSON_CAMERA)
+	if (mode == (int)CameraMode::THIRD_PERSON_CAMERA)
 		mCamera->LookAt(mPosition);
 	mCamera->UpdateViewMatrix();
 
@@ -138,7 +186,7 @@ TerrainPlayer::~TerrainPlayer()
 Camera* TerrainPlayer::ChangeCameraMode(int cameraMode)
 {
 	if (mCamera && cameraMode == (int)mCamera->GetMode())
-		return mCamera;
+		return nullptr;
 
 	mCamera = Player::ChangeCameraMode(cameraMode);
 
@@ -147,7 +195,7 @@ Camera* TerrainPlayer::ChangeCameraMode(int cameraMode)
 	case CameraMode::FIRST_PERSON_CAMERA:
 		mFriction = 2.0f;
 		mGravity = { 0.0f, -9.8f, 0.0f };
-		mMaxVelocityXZ = 2.5f;
+		mMaxVelocityXZ = 25.5f;
 		mMaxVelocityY = 40.0f;
 
 		mCamera->SetOffset(0.0f, 2.0f, 0.0f);
@@ -165,7 +213,13 @@ Camera* TerrainPlayer::ChangeCameraMode(int cameraMode)
 		break;
 
 	case CameraMode::TOP_DOWN_CAMERA:
-		mCamera->SetOffset(-10.0f, 10.0f, -10.0f);
+		mFriction = 20.0f;
+		mGravity = { 0.0f, -9.8f, 0.0f };
+		mMaxVelocityXZ = 25.5f;
+		mMaxVelocityY = 40.0f;
+
+		mCamera->SetOffset(-50.0f, 50.0f, -50.0f);
+		mCamera->SetTimeLag(0.25f);
 		break;
 	}
 
