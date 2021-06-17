@@ -29,8 +29,8 @@ HeightMapImage::~HeightMapImage()
 
 float HeightMapImage::GetHeight(float fx, float fz) const
 {
-	if (fx < 0.0f || fz < 0.0f || fx >= mWidth || fz >= mDepth)
-		return 0.0f;
+	if (fx < 0.0f || fz < 0.0f || fx >= (mWidth-1) || fz >= (mDepth-1))
+		return -100.0f;
 
 	const size_t x = (size_t)fx;
 	const size_t z = (size_t)fz;
@@ -64,7 +64,7 @@ float HeightMapImage::GetHeight(float fx, float fz) const
 
 XMFLOAT3 HeightMapImage::GetNormal(int x, int z) const
 {
-	if (x < 0.0f || z < 0.0f || x >= mWidth || z >= mDepth)
+	if (x < 0.0f || z < 0.0f || x >= (mWidth-1) || z >= (mDepth-1))
 		return XMFLOAT3(0.0f, 1.0f, 0.0f);
 
 	const int index = x + (z * mWidth);
