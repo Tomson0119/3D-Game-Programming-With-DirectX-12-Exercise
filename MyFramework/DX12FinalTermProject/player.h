@@ -18,6 +18,9 @@ public:
 
 	void Move(XMFLOAT3& shift, bool updateVelocity);
 
+	virtual void RotateY(float angle) override;
+	virtual void Pitch(float angle) override;
+
 	void SetCamera(Camera* camera) { mCamera = camera; }
 	void SetPlayerContext(void* context) { mPlayerUpdateContext = context; }
 	void SetCameraContext(void* context) { mCameraUpdateContext = context; }
