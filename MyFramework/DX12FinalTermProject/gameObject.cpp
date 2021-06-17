@@ -149,7 +149,7 @@ void GameObject::RotateY(float angle)
 	mLook = Vector3::TransformNormal(mLook, R);
 }
 
-void GameObject::Pitch(float angle, bool local)
+void GameObject::Pitch(float angle)
 {
 	XMMATRIX R = XMMatrixRotationAxis(XMLoadFloat3(&mRight), XMConvertToRadians(angle));
 	mUp = Vector3::TransformNormal(mUp, R);

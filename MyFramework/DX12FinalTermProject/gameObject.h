@@ -37,7 +37,7 @@ public:
 	void Rotate(const XMFLOAT3& axis, float angle);
 
 	virtual void RotateY(float angle);
-	virtual void Pitch(float angle, bool local=true);
+	virtual void Pitch(float angle);
 
 	void Scale(float xScale, float yScale, float zScale);
 	void Scale(const XMFLOAT3& scale);
