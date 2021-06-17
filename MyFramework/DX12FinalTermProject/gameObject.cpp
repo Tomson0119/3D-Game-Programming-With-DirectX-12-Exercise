@@ -22,8 +22,11 @@ void GameObject::UpdateConstants(ConstantBuffer<ObjectConstants>* objectCB)
 	objectCB->CopyData(mCBIndex, GetObjectConstants());	
 }
 
-void GameObject::Update(float elapsedTime)
+void GameObject::Update(float elapsedTime, XMFLOAT4X4* parent)
 {
+	if (mChild) mChild->Update(elapsedTime, &mWorld);
+	if (mSibling) mSibling->Update(elapsedTime, parent);
+
 	mLook = Vector3::Normalize(mLook);
 	mUp = Vector3::Normalize(Vector3::Cross(mLook, mRight));
 	mRight = Vector3::Cross(mUp, mLook);
@@ -60,6 +63,19 @@ void GameObject::UpdateTransform()
 void GameObject::UpdateBoudingBox()
 {
 	
+}
+
+void GameObject::SetChild(GameObject* child)
+{
+	if (child)
+		child->mParent = this;
+	if (mChild)
+	{
+		if (child) child->mSibling = mChild->mSibling;
+		mChild->mSibling = child;
+	}
+	else
+		mChild = child;
 }
 
 void GameObject::SetPosition(float x, float y, float z)

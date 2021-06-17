@@ -14,11 +14,13 @@ public:
 
 	void UpdateConstants(ConstantBuffer<ObjectConstants>* objectCB);
 
-	virtual void Update(float elapsedTime);
+	virtual void Update(float elapsedTime, XMFLOAT4X4* parent);
 	virtual void Draw(ID3D12GraphicsCommandList* cmdList);
 
 	void UpdateTransform();
 	void UpdateBoudingBox();
+
+	void SetChild(GameObject* child);
 
 	void SetMesh(Mesh* mesh) { mMeshes.emplace_back(mesh); }
 	virtual void SetPosition(float x, float y, float z);
@@ -26,6 +28,7 @@ public:
 
 	virtual void SetMaterial(XMFLOAT4 color, XMFLOAT3 frenel, float roughness);
 
+public:
 	void Move(float dx, float dy, float dz);
 	void Move(XMFLOAT3& dir, float dist);
 
@@ -43,6 +46,7 @@ public:
 	void Scale(const XMFLOAT3& scale);
 	void Scale(float scale);
 
+public:
 	XMFLOAT3 GetPosition() const { return mPosition; }
 	XMFLOAT3 GetRight() const { return mRight; }
 	XMFLOAT3 GetLook() const { return mLook; }
@@ -63,6 +67,10 @@ protected:
 
 	std::vector<Mesh*> mMeshes;
 	UINT mCBIndex = 0;
+
+	GameObject* mParent = nullptr;
+	GameObject* mChild = nullptr;
+	GameObject* mSibling = nullptr;
 };
 
 
