@@ -24,24 +24,24 @@ void GameObject::UpdateConstants(ConstantBuffer<ObjectConstants>* objectCB)
 
 void GameObject::Update(float elapsedTime, XMFLOAT4X4* parent)
 {
-	if (mChild) mChild->Update(elapsedTime, &mWorld);
-	if (mSibling) mSibling->Update(elapsedTime, parent);
-
 	mLook = Vector3::Normalize(mLook);
 	mUp = Vector3::Normalize(Vector3::Cross(mLook, mRight));
 	mRight = Vector3::Cross(mUp, mLook);
-
-	UpdateTransform();
+	
+	UpdateTransform(parent);
 	UpdateBoudingBox();
+
+	if (mChild) mChild->Update(elapsedTime, &mWorld);
+	if (mSibling) mSibling->Update(elapsedTime, parent);
 }
 
 void GameObject::Draw(ID3D12GraphicsCommandList* cmdList)
 {
-	for (const auto& mesh : mMeshes)
-		mesh->Draw(cmdList);
+	if(mMesh)
+		mMesh->Draw(cmdList);
 }
 
-void GameObject::UpdateTransform()
+void GameObject::UpdateTransform(XMFLOAT4X4* parent)
 {
 	mWorld(0, 0) = mScaling.x * mRight.x; 
 	mWorld(0, 1) = mRight.y;	
@@ -58,11 +58,17 @@ void GameObject::UpdateTransform()
 	mWorld(3, 0) = mPosition.x;
 	mWorld(3, 1) = mPosition.y;
 	mWorld(3, 2) = mPosition.z;
+
+	mWorld = (parent) ? Matrix4x4::Multiply(mWorld, *parent) : mWorld;
 }
 
 void GameObject::UpdateBoudingBox()
 {
-	
+	if (mMesh)
+	{
+		mMesh->mOOBB.Transform(mOOBB, XMLoadFloat4x4(&mWorld));
+		XMStoreFloat4(&mOOBB.Orientation, XMQuaternionNormalize(XMLoadFloat4(&mOOBB.Orientation)));
+	}
 }
 
 void GameObject::SetChild(GameObject* child)
@@ -198,6 +204,49 @@ ObjectConstants GameObject::GetObjectConstants()
 
 ///////////////////////////////////////////////////////////////////////////////
 //
+CrossHairObject::CrossHairObject(int offset,
+	ID3D12Device* device,
+	ID3D12GraphicsCommandList* cmdList)
+	: GameObject(offset)
+{
+	mMesh = new CrossHairMesh(device, cmdList, XMFLOAT3(0.0f, 0.0f, 0.0f), 0.2f, XMFLOAT2(0.08f, 0.08f));
+}
+
+CrossHairObject::~CrossHairObject()
+{
+	if (mMesh) delete mMesh;
+}
+
+void CrossHairObject::UpdatePosition(Camera* camera)
+{
+	mLook = camera->GetLook();
+	mUp = camera->GetUp();
+	mRight = camera->GetRight();
+	mPosition = Vector3::Add(camera->GetPosition(), mLook, 10.0f);
+
+	GameObject::UpdateTransform(nullptr);
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+GunObject::GunObject(int offset, Mesh* mesh)
+	: GameObject(offset, mesh)
+{
+	
+}
+
+GunObject::~GunObject()
+{
+}
+
+void GunObject::UpdateTransform(XMFLOAT4X4* parent)
+{
+	GameObject::UpdateTransform(parent);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
 TerrainObject::TerrainObject(int offset)
 	: GameObject(offset, nullptr)
 {
@@ -206,15 +255,13 @@ TerrainObject::TerrainObject(int offset)
 
 TerrainObject::~TerrainObject()
 {
-	for (const auto& mesh : mMeshes)
-		delete mesh;
-	mMeshes.clear();
+	if (mMesh) delete mMesh;
 }
 
 void TerrainObject::BuildTerrainMeshes(
 	ID3D12Device* device, 
 	ID3D12GraphicsCommandList* cmdList, 
-	int width, int depth, int blockWidth, int blockDepth,
+	int width, int depth,
 	const XMFLOAT3& scale, 
 	XMFLOAT4& color, 
 	const std::wstring& path)
@@ -223,28 +270,26 @@ void TerrainObject::BuildTerrainMeshes(
 	mDepth = depth;
 	mScale = scale;
 
-	int xQuadPerBlock = blockWidth - 1;
-	int zQuadPerBlock = blockDepth - 1;
+	int xQuadPerBlock = width - 1;
+	int zQuadPerBlock = depth - 1;
 
 	mHeightMapImage = std::make_unique<HeightMapImage>(path, mWidth, mDepth, mScale);
 
 	long xBlocks = (mWidth - 1) / xQuadPerBlock;
 	long zBlocks = (mDepth - 1) / zQuadPerBlock;
 
-	for (const auto& mesh : mMeshes)
-		delete mesh;
-	mMeshes.clear();
+	if (mMesh) delete mMesh;
 	
 	HeightMapGridMesh* gridMesh = nullptr;
 	for (int z = 0, zStart = 0; z < zBlocks; ++z)
 	{
 		for (int x = 0, xStart = 0; x < xBlocks; ++x)
 		{
-			xStart = x * (blockWidth - 1);
-			zStart = z * (blockDepth - 1);
+			xStart = x * (width - 1);
+			zStart = z * (depth - 1);
 
 			gridMesh = new HeightMapGridMesh(device, cmdList, xStart, zStart,
-				blockWidth, blockDepth, scale, color, mHeightMapImage.get());
+				width, depth, scale, color, mHeightMapImage.get());
 			SetMesh(gridMesh);
 		}
 	}

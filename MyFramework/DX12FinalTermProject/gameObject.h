@@ -2,6 +2,7 @@
 
 #include "mesh.h"
 #include "constantBuffer.h"
+#include "camera.h"
 
 class GameObject
 {
@@ -17,12 +18,12 @@ public:
 	virtual void Update(float elapsedTime, XMFLOAT4X4* parent);
 	virtual void Draw(ID3D12GraphicsCommandList* cmdList);
 
-	void UpdateTransform();
+	virtual void UpdateTransform(XMFLOAT4X4* parent);
 	void UpdateBoudingBox();
 
-	void SetChild(GameObject* child);
+	virtual void SetChild(GameObject* child);
 
-	void SetMesh(Mesh* mesh) { mMeshes.emplace_back(mesh); }
+	void SetMesh(Mesh* mesh) { mMesh = mesh; }
 	virtual void SetPosition(float x, float y, float z);
 	virtual void SetPosition(XMFLOAT3 pos);
 
@@ -65,14 +66,45 @@ protected:
 	XMFLOAT4X4 mWorld = Matrix4x4::Identity4x4();
 	Material mMaterial = {};
 
-	std::vector<Mesh*> mMeshes;
+	Mesh* mMesh = nullptr;
 	UINT mCBIndex = 0;
+
+	BoundingOrientedBox mOOBB = { };
 
 	GameObject* mParent = nullptr;
 	GameObject* mChild = nullptr;
 	GameObject* mSibling = nullptr;
 };
 
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+class CrossHairObject : public GameObject
+{
+public:
+	CrossHairObject(int offset,
+		ID3D12Device* device,
+		ID3D12GraphicsCommandList* cmdList);
+	CrossHairObject(const CrossHairObject& rhs) = delete;
+	CrossHairObject& operator=(const CrossHairObject& rhs) = delete;
+	virtual ~CrossHairObject();
+
+	void UpdatePosition(Camera* camera);
+};
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+class GunObject : public GameObject
+{
+public:
+	GunObject(int offset, Mesh* mesh);
+	GunObject(const GunObject& rhs) = delete;
+	GunObject& operator=(const GunObject& rhs) = delete;
+	virtual ~GunObject();
+
+	virtual void UpdateTransform(XMFLOAT4X4* parent) override;
+};
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -87,7 +119,7 @@ public:
 	void BuildTerrainMeshes(
 		ID3D12Device* device,
 		ID3D12GraphicsCommandList* cmdList,
-		int width, int depth, int blockWidth, int blockDepth,
+		int width, int depth,
 		const XMFLOAT3& scale,
 		XMFLOAT4& color,
 		const std::wstring& path);
