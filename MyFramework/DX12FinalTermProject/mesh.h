@@ -41,12 +41,16 @@ class Mesh
 {
 public:
 	Mesh();
+	Mesh(ID3D12Device* device,
+		 ID3D12GraphicsCommandList* cmdList,
+		 const std::wstring& path);
 	virtual ~Mesh();
 
 	void CreateResourceInfo(
 		ID3D12Device* device,
 		ID3D12GraphicsCommandList* cmdList,
 		UINT vbStride, UINT ibStride,
+		D3D12_PRIMITIVE_TOPOLOGY topology,
 		const void* vbData, UINT vbCount,
 		const void* ibData, UINT ibCount);
 
@@ -81,6 +85,19 @@ public:
 	D3D12_INDEX_BUFFER_VIEW mIndexBufferView = {};
 
 	BoundingOrientedBox mOOBB;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+class CrossHairMesh : public Mesh
+{
+public:
+	CrossHairMesh(
+		ID3D12Device* device,
+		ID3D12GraphicsCommandList* cmdList,
+		XMFLOAT3& center, float length, XMFLOAT2& offset);
+	virtual ~CrossHairMesh();
 };
 
 

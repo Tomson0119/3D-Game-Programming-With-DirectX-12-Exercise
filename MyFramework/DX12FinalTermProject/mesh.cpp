@@ -7,6 +7,11 @@ Mesh::Mesh()
 
 }
 
+Mesh::Mesh(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList, const std::wstring& path)
+{
+	LoadFromBinary(device, cmdList, path);
+}
+
 Mesh::~Mesh()
 {
 }
@@ -15,6 +20,7 @@ void Mesh::CreateResourceInfo(
 	ID3D12Device* device, 
 	ID3D12GraphicsCommandList* cmdList,
 	UINT vbStride, UINT ibStride,
+	D3D12_PRIMITIVE_TOPOLOGY topology,
 	const void* vbData, UINT vbCount, 
 	const void* ibData, UINT ibCount)
 {
@@ -32,7 +38,7 @@ void Mesh::CreateResourceInfo(
 	mBaseVertex = 0;
 	mSlot = 0;
 
-	mPrimitiveTopology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+	mPrimitiveTopology = topology;
 
 	mVertexBufferView.BufferLocation = mVertexBufferGPU->GetGPUVirtualAddress();
 	mVertexBufferView.SizeInBytes = vbByteSize;
@@ -98,6 +104,7 @@ void Mesh::LoadFromText(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList
 	}
 
 	Mesh::CreateResourceInfo(device, cmdList, sizeof(Vertex), sizeof(UINT),
+		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
 		vertices.data(), (UINT)vertices.size(),	indices.data(), (UINT)indices.size());
 }
 
@@ -171,8 +178,47 @@ void Mesh::LoadFromBinary(
 	}
 
 	Mesh::CreateResourceInfo(device, cmdList, sizeof(Vertex), sizeof(UINT),
+		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
 		vertices.data(), (UINT)vertices.size(), indices.data(), (UINT)indices.size());
 }
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+CrossHairMesh::CrossHairMesh(
+	ID3D12Device* device,
+	ID3D12GraphicsCommandList* cmdList,
+	XMFLOAT3& center, float length, XMFLOAT2& offset)
+{
+	float xStart = center.x + offset.x;
+	float yStart = center.y + offset.y;
+
+	std::array<DiffuseVertex, 8> vertices = 
+	{
+		DiffuseVertex(XMFLOAT3(center.x, yStart, center.z), (XMFLOAT4)Colors::Black),
+		DiffuseVertex(XMFLOAT3(center.x, yStart + length, center.z), (XMFLOAT4)Colors::Black),
+
+		DiffuseVertex(XMFLOAT3(center.x, -yStart, center.z), (XMFLOAT4)Colors::Black),
+		DiffuseVertex(XMFLOAT3(center.x, -(yStart + length), center.z), (XMFLOAT4)Colors::Black),
+
+		DiffuseVertex(XMFLOAT3(xStart, center.y, center.z), (XMFLOAT4)Colors::Black),
+		DiffuseVertex(XMFLOAT3(xStart + length, center.y, center.z), (XMFLOAT4)Colors::Black),
+
+		DiffuseVertex(XMFLOAT3(-xStart, center.y, center.z), (XMFLOAT4)Colors::Black),
+		DiffuseVertex(XMFLOAT3(-(xStart + length), center.y, center.z), (XMFLOAT4)Colors::Black)
+	};
+
+	std::array<UINT, 8> indices = { 0, 1, 2, 3, 4, 5, 6, 7 };
+
+	CreateResourceInfo(device, cmdList, sizeof(DiffuseVertex), sizeof(UINT),
+		D3D_PRIMITIVE_TOPOLOGY_LINELIST, vertices.data(), (UINT)vertices.size(),
+		indices.data(), (UINT)indices.size());
+}
+
+CrossHairMesh::~CrossHairMesh()
+{
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -244,6 +290,7 @@ BoxMesh::BoxMesh(
 	};
 
 	Mesh::CreateResourceInfo(device, cmdList, sizeof(Vertex), sizeof(UINT),
+		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
 		vertices.data(), (UINT)vertices.size(), indices.data(), (UINT)indices.size());
 }
 
@@ -305,9 +352,8 @@ HeightMapGridMesh::HeightMapGridMesh(
 	}
 
 	Mesh::CreateResourceInfo(device, cmdList, sizeof(DiffuseVertex), sizeof(UINT),
+		D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP,
 		vertices.data(), (UINT)vertices.size(), indices.data(), (UINT)indices.size());
-
-	mPrimitiveTopology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
 }
 
 HeightMapGridMesh::~HeightMapGridMesh()
@@ -337,3 +383,5 @@ XMFLOAT4 HeightMapGridMesh::GetColor(int x, int z, HeightMapImage* context) cons
 	
 	return Vector4::Multiply(reflect, incidentLitColor);
 }
+
+
