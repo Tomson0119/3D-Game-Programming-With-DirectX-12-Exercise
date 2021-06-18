@@ -121,5 +121,8 @@
     <None Include="Shaders\defaultColor.hlsl">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="Shaders\screenDiffuse.hlsl">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>
