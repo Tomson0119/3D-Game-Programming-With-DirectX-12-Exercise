@@ -53,6 +53,7 @@ void GameScene::UpdateConstants()
 	for (const auto& obj : mGameObjects)
 		// 오브젝트로부터 상수들을 받아 업데이트한다.
 		obj->UpdateConstants(mObjectCB.get());
+	
 }
 
 void GameScene::Update(const GameTimer& timer)
@@ -66,6 +67,8 @@ void GameScene::Update(const GameTimer& timer)
 
 	for (const auto& obj : mGameObjects)
 		obj->Update(dt, nullptr);
+
+	mCross->UpdatePosition(mCamera.get());
 
 	UpdateConstants();
 }
@@ -86,17 +89,25 @@ void GameScene::Draw(ID3D12GraphicsCommandList* cmdList, const GameTimer& timer)
 		mPipelines["wiredLit"]->SetAndDraw(cmdList, mObjectCB.get());
 		mPipelines["wiredColor"]->SetAndDraw(cmdList, mObjectCB.get());
 	}
+	if(mCamera->GetMode() == CameraMode::FIRST_PERSON_CAMERA)
+		mPipelines["crossHair"]->SetAndDraw(cmdList, mObjectCB.get());
 }
 
 void GameScene::OnProcessMouseDown(HWND hwnd, WPARAM buttonState)
 {
-	SetCapture(hwnd);
-	GetCursorPos(&mLastMousePos);
+	if (!GetCapture()) {
+		SetCapture(hwnd);
+		GetCursorPos(&mLastMousePos);
+		ShowCursor(FALSE);
+	}
+	else {
+		
+	}
 }
 
 void GameScene::OnProcessMouseUp(WPARAM buttonState)
 {
-	ReleaseCapture();
+	//ReleaseCapture();
 }
 
 void GameScene::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -113,21 +124,26 @@ void GameScene::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
 		case '1':
 			if (mPlayer) {
 				auto newCamera = mPlayer->ChangeCameraMode((int)CameraMode::FIRST_PERSON_CAMERA);
-				if(newCamera) mCamera.reset(newCamera);
+				if (newCamera) mCamera.reset(newCamera);
 			}
 			break;
 
 		case '2':
 			if (mPlayer) {
 				auto newCamera = mPlayer->ChangeCameraMode((int)CameraMode::THIRD_PERSON_CAMERA);
-				if(newCamera) mCamera.reset(newCamera);
+				if (newCamera) mCamera.reset(newCamera);
 			}
 			break;
 		case '3':
 			if (mPlayer) {
 				auto newCamera = mPlayer->ChangeCameraMode((int)CameraMode::TOP_DOWN_CAMERA);
-				if(newCamera) mCamera.reset(newCamera);
+				if (newCamera) mCamera.reset(newCamera);
 			}
+			break;
+
+		case VK_CONTROL:
+			ReleaseCapture();
+			ShowCursor(TRUE);
 			break;
 		}
 		Resize(mAspect);
@@ -164,14 +180,13 @@ void GameScene::OnMouseInput(const GameTimer& timer)
 	{
 		POINT currMousePos;
 		GetCursorPos(&currMousePos);
+		SetCursorPos(mLastMousePos.x, mLastMousePos.y);
 		
 		float delta_x = 0.25f * static_cast<float>(currMousePos.x - mLastMousePos.x);
 		float delta_y = 0.25f * static_cast<float>(currMousePos.y - mLastMousePos.y);
 
 		mPlayer->RotateY(delta_x);
 		mPlayer->Pitch(delta_y);
-
-		mLastMousePos = currMousePos;
 	}
 }
 
@@ -202,28 +217,56 @@ void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList
 {
 	// Terrain
 	auto terrain = std::make_unique<TerrainObject>(0);
-	terrain->BuildTerrainMeshes(device, cmdList, 257, 257, 257, 257,
+	terrain->BuildTerrainMeshes(device, cmdList, 257, 257,
 		XMFLOAT3(2.0f, 0.5f, 2.0f), XMFLOAT4(0.2f, 0.4f, 0.0f, 1.0f),
 		L"Resources\\heightmap1.raw");
 
-	// Player(Box)
-	mMeshes["box"] = std::make_unique<BoxMesh>(device, cmdList, 2.0f, 2.0f, 2.0f);
+	mPipelines["defaultColor"]->SetObject(terrain.get());
+	mPipelines["wiredColor"]->SetObject(terrain.get());
 
-	auto box = std::make_unique<TerrainPlayer>(1, mMeshes["box"].get(), terrain.get());
+	// Player(Box + Gun)
+	mMeshes["box"] = std::make_unique<BoxMesh>(device, cmdList, 1.0f, 3.0f, 1.0f);
+	mMeshes["gun_body"] = std::make_unique<Mesh>(device, cmdList, L"Models\\GunBody.bin");
+	mMeshes["gun_slide"] = std::make_unique<Mesh>(device, cmdList, L"Models\\GunSlide.bin");
+
+	auto gunSlide = std::make_unique<GunObject>(1, mMeshes["gun_slide"].get());
+	gunSlide->SetPosition(1.0f, 3.0f, 3.0f);
+	gunSlide->SetMaterial(XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f), XMFLOAT3(0.1f, 0.1f, 0.1f), 0.4f);
+	gunSlide->Rotate(0.0f, -90.0f, 0.0f);
+	
+	auto gunBody = std::make_unique<GunObject>(2, mMeshes["gun_body"].get());
+	gunBody->SetPosition(1.0f, 3.0f, 3.0f);
+	gunBody->SetMaterial(XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f), XMFLOAT3(0.1f, 0.1f, 0.1f), 0.4f);
+	//gunBody->SetChild(gunSlide.get());
+	gunBody->Rotate(0.0f, -90.0f, 0.0f);
+
+	auto box = std::make_unique<GunPlayer>(3, mMeshes["box"].get(), terrain.get());
 	box->SetMaterial(XMFLOAT4(0.8f, 0.6f, 0.0f, 1.0f), XMFLOAT3(0.4f, 0.4f, 0.4f), 0.125f);
+	box->SetChild(gunBody.get());
+	box->SetChild(gunSlide.get());
 
 	mPlayer = box.get();
 	mCamera.reset(mPlayer->ChangeCameraMode((int)CameraMode::THIRD_PERSON_CAMERA));
 	Resize(mAspect);  // Resetting Lens
 
-	// Setting Pipelines and Objects container
-	mPipelines["defaultColor"]->SetObject(terrain.get());
-	mPipelines["wiredColor"]->SetObject(terrain.get());
-	mGameObjects.emplace_back(std::move(terrain));
-
+	mPipelines["defaultLit"]->SetObject(gunSlide.get());
+	mPipelines["defaultLit"]->SetObject(gunBody.get());
 	mPipelines["defaultLit"]->SetObject(box.get());
+
+	mPipelines["wiredLit"]->SetObject(gunSlide.get());
+	mPipelines["wiredLit"]->SetObject(gunBody.get());
 	mPipelines["wiredLit"]->SetObject(box.get());
+
+	auto crossHair = std::make_unique<CrossHairObject>(4, device, cmdList);
+	mCross = crossHair.get();
+
+	mPipelines["crossHair"]->SetObject(crossHair.get());	
+
+	mGameObjects.emplace_back(std::move(terrain));
+	mGameObjects.emplace_back(std::move(gunSlide));
+	mGameObjects.emplace_back(std::move(gunBody));
 	mGameObjects.emplace_back(std::move(box));
+	mGameObjects.emplace_back(std::move(crossHair));
 }
 
 void GameScene::BuildConstantBuffers(ID3D12Device* device)
@@ -238,6 +281,7 @@ void GameScene::BuildShadersAndPSOs(ID3D12Device* device)
 	mShaders["defaultLit"] = std::make_unique<DefaultShader>(L"Shaders\\defaultLit.hlsl");
 	mShaders["defaultColor"] = std::make_unique<DefaultShader>(L"Shaders\\defaultColor.hlsl");
 	mShaders["diffuse"] = std::make_unique<DiffuseShader>(L"Shaders\\diffuse.hlsl");
+	mShaders["screen"] = std::make_unique<DiffuseShader>(L"Shaders\\screenDiffuse.hlsl");
 
 	mPipelines["defaultLit"] = std::make_unique<Pipeline>(false);
 	mPipelines["defaultLit"]->BuildPipeline(device, mRootSignature.Get(), mShaders["defaultLit"].get());
@@ -250,4 +294,8 @@ void GameScene::BuildShadersAndPSOs(ID3D12Device* device)
 
 	mPipelines["wiredColor"] = std::make_unique<Pipeline>(true);
 	mPipelines["wiredColor"]->BuildPipeline(device, mRootSignature.Get(), mShaders["diffuse"].get());
+
+	mPipelines["crossHair"] = std::make_unique<Pipeline>(false);
+	mPipelines["crossHair"]->SetTopology(D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE);
+	mPipelines["crossHair"]->BuildPipeline(device, mRootSignature.Get(), mShaders["screen"].get());
 }
