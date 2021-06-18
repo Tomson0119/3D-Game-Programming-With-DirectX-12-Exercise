@@ -59,6 +59,7 @@ private:
 	std::vector<std::unique_ptr<GameObject>> mGameObjects;
 
 	Player* mPlayer = nullptr;
+	CrossHairObject* mCross = nullptr;
 
 	POINT mLastMousePos;
 
