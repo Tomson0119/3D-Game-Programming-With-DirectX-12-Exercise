@@ -17,6 +17,7 @@ public:
 		ID3D12RootSignature* rootSig,
 		Shader* shader);
 
+	void SetTopology(D3D12_PRIMITIVE_TOPOLOGY_TYPE topology) { mPrimitive = topology; }
 	void SetObject(GameObject* obj);
 	void SetAndDraw(ID3D12GraphicsCommandList* cmdList, ConstantBuffer<ObjectConstants>* objCB);
 
