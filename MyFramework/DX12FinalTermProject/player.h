@@ -68,3 +68,15 @@ public:
 	virtual void OnPlayerUpdate(float elapsedTime) override;
 	virtual void OnCameraUpdate(float elapsedTime) override;
 };
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+//
+class GunPlayer : public TerrainPlayer
+{
+public:
+	GunPlayer(int offset, Mesh* mesh, void* context);
+	GunPlayer(const GunPlayer& rhs) = delete;
+	GunPlayer& operator=(const GunPlayer& rhs) = delete;
+	virtual ~GunPlayer();
+};
