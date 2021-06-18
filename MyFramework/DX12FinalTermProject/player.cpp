@@ -73,7 +73,8 @@ void Player::Pitch(float angle)
 		switch (mCamera->GetMode())
 		{
 		case CameraMode::FIRST_PERSON_CAMERA:
-			XMFLOAT3 look = GetLook();
+			XMFLOAT3 look = { 0.0f, GetLook().y, 1.0f };
+			look = Vector3::Normalize(look);
 			XMFLOAT3 forward = { 0.0f, 0.0f, 1.0f };
 
 			float radian = std::acosf(Vector3::Dot(look, forward));
@@ -82,7 +83,7 @@ void Player::Pitch(float angle)
 			XMFLOAT3 cross = Vector3::Cross(look, forward);
 			bool lookingUp = (cross.x > 0.0f) ? true : false;
 			
-			if (degree < 45.0f ||
+			if (degree < 30.0f ||
 				lookingUp && angle > 0.0f ||
 				!lookingUp && angle < 0.0f)  // 각도 제한
 				GameObject::Pitch(angle);
@@ -91,7 +92,6 @@ void Player::Pitch(float angle)
 		}
 	}
 }
-
 
 Camera* Player::ChangeCameraMode(int cameraMode)
 {	
@@ -172,7 +172,7 @@ TerrainPlayer::TerrainPlayer(int offset, Mesh* mesh, void* context)
 	TerrainObject* terrain = (TerrainObject*)context;
 	float xPos = terrain->GetWidth() * 0.5f;
 	float zPos = terrain->GetDepth() * 0.5f;
-	float yPos = terrain->GetHeight(xPos, zPos) + 100.0f;
+	float yPos = terrain->GetHeight(xPos, zPos) + 30.0f;
 	SetPosition(xPos, yPos, zPos);
 
 	SetPlayerContext(terrain);
@@ -234,8 +234,9 @@ void TerrainPlayer::OnPlayerUpdate(float elapsedTime)
 	XMFLOAT3 playerPos = GetPosition();
 	TerrainObject* terrain = (TerrainObject*)mPlayerUpdateContext;
 
-	float playerHalfHeight = 1.0f;
-	float height = terrain->GetHeight(playerPos.x, playerPos.z) + playerHalfHeight;
+	float playerHalfHeight = mMesh->mOOBB.Extents.y * 0.5f;
+	
+	float height = terrain->GetHeight(playerPos.x, playerPos.z) + playerHalfHeight + 1.0f;
 
 	if (playerPos.y < height)
 	{
@@ -262,4 +263,15 @@ void TerrainPlayer::OnCameraUpdate(float elapsedTime)
 		if (mCamera->GetMode() == CameraMode::THIRD_PERSON_CAMERA)
 			mCamera->LookAt(GetPosition());
 	}
+}
+
+/////////////////////////////////////////////////////////////////////////////////////
+//
+GunPlayer::GunPlayer(int offset, Mesh* mesh, void* context)
+	: TerrainPlayer(offset, mesh, context)
+{
+}
+
+GunPlayer::~GunPlayer()
+{
 }
