@@ -108,6 +108,7 @@ struct CameraConstants
 	XMFLOAT4X4 Proj;
 	XMFLOAT4X4 ViewProj;
 	XMFLOAT3 CameraPos;
+	float Aspect;
 };
 
 struct Material
@@ -171,6 +172,11 @@ namespace Vector3
 	inline XMFLOAT3 TransformNormal(XMFLOAT3& src, FXMMATRIX& mat)
 	{
 		return VectorToFloat3(XMVector3TransformNormal(XMLoadFloat3(&src), mat));
+	}
+
+	inline XMFLOAT3 Transform(XMFLOAT3& src, FXMMATRIX& mat)
+	{
+		return VectorToFloat3(XMVector3Transform(XMLoadFloat3(&src), mat));
 	}
 
 	inline XMFLOAT3 TransformCoord(XMFLOAT3& src, XMFLOAT4X4& mat)
