@@ -41,6 +41,9 @@ private:
 	void BuildConstantBuffers(ID3D12Device* device);
 	void BuildShadersAndPSOs(ID3D12Device* device);
 
+	XMFLOAT3 CenterPointScreenToWorld();
+	XMFLOAT3 GetCollisionPosWithTerrain(XMFLOAT3& start, XMFLOAT3& dir);
+
 private:
 	XMFLOAT4 mFrameColor = (XMFLOAT4)Colors::LightSkyBlue;
 
@@ -59,7 +62,9 @@ private:
 	std::vector<std::unique_ptr<GameObject>> mGameObjects;
 
 	Player* mPlayer = nullptr;
-	CrossHairObject* mCross = nullptr;
+	LineObject* mBulletTrack = nullptr;
+	GameObject* Test = nullptr;
+	TerrainObject* mTerrain = nullptr;
 
 	POINT mLastMousePos;
 
