@@ -26,12 +26,6 @@ public:
 	void SetMesh(Mesh* mesh) { mMesh = mesh; }
 	virtual void SetPosition(float x, float y, float z);
 	virtual void SetPosition(XMFLOAT3 pos);
-
-	void SetLook(XMFLOAT3& dir)
-	{
-		mLook = dir;
-	}
-
 	virtual void SetMaterial(XMFLOAT4 color, XMFLOAT3 frenel, float roughness);
 
 public:
@@ -60,6 +54,8 @@ public:
 	
 	UINT CBIndex() const { return mCBIndex; }
 	virtual ObjectConstants GetObjectConstants();
+	BoundingOrientedBox GetBoundingBox() const { return mOOBB; }
+	
 	
 protected:
 	XMFLOAT3 mPosition = { 0.0f, 0.0f, 0.0f };
