@@ -185,6 +185,31 @@ void Mesh::LoadFromBinary(
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 //
+LineMesh::LineMesh(
+	ID3D12Device* device,
+	ID3D12GraphicsCommandList* cmdList, 
+	float length)
+{
+	float halfLength = length * 0.5f;
+	std::array<DiffuseVertex, 2> vertices =
+	{
+		DiffuseVertex(XMFLOAT3(0.0f, 0.0f, -halfLength), (XMFLOAT4)Colors::Black),
+		DiffuseVertex(XMFLOAT3(0.0f, 0.0f, +halfLength), (XMFLOAT4)Colors::Black)
+	};
+
+	std::array<UINT, 2> indices = { 0, 1 };
+
+	Mesh::CreateResourceInfo(device, cmdList, sizeof(DiffuseVertex), sizeof(UINT),
+		D3D_PRIMITIVE_TOPOLOGY_LINELIST,
+		vertices.data(), (UINT)vertices.size(), indices.data(), (UINT)indices.size());
+}
+
+LineMesh::~LineMesh()
+{
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+//
 CrossHairMesh::CrossHairMesh(
 	ID3D12Device* device,
 	ID3D12GraphicsCommandList* cmdList,
@@ -210,7 +235,7 @@ CrossHairMesh::CrossHairMesh(
 
 	std::array<UINT, 8> indices = { 0, 1, 2, 3, 4, 5, 6, 7 };
 
-	CreateResourceInfo(device, cmdList, sizeof(DiffuseVertex), sizeof(UINT),
+	Mesh::CreateResourceInfo(device, cmdList, sizeof(DiffuseVertex), sizeof(UINT),
 		D3D_PRIMITIVE_TOPOLOGY_LINELIST, vertices.data(), (UINT)vertices.size(),
 		indices.data(), (UINT)indices.size());
 }
@@ -327,11 +352,11 @@ HeightMapGridMesh::HeightMapGridMesh(
 	}		
 
 	k = 0;
-	for (UINT z = 0; z < depth - 1; ++z)
+	for (UINT z = 0; z < (UINT)depth - 1; ++z)
 	{
 		if (!(z & 1))
 		{
-			for (UINT x = 0; x < width; ++x)
+			for (UINT x = 0; x < (UINT)width; ++x)
 			{
 				if ((x == 0) && (z > 0))
 					indices[k++] = x + (z * width);
@@ -383,5 +408,3 @@ XMFLOAT4 HeightMapGridMesh::GetColor(int x, int z, HeightMapImage* context) cons
 	
 	return Vector4::Multiply(reflect, incidentLitColor);
 }
-
-
