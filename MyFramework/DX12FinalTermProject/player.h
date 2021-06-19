@@ -3,6 +3,7 @@
 #include "gameObject.h"
 #include "camera.h"
 
+
 class Player : public GameObject
 {
 public:
@@ -81,4 +82,22 @@ public:
 	virtual ~GunPlayer();
 
 	XMFLOAT3 GetMuzzlePos();
+};
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+//
+class EnemyObject : public TerrainPlayer
+{
+public:
+	EnemyObject(int offset, Mesh* mesh, void* context);
+	EnemyObject(const EnemyObject& rhs) = delete;
+	EnemyObject& operator=(const EnemyObject& rhs) = delete;
+	virtual ~EnemyObject();
+
+	//virtual void Update(float elapsedTime, XMFLOAT4X4* parent) override;
+
+private:
+	float mMovingSpeed = 0.0f;
+
 };

@@ -41,7 +41,7 @@ void Player::Move(XMFLOAT3& shift, bool updateVelocity)
 	else
 	{
 		mPosition = Vector3::Add(mPosition, shift);
-		mCamera->Move(shift.x, shift.y, shift.z);
+		if(mCamera) mCamera->Move(shift.x, shift.y, shift.z);
 	}
 }
 
@@ -117,8 +117,13 @@ Camera* Player::ChangeCameraMode(int cameraMode)
 	if (newCamera)
 	{
 		newCamera->SetMode(cameraMode);
-		newCamera->SetPlayer(this);
+		newCamera->SetPlayer(this);		
 	}
+
+	if (mCamera &&  // 정면을 바라보도록 수정한다.
+		mCamera->GetMode() == CameraMode::FIRST_PERSON_CAMERA)
+		mLook.y = 0.0f;
+
 	return newCamera;
 }
 
@@ -145,14 +150,16 @@ void Player::Update(float elapsedTime, XMFLOAT4X4* parent)
 	if(mPlayerUpdateContext)
 		OnPlayerUpdate(elapsedTime);
 	
-	int mode = (int)mCamera->GetMode();
-	if (mode == (int)CameraMode::THIRD_PERSON_CAMERA)
-		mCamera->Update(elapsedTime);
-	if (mCameraUpdateContext)
-		OnCameraUpdate(elapsedTime);
-	if (mode == (int)CameraMode::THIRD_PERSON_CAMERA)
-		mCamera->LookAt(mPosition);
-	mCamera->UpdateViewMatrix();
+	if (mCamera) {
+		int mode = (int)mCamera->GetMode();
+		if (mode == (int)CameraMode::THIRD_PERSON_CAMERA)
+			mCamera->Update(elapsedTime);
+		if (mCameraUpdateContext)
+			OnCameraUpdate(elapsedTime);
+		if (mode == (int)CameraMode::THIRD_PERSON_CAMERA)
+			mCamera->LookAt(mPosition);
+		mCamera->UpdateViewMatrix();
+	}
 
 	length = Vector3::Length(mVelocity);
 	float deceleration = (mFriction * elapsedTime);
@@ -193,7 +200,7 @@ Camera* TerrainPlayer::ChangeCameraMode(int cameraMode)
 	switch (mCamera->GetMode())
 	{
 	case CameraMode::FIRST_PERSON_CAMERA:
-		mFriction = 2.0f;
+		mFriction = 50.0f;
 		mGravity = { 0.0f, -9.8f, 0.0f };
 		mMaxVelocityXZ = 25.5f;
 		mMaxVelocityY = 40.0f;
@@ -203,7 +210,7 @@ Camera* TerrainPlayer::ChangeCameraMode(int cameraMode)
 		break;
 
 	case CameraMode::THIRD_PERSON_CAMERA:
-		mFriction = 20.0f;
+		mFriction = 50.0f;
 		mGravity = { 0.0f, -9.8f, 0.0f };
 		mMaxVelocityXZ = 25.5f;
 		mMaxVelocityY = 40.0f;
@@ -213,7 +220,7 @@ Camera* TerrainPlayer::ChangeCameraMode(int cameraMode)
 		break;
 
 	case CameraMode::TOP_DOWN_CAMERA:
-		mFriction = 20.0f;
+		mFriction = 50.0f;
 		mGravity = { 0.0f, -9.8f, 0.0f };
 		mMaxVelocityXZ = 25.5f;
 		mMaxVelocityY = 40.0f;
@@ -234,9 +241,9 @@ void TerrainPlayer::OnPlayerUpdate(float elapsedTime)
 	XMFLOAT3 playerPos = GetPosition();
 	TerrainObject* terrain = (TerrainObject*)mPlayerUpdateContext;
 
-	float playerHalfHeight = mMesh->mOOBB.Extents.y * 0.5f;
+	float playerHalfHeight = mOOBB.Extents.y * 0.5f;
 	
-	float height = terrain->GetHeight(playerPos.x, playerPos.z) + playerHalfHeight + 1.0f;
+	float height = terrain->GetHeight(playerPos.x, playerPos.z) + playerHalfHeight + 0.5f;
 
 	if (playerPos.y < height)
 	{
@@ -265,6 +272,7 @@ void TerrainPlayer::OnCameraUpdate(float elapsedTime)
 	}
 }
 
+
 /////////////////////////////////////////////////////////////////////////////////////
 //
 GunPlayer::GunPlayer(int offset, Mesh* mesh, void* context)
@@ -289,3 +297,23 @@ XMFLOAT3 GunPlayer::GetMuzzlePos()
 	}
 	return mPosition;
 }
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+//
+EnemyObject::EnemyObject(int offset, Mesh* mesh, void* context)
+	: TerrainPlayer(offset, mesh, context)
+{
+	mFriction = 20.0f;
+	mGravity = { 0.0f, -9.8f, 0.0f };
+	mMaxVelocityXZ = 25.5f;
+	mMaxVelocityY = 40.0f;
+}
+
+EnemyObject::~EnemyObject()
+{
+}
+//
+//void EnemyObject::Update(float elapsedTime, XMFLOAT4X4* parent)
+//{
+//}
