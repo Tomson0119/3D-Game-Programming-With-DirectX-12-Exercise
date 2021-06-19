@@ -6,6 +6,7 @@ cbuffer CameraCB : register(b0)
     matrix gProj      : packoffset(c4);
     matrix gViewProj  : packoffset(c8);
     float3 gCameraPos : packoffset(c12);
+    float gAspect     : packoffset(c12.w);
 }
 
 cbuffer LightCB : register(b1)
@@ -29,7 +30,6 @@ struct VertexIn
 struct VertexOut
 {
     float4 PosH  : SV_POSITION;
-    float3 PosW  : POSITION;
     float4 Color : COLOR;
 };
 
@@ -37,8 +37,8 @@ VertexOut VS(VertexIn vin)
 {
     VertexOut vout;
 	
-    vout.PosW = mul(float4(vin.PosL, 1.0f), gWorld).xyz;
-    vout.PosH = mul(float4(vout.PosW, 1.0f), gViewProj);
+    vout.PosH = float4(vin.PosL, 1.0f);
+    vout.PosH.y = vout.PosH.y * gAspect;
     vout.PosH.z = 0.0f;
     
     vout.Color = vin.Color;
