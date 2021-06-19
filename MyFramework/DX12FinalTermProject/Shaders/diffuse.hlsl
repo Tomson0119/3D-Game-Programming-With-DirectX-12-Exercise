@@ -2,10 +2,11 @@
 
 cbuffer CameraCB : register(b0)
 {
-    matrix gView	    : packoffset(c0);
-    matrix gProj	    : packoffset(c4);
-    matrix gViewProj    : packoffset(c8); 
-    float3 gCameraPos   : packoffset(c12);
+    matrix gView	  : packoffset(c0);
+    matrix gProj	  : packoffset(c4);
+    matrix gViewProj  : packoffset(c8); 
+    float3 gCameraPos : packoffset(c12);
+    float gAspect     : packoffset(c12.w);
 }
 
 cbuffer LightCB : register(b1)
@@ -22,15 +23,15 @@ cbuffer ObjectCB : register(b2)
 
 struct VertexIn
 {
-	float3 PosL		: POSITION;
-    float4 Color    : COLOR;
+	float3 PosL  : POSITION;
+    float4 Color : COLOR;
 };
 
 struct VertexOut
 {
-	float4 PosH     : SV_POSITION;
-    float3 PosW     : POSITION;
-    float4 Color    : COLOR;
+	float4 PosH  : SV_POSITION;
+    float3 PosW  : POSITION;
+    float4 Color : COLOR;
 };
 
 VertexOut VS(VertexIn vin)

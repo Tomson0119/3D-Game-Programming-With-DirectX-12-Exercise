@@ -2,15 +2,16 @@
 
 cbuffer CameraCB : register(b0)
 {
-    matrix gView : packoffset(c0);
-    matrix gProj : packoffset(c4);
-    matrix gViewProj : packoffset(c8);
+    matrix gView      : packoffset(c0);
+    matrix gProj      : packoffset(c4);
+    matrix gViewProj  : packoffset(c8);
     float3 gCameraPos : packoffset(c12);
+    float gAspect     : packoffset(c12.w);
 }
 
 cbuffer LightCB : register(b1)
 {
-    float4 gAmbient : packoffset(c0);
+    float4 gAmbient           : packoffset(c0);
     Light gLights[NUM_LIGHTS] : packoffset(c1);
 }
 
@@ -22,16 +23,16 @@ cbuffer ObjectCB : register(b2)
 
 struct VertexIn
 {
-    float3 PosL : POSITION;
-    float3 NormalL : NORMAL;
+    float3 PosL     : POSITION;
+    float3 NormalL  : NORMAL;
     float2 TexCoord : TEXCOORD;
 };
 
 struct VertexOut
 {
-    float4 PosH : SV_POSITION;
-    float3 PosW : POSITION;
-    float3 NormalW : NORMAL;
+    float4 PosH     : SV_POSITION;
+    float3 PosW     : POSITION;
+    float3 NormalW  : NORMAL;
     float2 TexCoord : TEXCOORD;
 };
 
