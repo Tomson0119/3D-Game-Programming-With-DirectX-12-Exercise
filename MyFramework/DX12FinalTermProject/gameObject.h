@@ -27,6 +27,11 @@ public:
 	virtual void SetPosition(float x, float y, float z);
 	virtual void SetPosition(XMFLOAT3 pos);
 
+	void SetLook(XMFLOAT3& dir)
+	{
+		mLook = dir;
+	}
+
 	virtual void SetMaterial(XMFLOAT4 color, XMFLOAT3 frenel, float roughness);
 
 public:
@@ -79,6 +84,27 @@ protected:
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 //
+class LineObject : public GameObject
+{
+public:
+	LineObject(int offset,
+		ID3D12Device* device,
+		ID3D12GraphicsCommandList* cmdList,
+		float length);
+	LineObject(const LineObject& rhs) = delete;
+	LineObject& operator=(const LineObject& rhs) = delete;
+	virtual ~LineObject();
+
+	void SetLook(XMFLOAT3& look);
+	float GetLength() const { return mLength; }
+
+private:
+	float mLength = 0.0f;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+//
 class CrossHairObject : public GameObject
 {
 public:
@@ -88,8 +114,6 @@ public:
 	CrossHairObject(const CrossHairObject& rhs) = delete;
 	CrossHairObject& operator=(const CrossHairObject& rhs) = delete;
 	virtual ~CrossHairObject();
-
-	void UpdatePosition(Camera* camera);
 };
 
 

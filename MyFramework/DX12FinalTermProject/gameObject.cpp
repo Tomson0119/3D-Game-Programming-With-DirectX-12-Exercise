@@ -204,27 +204,40 @@ ObjectConstants GameObject::GetObjectConstants()
 
 ///////////////////////////////////////////////////////////////////////////////
 //
+LineObject::LineObject(int offset, 
+	ID3D12Device* device, 
+	ID3D12GraphicsCommandList* cmdList, 
+	float length)
+	: GameObject(offset), mLength(length)
+{
+	mMesh = new LineMesh(device, cmdList, length);
+}
+
+LineObject::~LineObject()
+{
+	if (mMesh) delete mMesh;
+}
+
+void LineObject::SetLook(XMFLOAT3& look)
+{
+	mLook = look;
+	GameObject::Update(1.0f, nullptr);
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
 CrossHairObject::CrossHairObject(int offset,
 	ID3D12Device* device,
 	ID3D12GraphicsCommandList* cmdList)
 	: GameObject(offset)
 {
-	mMesh = new CrossHairMesh(device, cmdList, XMFLOAT3(0.0f, 0.0f, 0.0f), 0.2f, XMFLOAT2(0.08f, 0.08f));
+	mMesh = new CrossHairMesh(device, cmdList, XMFLOAT3(0.0f, 0.0f, 0.0f), 0.04f, XMFLOAT2(0.02f, 0.02f));
 }
 
 CrossHairObject::~CrossHairObject()
 {
 	if (mMesh) delete mMesh;
-}
-
-void CrossHairObject::UpdatePosition(Camera* camera)
-{
-	mLook = camera->GetLook();
-	mUp = camera->GetUp();
-	mRight = camera->GetRight();
-	mPosition = Vector3::Add(camera->GetPosition(), mLook, 10.0f);
-
-	GameObject::UpdateTransform(nullptr);
 }
 
 
@@ -244,6 +257,7 @@ void GunObject::UpdateTransform(XMFLOAT4X4* parent)
 {
 	GameObject::UpdateTransform(parent);
 }
+
 
 ///////////////////////////////////////////////////////////////////////////////
 //
