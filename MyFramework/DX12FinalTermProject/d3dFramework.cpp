@@ -422,6 +422,7 @@ LRESULT D3DFramework::OnProcessMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 	default:
 		return DefWindowProc(m_hwnd, uMsg, wParam, lParam);
 	}
+	return 0;
 }
 
 void D3DFramework::OnProcessMouseInput(UINT uMsg, WPARAM wParam, LPARAM lParam)

@@ -29,4 +29,5 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int mCmdShow)
 		MessageBox(nullptr, error.ToString().c_str(), L"HR ERROR", MB_OK);
 		return 0;
 	}
+	return 0;
 }
