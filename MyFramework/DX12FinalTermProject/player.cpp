@@ -132,7 +132,7 @@ void Player::Update(float elapsedTime, XMFLOAT4X4* parent)
 	{
 		mVelocity.x *= (mMaxVelocityXZ / length);
 		mVelocity.z *= (mMaxVelocityXZ / length);
-	}
+	}	
 
 	length = sqrtf(mVelocity.y * mVelocity.y);
 	if (length > mMaxVelocityY)
@@ -274,4 +274,18 @@ GunPlayer::GunPlayer(int offset, Mesh* mesh, void* context)
 
 GunPlayer::~GunPlayer()
 {
+}
+
+XMFLOAT3 GunPlayer::GetMuzzlePos()
+{
+	if (mChild && dynamic_cast<GunObject*>(mChild)) {
+		XMFLOAT3 offset = mChild->GetPosition();
+		XMFLOAT3 pos = mPosition;
+		pos = Vector3::Add(pos, mLook, offset.z);
+		pos = Vector3::Add(pos, mUp, offset.y);
+		pos = Vector3::Add(pos, mRight, offset.x);
+		pos = Vector3::Add(pos, mLook, 0.5f);
+		return pos;
+	}
+	return mPosition;
 }

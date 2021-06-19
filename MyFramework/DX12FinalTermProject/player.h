@@ -79,4 +79,6 @@ public:
 	GunPlayer(const GunPlayer& rhs) = delete;
 	GunPlayer& operator=(const GunPlayer& rhs) = delete;
 	virtual ~GunPlayer();
+
+	XMFLOAT3 GetMuzzlePos();
 };
