@@ -488,6 +488,8 @@ void D3DFramework::ChangeFullScreenState()
 
 	mSwapChain->GetFullscreenState(&mFullScreen, NULL);
 	mSwapChain->SetFullscreenState(!mFullScreen, NULL);
+
+	OnResize();
 }
 
 ID3D12Resource* D3DFramework::CurrentBackBuffer() const
