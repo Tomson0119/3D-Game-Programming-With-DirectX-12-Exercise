@@ -42,7 +42,7 @@ private:
 	void BuildShadersAndPSOs(ID3D12Device* device);
 
 	XMFLOAT3 CenterPointScreenToWorld();
-	XMFLOAT3 GetCollisionPosWithTerrain(XMFLOAT3& start, XMFLOAT3& dir);
+	XMFLOAT3 GetCollisionPosWithObjects(XMFLOAT3& start, XMFLOAT3& dir);
 
 private:
 	XMFLOAT4 mFrameColor = (XMFLOAT4)Colors::LightSkyBlue;
@@ -60,6 +60,7 @@ private:
 	std::unordered_map<std::string, std::unique_ptr<Pipeline>> mPipelines;
 
 	std::vector<std::unique_ptr<GameObject>> mGameObjects;
+	std::array<EnemyObject*, 10> mEnemies;
 
 	Player* mPlayer = nullptr;
 	LineObject* mBulletTrack = nullptr;
