@@ -83,7 +83,7 @@ void Player::Pitch(float angle)
 			XMFLOAT3 cross = Vector3::Cross(look, forward);
 			bool lookingUp = (cross.x > 0.0f) ? true : false;
 			
-			if (degree < 30.0f ||
+			if (degree < 32.0f ||
 				lookingUp && angle > 0.0f ||
 				!lookingUp && angle < 0.0f)  // 각도 제한
 				GameObject::Pitch(angle);
@@ -304,7 +304,7 @@ XMFLOAT3 GunPlayer::GetMuzzlePos()
 EnemyObject::EnemyObject(int offset, Mesh* mesh, void* context, Player* player)
 	: TerrainPlayer(offset, mesh, context), mPlayer(player)
 {
-	mFriction = 20.0f;
+	mFriction = 0.1f;
 	mGravity = { 0.0f, -9.8f, 0.0f };
 	mMaxVelocityXZ = 25.5f;
 	mMaxVelocityY = 40.0f;
@@ -331,10 +331,18 @@ void EnemyObject::Update(float elapsedTime, XMFLOAT4X4* parent)
 
 	if (mHealth == 0)
 	{
+		mActive = false;
 		SetPosition(-100.0f, -100.0f, -100.0f);
 	}
 
-	GameObject::Update(elapsedTime, parent);
+	if (mActive) {
+		XMFLOAT3 playerPos = { mPlayer->GetPosition().x, 0.0f, mPlayer->GetPosition().z };
+		XMFLOAT3 pos = { mPosition.x, 0.0f, mPosition.z };
+		XMFLOAT3 direction = Vector3::Normalize(Vector3::Subtract(mPlayer->GetPosition(), mPosition));
+		XMFLOAT3 shift = Vector3::Add(XMFLOAT3(0.0f, 0.0f, 0.0f), direction, mMovingSpeed);
+		Player::Move(shift, false);
+	}
+	Player::Update(elapsedTime, parent);
 }
 
 void EnemyObject::SetMaterial(XMFLOAT4 color, XMFLOAT3 frenel, float roughness)
@@ -345,7 +353,8 @@ void EnemyObject::SetMaterial(XMFLOAT4 color, XMFLOAT3 frenel, float roughness)
 
 void EnemyObject::GotShot()
 {
-	if(mHealth > 0) mHealth -= 1;
+	if (mHealth > 0) mHealth -= 1;
+
 	mGotShot = true;
 	mMaterial.Color = XMFLOAT4(0.6f, 0.6f, 0.6f, 1.0f);
 }

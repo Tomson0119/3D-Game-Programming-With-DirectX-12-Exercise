@@ -99,13 +99,18 @@ public:
 	virtual void SetMaterial(XMFLOAT4 color, XMFLOAT3 frenel, float roughness) override;
 
 	void GotShot();
+	void SetActive(bool val) { mActive = val; }
+	void SetSpeed(float speed) { mMovingSpeed = speed; }
+	void SetHealth(unsigned int value) { mHealth = value; }
+
+	bool IsActive() const { return mActive; }
 
 private:
-	float mMovingSpeed = 0.0f;
+	float mMovingSpeed = 0.02f;
 	bool mGotShot = false;
+	bool mActive = true;
 
-	const unsigned int mMaxHealth = 3;
-	unsigned int mHealth = 3;
+	unsigned int mHealth = 0;
 
 	XMFLOAT4 mOriginalColor = { };
 	
