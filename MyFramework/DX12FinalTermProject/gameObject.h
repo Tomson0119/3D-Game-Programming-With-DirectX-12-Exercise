@@ -28,6 +28,8 @@ public:
 	virtual void SetPosition(XMFLOAT3 pos);
 	virtual void SetMaterial(XMFLOAT4 color, XMFLOAT3 frenel, float roughness);
 
+	void SetLook(XMFLOAT3& look);
+
 public:
 	void Move(float dx, float dy, float dz);
 	void Move(XMFLOAT3& dir, float dist);
@@ -112,19 +114,6 @@ public:
 	virtual ~CrossHairObject();
 };
 
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-class GunObject : public GameObject
-{
-public:
-	GunObject(int offset, Mesh* mesh);
-	GunObject(const GunObject& rhs) = delete;
-	GunObject& operator=(const GunObject& rhs) = delete;
-	virtual ~GunObject();
-
-	virtual void UpdateTransform(XMFLOAT4X4* parent) override;
-};
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 //

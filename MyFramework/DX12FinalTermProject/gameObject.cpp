@@ -101,6 +101,12 @@ void GameObject::SetMaterial(XMFLOAT4 color, XMFLOAT3 frenel, float roughness)
 	mMaterial.Roughness = roughness;
 }
 
+void GameObject::SetLook(XMFLOAT3& look)
+{
+	mLook = look;
+	GameObject::Update(1.0f, nullptr);
+}
+
 void GameObject::Move(float dx, float dy, float dz)
 {
 	mPosition.x += dx;
@@ -238,24 +244,6 @@ CrossHairObject::CrossHairObject(int offset,
 CrossHairObject::~CrossHairObject()
 {
 	if (mMesh) delete mMesh;
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-//
-GunObject::GunObject(int offset, Mesh* mesh)
-	: GameObject(offset, mesh)
-{
-	
-}
-
-GunObject::~GunObject()
-{
-}
-
-void GunObject::UpdateTransform(XMFLOAT4X4* parent)
-{
-	GameObject::UpdateTransform(parent);
 }
 
 
