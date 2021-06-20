@@ -15,7 +15,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int mCmdShow)
 	}
 	
 #endif
-	std::cout << "Hello" << std::endl;
 
 	try
 	{
