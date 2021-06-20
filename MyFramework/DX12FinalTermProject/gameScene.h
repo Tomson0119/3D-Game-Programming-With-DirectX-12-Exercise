@@ -44,6 +44,9 @@ private:
 	XMFLOAT3 CenterPointScreenToWorld();
 	XMFLOAT3 GetCollisionPosWithObjects(XMFLOAT3& start, XMFLOAT3& dir);
 	bool OnCollisionWithEnemy(XMFLOAT3& point);
+	bool CheckEnemiesDeath();
+
+	void ShowManual();
 
 private:
 	XMFLOAT4 mFrameColor = (XMFLOAT4)Colors::LightSkyBlue;
@@ -61,13 +64,15 @@ private:
 	std::unordered_map<std::string, std::unique_ptr<Pipeline>> mPipelines;
 
 	std::vector<std::unique_ptr<GameObject>> mGameObjects;
-	std::array<EnemyObject*, 10> mEnemies;
+	std::array<EnemyObject*, 16> mEnemies;
 
 	Player* mPlayer = nullptr;
 	LineObject* mBulletTrack = nullptr;
-	GameObject* Test = nullptr;
+	GameObject* mHitIndicator = nullptr;
 	TerrainObject* mTerrain = nullptr;
+	EnemyObject* mBoss;
 
+	CameraMode mLastCameraMode;
 	POINT mLastMousePos;
 
 	float mAspect = 0.0f;
