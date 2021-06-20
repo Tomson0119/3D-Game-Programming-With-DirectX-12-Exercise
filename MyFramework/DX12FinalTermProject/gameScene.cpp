@@ -13,6 +13,10 @@ std::ostream& operator<<(std::ostream& os, XMFLOAT3& vec)
 
 GameScene::GameScene()
 {
+#if defined(DEBUG) || defined(_DEBUG)
+	ShowManual();
+#endif
+
 	mCamera = std::make_unique<Camera>();
 }
 
@@ -77,6 +81,10 @@ void GameScene::Update(const GameTimer& timer)
 	for (const auto& obj : mGameObjects)
 		obj->Update(dt, nullptr);
 
+	if (CheckEnemiesDeath() && !mBoss->IsActive()) {
+		mBoss->SetPosition(mTerrain->GetWidth() * 0.5f, 50.0f, mTerrain->GetDepth() * 0.5f);
+		mBoss->SetActive(true);
+	}
 	UpdateConstants();
 }
 
@@ -105,34 +113,48 @@ void GameScene::Draw(ID3D12GraphicsCommandList* cmdList, const GameTimer& timer)
 
 void GameScene::OnProcessMouseDown(HWND hwnd, WPARAM buttonState)
 {
-	if (!GetCapture()) {
-		SetCapture(hwnd);
-		GetCursorPos(&mLastMousePos);
-		ShowCursor(FALSE);
+	if (buttonState & MK_LBUTTON)
+	{
+		if (!GetCapture())
+		{
+			SetCapture(hwnd);
+			GetCursorPos(&mLastMousePos);
+			ShowCursor(FALSE);
+		}
+		else if (mCamera->GetMode() == CameraMode::FIRST_PERSON_CAMERA)
+		{
+			XMFLOAT3 pos = mPlayer->GetPosition();
+
+			XMFLOAT3 begin = dynamic_cast<GunPlayer*>(mPlayer)->GetMuzzlePos();
+			begin.y += 0.5f;  // 값을 살짝 조정.
+			XMFLOAT3 screenPos = CenterPointScreenToWorld();
+			screenPos.z = mPlayer->GetPosition().z;
+			XMFLOAT3 collapsed = GetCollisionPosWithObjects(screenPos, mCamera->GetLook());
+
+			XMFLOAT3 dir = Vector3::Normalize(Vector3::Subtract(collapsed, begin));
+			XMFLOAT3 newPos = Vector3::Add(begin, dir, 0.5f * mBulletTrack->GetLength());
+
+			mBulletTrack->SetPosition(newPos);
+			mBulletTrack->SetLook(dir);
+
+			mHitIndicator->SetPosition(collapsed);
+			mHitIndicator->SetLook(mCamera->GetLook());
+		}
 	}
-	else if(mCamera->GetMode() == CameraMode::FIRST_PERSON_CAMERA) {
-		XMFLOAT3 pos = mPlayer->GetPosition();
-		
-		XMFLOAT3 begin = dynamic_cast<GunPlayer*>(mPlayer)->GetMuzzlePos();
-		begin.y += 0.5f;  // 값을 살짝 조정.
-		XMFLOAT3 screenPos = CenterPointScreenToWorld();
-		screenPos.z = mPlayer->GetPosition().z;
-		XMFLOAT3 collapsed = GetCollisionPosWithObjects(screenPos, mPlayer->GetLook());
-		std::cout << collapsed << std::endl;
-
-		XMFLOAT3 dir = Vector3::Normalize(Vector3::Subtract(collapsed, begin));
-		XMFLOAT3 newPos = Vector3::Add(begin, dir, 0.5f * mBulletTrack->GetLength());
-		
-		mBulletTrack->SetPosition(newPos);
-		mBulletTrack->SetLook(dir);
-
-		Test->SetPosition(collapsed);
+	else if (buttonState & MK_RBUTTON)
+	{
+		if (mPlayer) {
+			auto newMode = (mLastCameraMode == CameraMode::FIRST_PERSON_CAMERA) ?
+				CameraMode::THIRD_PERSON_CAMERA : CameraMode::FIRST_PERSON_CAMERA;
+			mLastCameraMode = newMode;
+			auto newCamera = mPlayer->ChangeCameraMode((int)newMode);
+			if (newCamera) mCamera.reset(newCamera);
+		}
 	}
 }
 
 void GameScene::OnProcessMouseUp(WPARAM buttonState)
-{
-	//ReleaseCapture();
+{	
 }
 
 void GameScene::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -146,21 +168,7 @@ void GameScene::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
 			mShowWireFrame = !mShowWireFrame;
 			break;
 
-		case '1':
-			if (mPlayer) {
-				auto newCamera = mPlayer->ChangeCameraMode((int)CameraMode::FIRST_PERSON_CAMERA);
-				if (newCamera) mCamera.reset(newCamera);
-			}
-			break;
-
-		case '2':
-			if (mPlayer) {
-				auto newCamera = mPlayer->ChangeCameraMode((int)CameraMode::THIRD_PERSON_CAMERA);
-				if (newCamera) mCamera.reset(newCamera);
-			}
-			break;
-
-		case '3':
+		case VK_TAB:
 			if (mPlayer) {
 				auto newCamera = mPlayer->ChangeCameraMode((int)CameraMode::TOP_DOWN_CAMERA);
 				if (newCamera) mCamera.reset(newCamera);
@@ -173,6 +181,14 @@ void GameScene::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
 			break;
 		}
 		Resize(mAspect);
+		break;
+
+	case WM_KEYUP:
+		if(wParam == VK_TAB)
+			if (mPlayer) {
+				auto newCamera = mPlayer->ChangeCameraMode((int)mLastCameraMode);
+				if (newCamera) mCamera.reset(newCamera);
+			}
 		break;
 	}
 }
@@ -241,8 +257,10 @@ void GameScene::BuildRootSignature(ID3D12Device* device)
 
 void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
 {
+	UINT index = 0;
+
 	// Terrain
-	auto terrain = std::make_unique<TerrainObject>(0);
+	auto terrain = std::make_unique<TerrainObject>(index++);
 	terrain->BuildTerrainMeshes(device, cmdList, 257, 257,
 		XMFLOAT3(2.0f, 0.5f, 2.0f), XMFLOAT4(0.2f, 0.4f, 0.0f, 1.0f),
 		L"Resources\\heightmap1.raw");
@@ -256,27 +274,27 @@ void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList
 	mMeshes["gun_body"] = std::make_unique<Mesh>(device, cmdList, L"Models\\GunBody.bin");
 	mMeshes["gun_slide"] = std::make_unique<Mesh>(device, cmdList, L"Models\\GunSlide.bin");
 
-	mMeshes["testBox"] = std::make_unique<BoxMesh>(device, cmdList, 0.2f, 0.2f, 0.2f);
-	
+	mMeshes["hitBox"] = std::make_unique<BoxMesh>(device, cmdList, 0.2f, 0.2f, 0.2f);	
 	mMeshes["slime"] = std::make_unique<Mesh>(device, cmdList, L"Models\\Slime.bin");
 
-	auto gunSlide = std::make_unique<GunObject>(1, mMeshes["gun_slide"].get());
+	auto gunSlide = std::make_unique<GameObject>(index++, mMeshes["gun_slide"].get());
 	gunSlide->SetPosition(1.0f, 3.0f, 3.0f);
 	gunSlide->SetMaterial(XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f), XMFLOAT3(0.1f, 0.1f, 0.1f), 0.4f);
 	gunSlide->Rotate(0.0f, -90.0f, 0.0f);
 	
-	auto gunBody = std::make_unique<GunObject>(2, mMeshes["gun_body"].get());
+	auto gunBody = std::make_unique<GameObject>(index++, mMeshes["gun_body"].get());
 	gunBody->SetPosition(1.0f, 3.0f, 3.0f);
 	gunBody->SetMaterial(XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f), XMFLOAT3(0.1f, 0.1f, 0.1f), 0.4f);
 	gunBody->Rotate(0.0f, -90.0f, 0.0f);
 
-	auto box = std::make_unique<GunPlayer>(3, mMeshes["box"].get(), terrain.get());
+	auto box = std::make_unique<GunPlayer>(index++, mMeshes["box"].get(), terrain.get());
 	box->SetMaterial(XMFLOAT4(0.8f, 0.6f, 0.0f, 1.0f), XMFLOAT3(0.4f, 0.4f, 0.4f), 0.125f);
 	box->SetChild(gunBody.get());
 	box->SetChild(gunSlide.get());
 
 	mPlayer = box.get();
 	mCamera.reset(mPlayer->ChangeCameraMode((int)CameraMode::FIRST_PERSON_CAMERA));
+	mLastCameraMode = mCamera->GetMode();
 	Resize(mAspect);  // Resetting Lens
 
 	mPipelines["defaultLit"]->SetObject(gunSlide.get());
@@ -287,38 +305,60 @@ void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList
 	mPipelines["wiredLit"]->SetObject(gunBody.get());
 	mPipelines["wiredLit"]->SetObject(box.get());
 
-	auto line = std::make_unique<LineObject>(4, device, cmdList, 60.0f);
-	line->SetPosition(-100.0f, -100.0f, -100.0f);
+	auto line = std::make_unique<LineObject>(index++, device, cmdList, 60.0f);
+	line->SetPosition(-500.0f, -500.0f, -500.0f);
 	mBulletTrack = line.get();
 	mPipelines["line"]->SetObject(line.get());
 
-	auto crossHair = std::make_unique<CrossHairObject>(5, device, cmdList);
+	auto crossHair = std::make_unique<CrossHairObject>(index++, device, cmdList);
 	mPipelines["screenDiffuse"]->SetObject(crossHair.get());
 
-	auto test = std::make_unique<GameObject>(6, mMeshes["testBox"].get());
-	test->SetMaterial(XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f), XMFLOAT3(0.1f, 0.1f, 0.1f), 0.1f);
-	test->SetPosition(-100.0f, -100.0f, -100.0f);
-	Test = test.get();
-	mPipelines["defaultLit"]->SetObject(test.get());
+	auto hit = std::make_unique<GameObject>(index++, mMeshes["hitBox"].get());
+	hit->SetMaterial(XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f), XMFLOAT3(0.1f, 0.1f, 0.1f), 0.1f);
+	hit->SetPosition(-500.0f, -500.0f, -500.0f);
+	mHitIndicator = hit.get();
+	mPipelines["defaultLit"]->SetObject(hit.get());
+	mPipelines["wiredLit"]->SetObject(hit.get());
 
-	const std::array<XMFLOAT4, 4> colors =
-	{
-		XMFLOAT4(0.6f, 0.4f, 0.2f, 1.0f),
-		XMFLOAT4(0.3f, 0.4f, 1.0f, 1.0f),
-		XMFLOAT4(1.0f, 0.6f, 1.0f, 1.0f),
-		XMFLOAT4(0.4f, 0.0f, 0.7f, 1.0f)
+	struct EnemyInfo {
+		XMFLOAT4 Color;
+		XMFLOAT3 Pos;
 	};
 
-	for (int i = 0; i < 10; ++i)
+	const float offset = 30.0f;
+
+	std::array<EnemyInfo, 4> infos =
 	{
-		auto enemy = std::make_unique<EnemyObject>(i + 7, mMeshes["slime"].get(), terrain.get(), mPlayer);
-		enemy->SetMaterial(colors[i%4], XMFLOAT3(0.0f, 0.0f, 0.0f), 0.3f);
-		enemy->SetPosition(255.0f + i * 2.0f, 60.0f, 300.0f);
+		EnemyInfo(XMFLOAT4(0.6f, 0.4f, 0.2f, 1.0f), XMFLOAT3(offset, 70.0f, offset)),
+		EnemyInfo(XMFLOAT4(0.3f, 0.4f, 1.0f, 1.0f), XMFLOAT3(offset, 70.0f, mTerrain->GetDepth() - offset)),
+		EnemyInfo(XMFLOAT4(1.0f, 0.6f, 1.0f, 1.0f), XMFLOAT3(mTerrain->GetWidth() - offset, 70.0f, offset)),
+		EnemyInfo(XMFLOAT4(0.4f, 0.0f, 0.7f, 1.0f), XMFLOAT3(mTerrain->GetWidth() - offset, 70.0f, mTerrain->GetDepth() - offset))
+	};
+
+	for (int i = 0; i < mEnemies.size(); ++i)
+	{
+		auto enemy = std::make_unique<EnemyObject>(index++, mMeshes["slime"].get(), terrain.get(), mPlayer);
+		enemy->SetMaterial(infos[i%4].Color, XMFLOAT3(0.0f, 0.0f, 0.0f), 0.3f);
+		enemy->SetPosition(Vector3::Add(infos[i % 4].Pos, XMFLOAT3((i / 4) % 2 * 5.0f, 0.0f, (i / 8) % 2 * 5.0f)));
+		enemy->SetSpeed(Math::RandFloat(0.04f, 0.07f));
+		enemy->SetHealth(3);
 		mEnemies[i] = enemy.get();
 		mPipelines["defaultLit"]->SetObject(enemy.get());
 		mPipelines["wiredLit"]->SetObject(enemy.get());
 		mGameObjects.emplace_back(std::move(enemy));
 	}
+
+	auto boss = std::make_unique<EnemyObject>(index++, mMeshes["slime"].get(), terrain.get(), mPlayer);
+	boss->SetMaterial((XMFLOAT4)Colors::DarkBlue, XMFLOAT3(0.0f, 0.0f, 0.0f), 0.3f);
+	boss->SetPosition(-500.0f, -500.0f, -500.0f);
+	boss->Scale(50.0f);
+	boss->SetSpeed(0.02f);
+	boss->SetHealth(20);
+	boss->SetActive(false);
+	mBoss = boss.get();
+	mPipelines["defaultLit"]->SetObject(boss.get());
+	mPipelines["wiredLit"]->SetObject(boss.get());
+	mGameObjects.emplace_back(std::move(boss));
 
 	mGameObjects.emplace_back(std::move(terrain));
 	mGameObjects.emplace_back(std::move(gunSlide));
@@ -326,7 +366,7 @@ void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList
 	mGameObjects.emplace_back(std::move(box));
 	mGameObjects.emplace_back(std::move(line));
 	mGameObjects.emplace_back(std::move(crossHair));
-	mGameObjects.emplace_back(std::move(test));
+	mGameObjects.emplace_back(std::move(hit));
 }
 
 void GameScene::BuildConstantBuffers(ID3D12Device* device)
@@ -400,7 +440,10 @@ XMFLOAT3 GameScene::GetCollisionPosWithObjects(XMFLOAT3& start, XMFLOAT3& dir)
 
 bool GameScene::OnCollisionWithEnemy(XMFLOAT3& point)
 {
-	for (const auto& enemy : mEnemies)
+	std::vector<EnemyObject*> allEnemies = { mEnemies.begin(), mEnemies.end() };
+	allEnemies.emplace_back(mBoss);
+
+	for (const auto& enemy : allEnemies)
 	{
 		XMFLOAT3 center = enemy->GetBoundingBox().Center;
 		XMFLOAT3 extent = enemy->GetBoundingBox().Extents;
@@ -414,9 +457,31 @@ bool GameScene::OnCollisionWithEnemy(XMFLOAT3& point)
 			&& bound[4] <= point.z && point.z <= bound[5])
 		{
 			// Do collision process
+			std::cout << "Hit!" << std::endl;
 			enemy->GotShot();
 			return true;
 		}
 	}
 	return false;
+}
+
+bool GameScene::CheckEnemiesDeath()
+{
+	for (const auto& enemy : mEnemies)
+		if (enemy->IsActive())
+			return false;
+	return true;
+}
+
+void GameScene::ShowManual()
+{
+	std::cout << "================== 조작법 =================" << std::endl;
+	std::cout << "캐릭터 이동         : W, A, S, D" << std::endl;
+	std::cout << "카메라 회전         : 마우스 이동" << std::endl;
+	std::cout << "사격                : 마우스 왼쪽 버튼" << std::endl;
+	std::cout << "1/3인칭 카메라 전환 : 마우스 오른쪽 버튼" << std::endl;
+	std::cout << "탑 다운 카메라 전환 : TAB Holding" << std::endl;
+	std::cout << "전체화면 모드       : F9" << std::endl;
+	std::cout << "커서 활성화         : CONTROL" << std::endl;
+	std::cout << "==========================================" << std::endl;
 }
