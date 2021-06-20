@@ -86,7 +86,6 @@ void GameFramework::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
 	switch (uMsg)
 	{
 	case WM_KEYUP:
-	{
 		switch (wParam)
 		{
 		case VK_ESCAPE:
@@ -102,10 +101,7 @@ void GameFramework::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
 		}
 		break;
 	}
-	default:
-		if (!mScenes.empty()) mScenes.top()->OnProcessKeyInput(uMsg, wParam, lParam);
-		break;
-	}	
+	if (!mScenes.empty()) mScenes.top()->OnProcessKeyInput(uMsg, wParam, lParam);
 }
 
 void GameFramework::Update(const GameTimer& timer)
