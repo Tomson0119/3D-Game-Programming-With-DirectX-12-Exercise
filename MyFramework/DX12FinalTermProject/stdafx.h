@@ -136,6 +136,12 @@ namespace Math
 		return rand() % (max - min + 1) + min;
 	}
 
+	inline float RandFloat(float min, float max)
+	{
+		float r = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+		return r * (max - min) + min;
+	}
+
 	inline float ClampFloat(float x, float min, float max)
 	{
 		return (x < min) ? min : ((x > max) ? max : x);
