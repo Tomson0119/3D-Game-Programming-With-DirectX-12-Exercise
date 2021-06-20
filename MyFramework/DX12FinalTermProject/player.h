@@ -90,14 +90,24 @@ public:
 class EnemyObject : public TerrainPlayer
 {
 public:
-	EnemyObject(int offset, Mesh* mesh, void* context);
+	EnemyObject(int offset, Mesh* mesh, void* context, Player* player);
 	EnemyObject(const EnemyObject& rhs) = delete;
 	EnemyObject& operator=(const EnemyObject& rhs) = delete;
 	virtual ~EnemyObject();
 
-	//virtual void Update(float elapsedTime, XMFLOAT4X4* parent) override;
+	virtual void Update(float elapsedTime, XMFLOAT4X4* parent) override;
+	virtual void SetMaterial(XMFLOAT4 color, XMFLOAT3 frenel, float roughness) override;
+
+	void GotShot();
 
 private:
 	float mMovingSpeed = 0.0f;
+	bool mGotShot = false;
 
+	const unsigned int mMaxHealth = 3;
+	unsigned int mHealth = 3;
+
+	XMFLOAT4 mOriginalColor = { };
+	
+	Player* mPlayer = nullptr;
 };

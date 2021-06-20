@@ -301,8 +301,8 @@ XMFLOAT3 GunPlayer::GetMuzzlePos()
 
 /////////////////////////////////////////////////////////////////////////////////////
 //
-EnemyObject::EnemyObject(int offset, Mesh* mesh, void* context)
-	: TerrainPlayer(offset, mesh, context)
+EnemyObject::EnemyObject(int offset, Mesh* mesh, void* context, Player* player)
+	: TerrainPlayer(offset, mesh, context), mPlayer(player)
 {
 	mFriction = 20.0f;
 	mGravity = { 0.0f, -9.8f, 0.0f };
@@ -313,7 +313,39 @@ EnemyObject::EnemyObject(int offset, Mesh* mesh, void* context)
 EnemyObject::~EnemyObject()
 {
 }
-//
-//void EnemyObject::Update(float elapsedTime, XMFLOAT4X4* parent)
-//{
-//}
+
+void EnemyObject::Update(float elapsedTime, XMFLOAT4X4* parent)
+{
+	if (mGotShot)
+	{
+		static float total = 0.0f;
+
+		total += elapsedTime;
+		if (total >= 0.1f)
+		{
+			mMaterial.Color = mOriginalColor;
+			total = 0.0f;
+			mGotShot = false;
+		}
+	}
+
+	if (mHealth == 0)
+	{
+		SetPosition(-100.0f, -100.0f, -100.0f);
+	}
+
+	GameObject::Update(elapsedTime, parent);
+}
+
+void EnemyObject::SetMaterial(XMFLOAT4 color, XMFLOAT3 frenel, float roughness)
+{
+	GameObject::SetMaterial(color, frenel, roughness);
+	mOriginalColor = color;
+}
+
+void EnemyObject::GotShot()
+{
+	if(mHealth > 0) mHealth -= 1;
+	mGotShot = true;
+	mMaterial.Color = XMFLOAT4(0.6f, 0.6f, 0.6f, 1.0f);
+}
