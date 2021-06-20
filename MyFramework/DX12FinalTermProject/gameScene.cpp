@@ -311,7 +311,7 @@ void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList
 
 	for (int i = 0; i < 10; ++i)
 	{
-		auto enemy = std::make_unique<EnemyObject>(i + 7, mMeshes["slime"].get(), terrain.get());
+		auto enemy = std::make_unique<EnemyObject>(i + 7, mMeshes["slime"].get(), terrain.get(), mPlayer);
 		enemy->SetMaterial(colors[i%4], XMFLOAT3(0.0f, 0.0f, 0.0f), 0.3f);
 		enemy->SetPosition(255.0f + i * 2.0f, 60.0f, 300.0f);
 		mEnemies[i] = enemy.get();
@@ -391,14 +391,32 @@ XMFLOAT3 GameScene::GetCollisionPosWithObjects(XMFLOAT3& start, XMFLOAT3& dir)
 
 		if (point.y <= mTerrain->GetHeight(point.x, point.z)
 			|| currentRange >= maxRange)
-			return point;
+			return point;		
 		
-		BoundingBox bullet = { point, XMFLOAT3(0.01f, 0.01f, 0.01f) };
-		for (const auto& enemy : mEnemies)
-			if (enemy->GetBoundingBox().Intersects(bullet)) {
-				std::cout << "Intersected" << std::endl;
-				
-				return point;
-			}
+		if (OnCollisionWithEnemy(point))
+			return point;
 	}
+}
+
+bool GameScene::OnCollisionWithEnemy(XMFLOAT3& point)
+{
+	for (const auto& enemy : mEnemies)
+	{
+		XMFLOAT3 center = enemy->GetBoundingBox().Center;
+		XMFLOAT3 extent = enemy->GetBoundingBox().Extents;
+
+		float bound[6] = { center.x - extent.x, center.x + extent.x,
+						   center.y - extent.y, center.y + extent.y,
+						   center.z - extent.z, center.z + extent.z };
+
+		if (bound[0] <= point.x && point.x <= bound[1]
+			&& bound[2] <= point.y && point.y <= bound[3]
+			&& bound[4] <= point.z && point.z <= bound[5])
+		{
+			// Do collision process
+			enemy->GotShot();
+			return true;
+		}
+	}
+	return false;
 }

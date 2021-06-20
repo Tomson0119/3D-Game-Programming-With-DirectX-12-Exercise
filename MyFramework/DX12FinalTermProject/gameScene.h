@@ -43,6 +43,7 @@ private:
 
 	XMFLOAT3 CenterPointScreenToWorld();
 	XMFLOAT3 GetCollisionPosWithObjects(XMFLOAT3& start, XMFLOAT3& dir);
+	bool OnCollisionWithEnemy(XMFLOAT3& point);
 
 private:
 	XMFLOAT4 mFrameColor = (XMFLOAT4)Colors::LightSkyBlue;
