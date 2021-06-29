@@ -70,7 +70,8 @@ private:
 	LineObject* mBulletTrack = nullptr;
 	GameObject* mHitIndicator = nullptr;
 	TerrainObject* mTerrain = nullptr;
-	EnemyObject* mBoss;
+	EnemyObject* mBoss = nullptr;
+	GunObject* mGunSlide = nullptr;
 
 	CameraMode mLastCameraMode;
 	POINT mLastMousePos;

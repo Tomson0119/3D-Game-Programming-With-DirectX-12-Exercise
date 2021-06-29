@@ -93,7 +93,6 @@ public:
 	LineObject& operator=(const LineObject& rhs) = delete;
 	virtual ~LineObject();
 
-	void SetLook(XMFLOAT3& look);
 	float GetLength() const { return mLength; }
 
 private:
@@ -112,6 +111,26 @@ public:
 	CrossHairObject(const CrossHairObject& rhs) = delete;
 	CrossHairObject& operator=(const CrossHairObject& rhs) = delete;
 	virtual ~CrossHairObject();
+};
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+class GunObject : public GameObject
+{
+public:
+	GunObject(int offset, Mesh *mesh);
+	GunObject(const GunObject& rhs) = delete;
+	GunObject& operator=(const GunObject& rhs) = delete;
+	virtual ~GunObject();
+
+	void SetShootMotion() { mShooted = true; mOrigin = mPosition; }
+	virtual void Update(float elapsedTime, XMFLOAT4X4* parent) override;
+
+private:
+	float mMoveDistance = 10.0f;
+	bool mShooted = false;
+	XMFLOAT3 mOrigin = { };
 };
 
 

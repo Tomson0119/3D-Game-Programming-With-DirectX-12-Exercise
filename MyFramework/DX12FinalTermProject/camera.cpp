@@ -170,8 +170,8 @@ void FirstPersonCamera::Update(const float elapsedTime)
 		mLook = mPlayer->GetLook();
 		mRight = mPlayer->GetRight();
 		mUp = mPlayer->GetUp();
-		Camera::Update(elapsedTime);
 	}
+	Camera::Update(elapsedTime);
 }
 
 
@@ -218,12 +218,6 @@ void ThirdPersonCamera::Update(float elapsedTime)
 		}
 	}
 	Camera::Update(elapsedTime);
-}
-
-void ThirdPersonCamera::LookAt(XMFLOAT3& target)
-{
-	XMFLOAT3 up = (mPlayer) ? mPlayer->GetUp() : XMFLOAT3(0.0f, 1.0f, 0.0f);
-	Camera::LookAt(mPosition, target, up);
 }
 
 

@@ -224,12 +224,6 @@ LineObject::~LineObject()
 	if (mMesh) delete mMesh;
 }
 
-void LineObject::SetLook(XMFLOAT3& look)
-{
-	mLook = look;
-	GameObject::Update(1.0f, nullptr);
-}
-
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -307,4 +301,37 @@ XMFLOAT3 TerrainObject::GetNormal(float x, float z) const
 {
 	assert(mHeightMapImage && "HeightMapImage doesn't exist");
 	return mHeightMapImage->GetNormal((int)(x / mScale.x), (int)(z / mScale.z));
+}
+
+GunObject::GunObject(int offset, Mesh* mesh)
+	: GameObject(offset, mesh)
+{
+
+}
+
+GunObject::~GunObject()
+{
+}
+
+void GunObject::Update(float elapsedTime, XMFLOAT4X4* parent)
+{
+	if (mShooted)
+	{
+		static float movedDistance = 0.0f;
+
+		movedDistance += mMoveDistance * elapsedTime;
+		if (movedDistance > 1.0f)
+			mMoveDistance *= -1.0f;		
+		else if (movedDistance <= 0.0f)
+		{
+			mMoveDistance *= -1.0f;
+			mShooted = false;
+			movedDistance = 0.0f;
+			GameObject::SetPosition(mOrigin);
+			GameObject::Update(elapsedTime, parent);
+			return;
+		}
+		GameObject::Move(mLook, -mMoveDistance * elapsedTime);
+	}
+	GameObject::Update(elapsedTime, parent);
 }

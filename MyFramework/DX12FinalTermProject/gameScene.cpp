@@ -123,8 +123,6 @@ void GameScene::OnProcessMouseDown(HWND hwnd, WPARAM buttonState)
 		}
 		else if (mCamera->GetMode() == CameraMode::FIRST_PERSON_CAMERA)
 		{
-			XMFLOAT3 pos = mPlayer->GetPosition();
-
 			XMFLOAT3 begin = dynamic_cast<GunPlayer*>(mPlayer)->GetMuzzlePos();
 			begin.y += 0.5f;  // 값을 살짝 조정.
 			XMFLOAT3 screenPos = CenterPointScreenToWorld();
@@ -139,16 +137,22 @@ void GameScene::OnProcessMouseDown(HWND hwnd, WPARAM buttonState)
 
 			mHitIndicator->SetPosition(collapsed);
 			mHitIndicator->SetLook(mCamera->GetLook());
+
+			mGunSlide->SetShootMotion();
 		}
 	}
 	else if (buttonState & MK_RBUTTON)
 	{
-		if (mPlayer) {
+		if (GetCapture() && mPlayer) {
 			auto newMode = (mLastCameraMode == CameraMode::FIRST_PERSON_CAMERA) ?
 				CameraMode::THIRD_PERSON_CAMERA : CameraMode::FIRST_PERSON_CAMERA;
 			mLastCameraMode = newMode;
 			auto newCamera = mPlayer->ChangeCameraMode((int)newMode);
-			if (newCamera) mCamera.reset(newCamera);
+			if (newCamera)
+			{
+				mCamera.reset(newCamera);
+				Resize(mAspect);
+			}
 		}
 	}
 }
@@ -171,7 +175,11 @@ void GameScene::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
 		case VK_TAB:
 			if (mPlayer) {
 				auto newCamera = mPlayer->ChangeCameraMode((int)CameraMode::TOP_DOWN_CAMERA);
-				if (newCamera) mCamera.reset(newCamera);
+				if (newCamera)
+				{
+					mCamera.reset(newCamera);
+					Resize(mAspect);
+				}
 			}
 			break;
 
@@ -180,7 +188,7 @@ void GameScene::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
 			ShowCursor(TRUE);
 			break;
 		}
-		Resize(mAspect);
+		
 		break;
 
 	case WM_KEYUP:
@@ -277,15 +285,14 @@ void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList
 	mMeshes["hitBox"] = std::make_unique<BoxMesh>(device, cmdList, 0.2f, 0.2f, 0.2f);	
 	mMeshes["slime"] = std::make_unique<Mesh>(device, cmdList, L"Models\\Slime.bin");
 
-	auto gunSlide = std::make_unique<GameObject>(index++, mMeshes["gun_slide"].get());
+	auto gunSlide = std::make_unique<GunObject>(index++, mMeshes["gun_slide"].get());
 	gunSlide->SetPosition(1.0f, 3.0f, 3.0f);
 	gunSlide->SetMaterial(XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f), XMFLOAT3(0.1f, 0.1f, 0.1f), 0.4f);
-	gunSlide->Rotate(0.0f, -90.0f, 0.0f);
-	
-	auto gunBody = std::make_unique<GameObject>(index++, mMeshes["gun_body"].get());
+	mGunSlide = gunSlide.get();
+
+	auto gunBody = std::make_unique<GunObject>(index++, mMeshes["gun_body"].get());
 	gunBody->SetPosition(1.0f, 3.0f, 3.0f);
 	gunBody->SetMaterial(XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f), XMFLOAT3(0.1f, 0.1f, 0.1f), 0.4f);
-	gunBody->Rotate(0.0f, -90.0f, 0.0f);
 
 	auto box = std::make_unique<GunPlayer>(index++, mMeshes["box"].get(), terrain.get());
 	box->SetMaterial(XMFLOAT4(0.8f, 0.6f, 0.0f, 1.0f), XMFLOAT3(0.4f, 0.4f, 0.4f), 0.125f);
@@ -481,6 +488,7 @@ void GameScene::ShowManual()
 	std::cout << "사격                : 마우스 왼쪽 버튼" << std::endl;
 	std::cout << "1/3인칭 카메라 전환 : 마우스 오른쪽 버튼" << std::endl;
 	std::cout << "탑 다운 카메라 전환 : TAB Holding" << std::endl;
+	std::cout << "와이어프레임 전환   : G" << std::endl;
 	std::cout << "전체화면 모드       : F9" << std::endl;
 	std::cout << "커서 활성화         : CONTROL" << std::endl;
 	std::cout << "==========================================" << std::endl;

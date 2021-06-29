@@ -52,9 +52,6 @@ void Player::RotateY(float angle)
 		switch (mCamera->GetMode())
 		{
 		case CameraMode::FIRST_PERSON_CAMERA:
-			mCamera->RotateY(angle);
-			break;
-
 		case CameraMode::THIRD_PERSON_CAMERA:
 			mCamera->RotateY(angle);
 			break;
@@ -149,15 +146,8 @@ void Player::Update(float elapsedTime, XMFLOAT4X4* parent)
 
 	if(mPlayerUpdateContext)
 		OnPlayerUpdate(elapsedTime);
-	
-	if (mCamera) {
-		int mode = (int)mCamera->GetMode();
-		if (mode == (int)CameraMode::THIRD_PERSON_CAMERA)
-			mCamera->Update(elapsedTime);
-		if (mCameraUpdateContext)
-			OnCameraUpdate(elapsedTime);
-		if (mode == (int)CameraMode::THIRD_PERSON_CAMERA)
-			mCamera->LookAt(mPosition);
+	if (mCamera && mCameraUpdateContext) {
+		OnCameraUpdate(elapsedTime);
 		mCamera->UpdateViewMatrix();
 	}
 

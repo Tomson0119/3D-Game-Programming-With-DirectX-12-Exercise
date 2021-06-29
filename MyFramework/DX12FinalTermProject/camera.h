@@ -123,7 +123,6 @@ public:
 	virtual ~ThirdPersonCamera();
 
 	virtual void Update(const float elapsedTime) override;
-	virtual void LookAt(XMFLOAT3& target) override;
 };
 
 
