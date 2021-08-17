@@ -5,6 +5,7 @@
 #include "pipeline.h"
 #include "player.h"
 #include "shader.h"
+#include "frameResource.h"
 
 
 class GameScene
@@ -43,9 +44,9 @@ private:
 
 	std::unique_ptr<Camera> mCamera;
 
-	std::unique_ptr<ConstantBuffer<ObjectConstants>> mObjectCB;
-	std::unique_ptr<ConstantBuffer<CameraConstants>> mCameraCB;
-	std::unique_ptr<ConstantBuffer<LightConstants>> mLightCB;
+	std::vector<std::unique_ptr<FrameResource>> mFrameResources;
+	FrameResource* mCurrFrameResource = nullptr;
+	static const UINT mFrameCount = 3;	
 
 	ComPtr<ID3D12RootSignature> mRootSignature;
 	
