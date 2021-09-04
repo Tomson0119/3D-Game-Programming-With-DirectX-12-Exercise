@@ -27,7 +27,7 @@
 #include <DirectXColors.h>
 #include <DirectXPackedVector.h>
 
-#include "d3dx12.h"
+// #include "d3dx12.h"
 
 
 #pragma comment(lib, "d3d12.lib")
@@ -46,7 +46,7 @@
 #include <iostream>
 #include <cmath>
 
-
+#include "d3dExtension.h"
 #include "dxException.h"
 
 using namespace DirectX;
