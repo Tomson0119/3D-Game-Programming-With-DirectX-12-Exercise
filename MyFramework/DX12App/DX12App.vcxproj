@@ -302,6 +302,9 @@
     <ClInclude Include="shader.h" />
     <ClInclude Include="common.h" />
   </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Shaders\TexShader.hlsl" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
