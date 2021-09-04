@@ -2,6 +2,7 @@
 
 extern DXGI_SAMPLE_DESC gMsaaStateDesc;
 
+class Camera;
 class GameScene;
 class D3DFramwork;
 
@@ -26,5 +27,6 @@ private:
 	virtual void Draw(const GameTimer& timer) override;
 
 private:
+	std::unique_ptr<Camera> mCamera;
 	std::stack<std::unique_ptr<GameScene>> mScenes;
 };
