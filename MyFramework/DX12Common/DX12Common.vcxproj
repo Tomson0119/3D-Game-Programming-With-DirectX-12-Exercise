@@ -161,6 +161,7 @@
   <ItemGroup>
     <ClInclude Include="basewin.h" />
     <ClInclude Include="constantBuffer.h" />
+    <ClInclude Include="d3dExtension.h" />
     <ClInclude Include="d3dFramework.h" />
     <ClInclude Include="dxException.h" />
     <ClInclude Include="gameTimer.h" />
