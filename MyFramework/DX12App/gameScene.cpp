@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "common.h"
 #include "gameScene.h"
 
 GameScene::GameScene()

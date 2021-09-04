@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "common.h"
 #include "gameFramework.h"
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int mCmdShow)

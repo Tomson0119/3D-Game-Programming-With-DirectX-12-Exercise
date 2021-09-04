@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "common.h"
 #include "player.h"
 #include "camera.h"
 

@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "common.h"
 #include "frameResource.h"
 
 FrameResource::FrameResource(ID3D12Device* device, UINT objectCount, UINT cameraCount, UINT lightCount)

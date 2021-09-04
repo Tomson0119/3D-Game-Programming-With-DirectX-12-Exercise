@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "common.h"
 #include "pipeline.h"
 
 extern DXGI_SAMPLE_DESC gMsaaStateDesc;

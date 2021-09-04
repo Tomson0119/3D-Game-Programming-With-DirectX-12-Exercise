@@ -1,5 +1,6 @@
-#include "stdafx.h"
+#include "common.h"
 #include "gameObject.h"
+#include "mesh.h"
 
 
 GameObject::GameObject(int offset)
