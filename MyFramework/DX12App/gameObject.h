@@ -1,7 +1,7 @@
 #pragma once
 
 class Mesh;
-class ObjectConstants;
+struct ObjectConstants;
 
 class GameObject
 {
