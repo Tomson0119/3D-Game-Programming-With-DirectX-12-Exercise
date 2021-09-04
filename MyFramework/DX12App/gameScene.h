@@ -1,6 +1,5 @@
 #pragma once
 
-#include "camera.h"
 #include "mesh.h"
 #include "pipeline.h"
 #include "player.h"
@@ -41,8 +40,6 @@ private:
 
 private:
 	XMFLOAT4 mFrameColor = (XMFLOAT4)Colors::LightSkyBlue;
-
-	std::unique_ptr<Camera> mCamera;
 
 	std::vector<std::unique_ptr<FrameResource>> mFrameResources;
 	FrameResource* mCurrFrameResource = nullptr;
