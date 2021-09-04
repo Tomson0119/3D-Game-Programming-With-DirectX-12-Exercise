@@ -16,6 +16,7 @@ public:
 	virtual bool InitFramework();
 	void Run();
 
+	void SetResolution(UINT width, UINT height);
 	float GetAspect() const { return static_cast<float>(mFrameWidth) / mFrameHeight; }
 
 private:
@@ -30,13 +31,12 @@ private:
 	void CreateDepthStencilView();	
 	
 	void OutputAdapterInfo(IDXGIAdapter1* adapter);
-	void QueryVideoMemory(IDXGIAdapter1* adapter);
-
-	void UpdateFrameStates();
-	void ChangeFullScreenState();
+	void QueryVideoMemory(IDXGIAdapter1* adapter);	
 
 protected:
 	void WaitUntilGPUComplete();
+	void UpdateFrameStates();
+	void ChangeFullScreenState();
 
 	ID3D12Resource* CurrentBackBuffer() const;
 	D3D12_CPU_DESCRIPTOR_HANDLE CurrentBackBufferView() const;
@@ -50,9 +50,9 @@ public:
 protected:
 	virtual void OnResize();
 
-	virtual void OnProcessMouseInput(UINT uMsg, WPARAM wParam, LPARAM lParam);
-	virtual void OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam);
-	virtual void Update(const GameTimer& timer);
+	virtual void OnProcessMouseInput(UINT uMsg, WPARAM wParam, LPARAM lParam) = 0;
+	virtual void OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam) = 0;
+	virtual void Update(const GameTimer& timer) = 0;
 	virtual void Draw(const GameTimer& timer) = 0;
 
 protected:

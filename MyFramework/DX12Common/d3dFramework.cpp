@@ -12,6 +12,12 @@ D3DFramework::~D3DFramework()
 	if (mFenceEvent) CloseHandle(mFenceEvent);
 }
 
+void D3DFramework::SetResolution(UINT width, UINT height)
+{
+	mFrameWidth = width;
+	mFrameHeight = height;
+}
+
 bool D3DFramework::InitFramework()
 {
 	if(!InitWindow(mWndCaption.c_str(), mFrameWidth, mFrameHeight))
@@ -302,12 +308,14 @@ void D3DFramework::CreateDepthStencilView()
 
 void D3DFramework::WaitUntilGPUComplete()
 {
-	++mCurrentFenceValue;
+	++mCurrentFenceValue; // 울타리 지점을 전진시킨다.
+	// 새 울타리 지점을 설정하도록 커맨드 큐에 추가한다.
 	ThrowIfFailed(mCommandQueue->Signal(mFence.Get(), mCurrentFenceValue));
-	if (mFence->GetCompletedValue() < mCurrentFenceValue)
+	if (mFence->GetCompletedValue() < mCurrentFenceValue) // 울타리 지점까지의 명령들을 처리
 	{
+		// 울타리 지점에 도달하면 이벤트 발동한다.
 		ThrowIfFailed(mFence->SetEventOnCompletion(mCurrentFenceValue, mFenceEvent));
-		WaitForSingleObject(mFenceEvent, INFINITE);
+		WaitForSingleObject(mFenceEvent, INFINITE); // 이벤트가 발동될 때까지 기다린다.
 	}
 }
 
@@ -422,33 +430,6 @@ LRESULT D3DFramework::OnProcessMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 		return DefWindowProc(m_hwnd, uMsg, wParam, lParam);
 	}
 	return 0;
-}
-
-void D3DFramework::OnProcessMouseInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-}
-
-void D3DFramework::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-	switch (uMsg)
-	{
-	case WM_KEYUP:
-		switch(wParam)
-		{
-		case VK_ESCAPE:
-			PostQuitMessage(0);
-			break;
-
-		case VK_F9:
-			ChangeFullScreenState();
-			break;
-		}
-	}
-}
-
-void D3DFramework::Update(const GameTimer& timer)
-{
-	UpdateFrameStates();
 }
 
 void D3DFramework::UpdateFrameStates()
