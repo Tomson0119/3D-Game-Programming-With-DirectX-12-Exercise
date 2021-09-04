@@ -5,6 +5,7 @@ extern DXGI_SAMPLE_DESC gMsaaStateDesc;
 class Camera;
 class GameScene;
 class D3DFramwork;
+class Player;
 
 class GameFramework : public D3DFramework
 {
@@ -16,8 +17,6 @@ public:
 
 	virtual bool InitFramework() override;
 
-	void SetResolution(UINT width, UINT height);
-
 private:
 	virtual void OnResize() override;
 	virtual void OnProcessMouseInput(UINT uMsg, WPARAM wParam, LPARAM lParam) override;
@@ -27,6 +26,12 @@ private:
 	virtual void Draw(const GameTimer& timer) override;
 
 private:
+	std::unique_ptr<FrameResource> mFrameResources[3];
+	FrameResource* mCurrFrameResource = nullptr;
+	static const UINT mFrameCount = 3;
+
 	std::unique_ptr<Camera> mCamera;
+	std::unique_ptr<Player> mPlayer;
+
 	std::stack<std::unique_ptr<GameScene>> mScenes;
 };
