@@ -82,12 +82,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\defaultColor.hlsl">
-      <Filter>리소스 파일</Filter>
-    </None>
-    <None Include="Shaders\defaultLit.hlsl">
-      <Filter>리소스 파일</Filter>
-    </None>
     <None Include="Shaders\lighting.hlsl">
       <Filter>리소스 파일</Filter>
     </None>

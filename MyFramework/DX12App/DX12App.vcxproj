@@ -168,12 +168,6 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\defaultColor.hlsl">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="Shaders\defaultLit.hlsl">
-      <FileType>Document</FileType>
-    </None>
     <None Include="Shaders\lighting.hlsl">
       <FileType>Document</FileType>
     </None>
