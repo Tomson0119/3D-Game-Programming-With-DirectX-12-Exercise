@@ -1,11 +1,10 @@
 #pragma once
 
-#include "../DX12Common/constantBuffer.h"
-#include "../DX12Common/dxException.h"
-#include "../DX12Common/d3dFramework.h"
-#include "../DX12Common/geometry.h"
-
-#include "../DX12Common/stdafx.h"
+#include "constantBuffer.h"
+#include "dxException.h"
+#include "d3dFramework.h"
+#include "geometry.h"
+#include "stdafx.h"
 
 
 #define NUM_LIGHTS 3
