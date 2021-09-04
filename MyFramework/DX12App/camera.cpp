@@ -24,6 +24,11 @@ void Camera::SetPosition(const XMFLOAT3& pos)
 	mViewDirty = true;
 }
 
+void Camera::SetLens(float aspect)
+{
+	SetLens(mFov.y, aspect, mNearZ, mFarZ);
+}
+
 void Camera::SetLens(float fovY, float aspect, float zn, float zf)
 {
 	mNearWindow.y = 2.0f * tanf(fovY * 0.5f) * zn;

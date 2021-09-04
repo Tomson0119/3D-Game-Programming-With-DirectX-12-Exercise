@@ -25,6 +25,7 @@ public:
 	void SetMode(int mode) { mMode = (CameraMode)mode; }
 	void SetTimeLag(float lag) { mTimeLag = lag; }
 
+	void SetLens(float aspect);
 	void SetLens(float fovY, float aspect, float zn, float zf);
 	void LookAt(XMFLOAT3& pos, XMFLOAT3& target, XMFLOAT3& up);
 	virtual void LookAt(XMFLOAT3& target);
