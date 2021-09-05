@@ -53,6 +53,12 @@ void D3DFramework::Run()
 	}
 }
 
+void D3DFramework::SetResolution(int width, int height)
+{
+	mFrameWidth = width;
+	mFrameHeight = height;
+}
+
 bool D3DFramework::InitDirect3D()
 {
 	CreateD3DDevice();
@@ -425,33 +431,6 @@ LRESULT D3DFramework::OnProcessMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-void D3DFramework::OnProcessMouseInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-}
-
-void D3DFramework::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-	switch (uMsg)
-	{
-	case WM_KEYUP:
-		switch(wParam)
-		{
-		case VK_ESCAPE:
-			PostQuitMessage(0);
-			break;
-
-		case VK_F9:
-			ChangeFullScreenState();
-			break;
-		}
-	}
-}
-
-void D3DFramework::Update(const GameTimer& timer)
-{
-	UpdateFrameStates();
-}
-
 void D3DFramework::UpdateFrameStates()
 {
 	static int frameCount = 0;
@@ -499,7 +478,9 @@ ID3D12Resource* D3DFramework::CurrentBackBuffer() const
 
 D3D12_CPU_DESCRIPTOR_HANDLE D3DFramework::CurrentBackBufferView() const
 {
-	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle{};
+	return CD3DX12_CPU_DESCRIPTOR_HANDLE(
+		mRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
+		mCurrBackBufferIndex, mRtvDescriptorSize);
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE D3DFramework::DepthStencilView() const

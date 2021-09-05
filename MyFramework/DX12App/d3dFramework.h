@@ -16,6 +16,7 @@ public:
 	virtual bool InitFramework();
 	void Run();
 
+	void SetResolution(int width, int height);
 	float GetAspect() const { return static_cast<float>(mFrameWidth) / mFrameHeight; }
 
 private:
@@ -31,7 +32,8 @@ private:
 	
 	void OutputAdapterInfo(IDXGIAdapter1* adapter);
 	void QueryVideoMemory(IDXGIAdapter1* adapter);
-
+	
+public:
 	void UpdateFrameStates();
 	void ChangeFullScreenState();
 
@@ -50,9 +52,9 @@ public:
 protected:
 	virtual void OnResize();
 
-	virtual void OnProcessMouseInput(UINT uMsg, WPARAM wParam, LPARAM lParam);
-	virtual void OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam);
-	virtual void Update(const GameTimer& timer);
+	virtual void OnProcessMouseInput(UINT uMsg, WPARAM wParam, LPARAM lParam) = 0;
+	virtual void OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam) = 0;
+	virtual void Update(const GameTimer& timer) = 0;
 	virtual void Draw(const GameTimer& timer) = 0;
 
 protected:
@@ -97,6 +99,6 @@ protected:
 
 	std::wstring mWndCaption = L"D3D12 App";
 
-	int mFrameWidth = 800;
-	int mFrameHeight = 600;
+	int mFrameWidth;
+	int mFrameHeight;
 };
