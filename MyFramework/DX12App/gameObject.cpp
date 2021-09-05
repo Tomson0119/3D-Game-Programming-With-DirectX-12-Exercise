@@ -1,6 +1,5 @@
-#include "common.h"
+#include "stdafx.h"
 #include "gameObject.h"
-#include "mesh.h"
 
 
 GameObject::GameObject(int offset)
@@ -206,4 +205,133 @@ ObjectConstants GameObject::GetObjectConstants()
 	objCnst.World = Matrix4x4::Transpose(mWorld);
 	objCnst.Mat = mMaterial;
 	return objCnst;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+LineObject::LineObject(int offset, 
+	ID3D12Device* device, 
+	ID3D12GraphicsCommandList* cmdList, 
+	float length)
+	: GameObject(offset), mLength(length)
+{
+	mMesh = new LineMesh(device, cmdList, length);
+}
+
+LineObject::~LineObject()
+{
+	if (mMesh) delete mMesh;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+CrossHairObject::CrossHairObject(int offset,
+	ID3D12Device* device,
+	ID3D12GraphicsCommandList* cmdList)
+	: GameObject(offset)
+{
+	mMesh = new CrossHairMesh(device, cmdList, XMFLOAT3(0.0f, 0.0f, 0.0f), 0.04f, XMFLOAT2(0.02f, 0.02f));
+}
+
+CrossHairObject::~CrossHairObject()
+{
+	if (mMesh) delete mMesh;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+TerrainObject::TerrainObject(int offset)
+	: GameObject(offset, nullptr)
+{
+
+}
+
+TerrainObject::~TerrainObject()
+{
+	if (mMesh) delete mMesh;
+}
+
+void TerrainObject::BuildTerrainMeshes(
+	ID3D12Device* device, 
+	ID3D12GraphicsCommandList* cmdList, 
+	int width, int depth,
+	const XMFLOAT3& scale, 
+	XMFLOAT4& color, 
+	const std::wstring& path)
+{
+	mWidth = width;
+	mDepth = depth;
+	mScale = scale;
+
+	int xQuadPerBlock = width - 1;
+	int zQuadPerBlock = depth - 1;
+
+	mHeightMapImage = std::make_unique<HeightMapImage>(path, mWidth, mDepth, mScale);
+
+	long xBlocks = (mWidth - 1) / xQuadPerBlock;
+	long zBlocks = (mDepth - 1) / zQuadPerBlock;
+
+	if (mMesh) delete mMesh;
+	
+	HeightMapGridMesh* gridMesh = nullptr;
+	for (int z = 0, zStart = 0; z < zBlocks; ++z)
+	{
+		for (int x = 0, xStart = 0; x < xBlocks; ++x)
+		{
+			xStart = x * (width - 1);
+			zStart = z * (depth - 1);
+
+			gridMesh = new HeightMapGridMesh(device, cmdList, xStart, zStart,
+				width, depth, scale, color, mHeightMapImage.get());
+			SetMesh(gridMesh);
+		}
+	}
+}
+
+float TerrainObject::GetHeight(float x, float z) const
+{
+	assert(mHeightMapImage && "HeightMapImage doesn't exist");
+	return mHeightMapImage->GetHeight(x / mScale.x, z / mScale.z) * mScale.y;
+}
+
+XMFLOAT3 TerrainObject::GetNormal(float x, float z) const
+{
+	assert(mHeightMapImage && "HeightMapImage doesn't exist");
+	return mHeightMapImage->GetNormal((int)(x / mScale.x), (int)(z / mScale.z));
+}
+
+GunObject::GunObject(int offset, Mesh* mesh)
+	: GameObject(offset, mesh)
+{
+
+}
+
+GunObject::~GunObject()
+{
+}
+
+void GunObject::Update(float elapsedTime, XMFLOAT4X4* parent)
+{
+	if (mShooted)
+	{
+		static float movedDistance = 0.0f;
+
+		movedDistance += mMoveDistance * elapsedTime;
+		if (movedDistance > 1.0f)
+			mMoveDistance *= -1.0f;		
+		else if (movedDistance <= 0.0f)
+		{
+			mMoveDistance *= -1.0f;
+			mShooted = false;
+			movedDistance = 0.0f;
+			GameObject::SetPosition(mOrigin);
+			GameObject::Update(elapsedTime, parent);
+			return;
+		}
+		GameObject::Move(mLook, -mMoveDistance * elapsedTime);
+	}
+	GameObject::Update(elapsedTime, parent);
 }

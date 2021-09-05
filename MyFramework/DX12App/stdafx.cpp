@@ -1,5 +1,4 @@
 #include "stdafx.h"
-#include "d3dx12.h"
 
 ComPtr<ID3D12Resource> CreateBufferResource(
     ID3D12Device* device, 
@@ -10,16 +9,16 @@ ComPtr<ID3D12Resource> CreateBufferResource(
     ComPtr<ID3D12Resource> defaultResource;
 
     ThrowIfFailed(device->CreateCommittedResource(
-        &Extension::HeapProperties(D3D12_HEAP_TYPE_DEFAULT),
+        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
         D3D12_HEAP_FLAG_NONE,
-        &Extension::BufferResourceDesc(byteSize),
+        &CD3DX12_RESOURCE_DESC::Buffer(byteSize),
 		D3D12_RESOURCE_STATE_COPY_DEST, 
 		nullptr, IID_PPV_ARGS(defaultResource.GetAddressOf())));
 
 	ThrowIfFailed(device->CreateCommittedResource(
-		&Extension::HeapProperties(D3D12_HEAP_TYPE_UPLOAD),
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 		D3D12_HEAP_FLAG_NONE,
-		&Extension::BufferResourceDesc(byteSize),
+		&CD3DX12_RESOURCE_DESC::Buffer(byteSize),
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr, IID_PPV_ARGS(uploadBuffer.GetAddressOf())));
 
@@ -29,10 +28,14 @@ ComPtr<ID3D12Resource> CreateBufferResource(
 	subresourceData.RowPitch = byteSize;
 	subresourceData.SlicePitch = byteSize;
 
-	UpdateSubresources<1>(cmdList, defaultResource.Get(), 
+	/*cmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+		defaultResource.Get(), D3D12_RESOURCE_STATE_COMMON,
+		D3D12_RESOURCE_STATE_COPY_DEST));*/
+
+	UpdateSubresources(cmdList, defaultResource.Get(), 
 		uploadBuffer.Get(), 0, 0, 1, &subresourceData);
 
-	cmdList->ResourceBarrier(1, &Extension::ResourceBarrier(
+	cmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
 		defaultResource.Get(), D3D12_RESOURCE_STATE_COPY_DEST,
 		D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
 

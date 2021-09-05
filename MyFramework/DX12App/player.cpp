@@ -1,4 +1,4 @@
-#include "common.h"
+#include "stdafx.h"
 #include "player.h"
 #include "camera.h"
 
@@ -158,4 +158,193 @@ void Player::Update(float elapsedTime, XMFLOAT4X4* parent)
 	mVelocity = Vector3::Add(mVelocity, Vector3::Normalize(velocity));
 
 	GameObject::Update(elapsedTime, parent);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+//
+TerrainPlayer::TerrainPlayer(int offset, Mesh* mesh, void* context)
+	: Player(offset, mesh)
+{
+	TerrainObject* terrain = (TerrainObject*)context;
+	float xPos = terrain->GetWidth() * 0.5f;
+	float zPos = terrain->GetDepth() * 0.5f;
+	float yPos = terrain->GetHeight(xPos, zPos) + 30.0f;
+	SetPosition(xPos, yPos, zPos);
+
+	SetPlayerContext(terrain);
+	SetCameraContext(terrain);
+}
+
+TerrainPlayer::~TerrainPlayer()
+{
+}
+
+Camera* TerrainPlayer::ChangeCameraMode(int cameraMode)
+{
+	if (mCamera && cameraMode == (int)mCamera->GetMode())
+		return nullptr;
+
+	mCamera = Player::ChangeCameraMode(cameraMode);
+
+	switch (mCamera->GetMode())
+	{
+	case CameraMode::FIRST_PERSON_CAMERA:
+		mFriction = 50.0f;
+		mGravity = { 0.0f, -9.8f, 0.0f };
+		mMaxVelocityXZ = 25.5f;
+		mMaxVelocityY = 40.0f;
+
+		mCamera->SetOffset(0.0f, 2.0f, 0.0f);
+		mCamera->SetTimeLag(0.0f);
+		break;
+
+	case CameraMode::THIRD_PERSON_CAMERA:
+		mFriction = 50.0f;
+		mGravity = { 0.0f, -9.8f, 0.0f };
+		mMaxVelocityXZ = 25.5f;
+		mMaxVelocityY = 40.0f;
+
+		mCamera->SetOffset(0.0f, 5.0f, -10.0f);
+		mCamera->SetTimeLag(0.25f);
+		break;
+
+	case CameraMode::TOP_DOWN_CAMERA:
+		mFriction = 50.0f;
+		mGravity = { 0.0f, -9.8f, 0.0f };
+		mMaxVelocityXZ = 25.5f;
+		mMaxVelocityY = 40.0f;
+
+		mCamera->SetOffset(-50.0f, 50.0f, -50.0f);
+		mCamera->SetTimeLag(0.25f);
+		break;
+	}
+
+	mCamera->SetPosition(Vector3::Add(mPosition, mCamera->GetOffset()));
+	mCamera->Update(1.0f);
+
+	return mCamera;
+}
+
+void TerrainPlayer::OnPlayerUpdate(float elapsedTime)
+{
+	XMFLOAT3 playerPos = GetPosition();
+	TerrainObject* terrain = (TerrainObject*)mPlayerUpdateContext;
+
+	float playerHalfHeight = mOOBB.Extents.y * 0.5f;
+	
+	float height = terrain->GetHeight(playerPos.x, playerPos.z) + playerHalfHeight + 0.5f;
+
+	if (playerPos.y < height)
+	{
+		XMFLOAT3 playerVelocity = GetVelocity();
+		playerVelocity.y = 0.0f;
+		SetVelocity(playerVelocity);
+		playerPos.y = height;
+		SetPosition(playerPos);
+	}
+}
+
+void TerrainPlayer::OnCameraUpdate(float elapsedTime)
+{
+	XMFLOAT3 cameraPos = mCamera->GetPosition();
+	TerrainObject* terrain = (TerrainObject*)mCameraUpdateContext;
+
+	float height = terrain->GetHeight(cameraPos.x, cameraPos.z) + 5.0f;
+
+	if (cameraPos.y <= height)
+	{
+		cameraPos.y = height;
+		mCamera->SetPosition(cameraPos);
+		
+		if (mCamera->GetMode() == CameraMode::THIRD_PERSON_CAMERA)
+			mCamera->LookAt(GetPosition());
+	}
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+//
+GunPlayer::GunPlayer(int offset, Mesh* mesh, void* context)
+	: TerrainPlayer(offset, mesh, context)
+{
+}
+
+GunPlayer::~GunPlayer()
+{
+}
+
+XMFLOAT3 GunPlayer::GetMuzzlePos()
+{
+	if (mChild && dynamic_cast<GunObject*>(mChild)) {
+		XMFLOAT3 offset = mChild->GetPosition();
+		XMFLOAT3 pos = mPosition;
+		pos = Vector3::Add(pos, mLook, offset.z);
+		pos = Vector3::Add(pos, mUp, offset.y);
+		pos = Vector3::Add(pos, mRight, offset.x);
+		pos = Vector3::Add(pos, mLook, 0.5f);
+		return pos;
+	}
+	return mPosition;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+//
+EnemyObject::EnemyObject(int offset, Mesh* mesh, void* context, Player* player)
+	: TerrainPlayer(offset, mesh, context), mPlayer(player)
+{
+	mFriction = 0.1f;
+	mGravity = { 0.0f, -9.8f, 0.0f };
+	mMaxVelocityXZ = 25.5f;
+	mMaxVelocityY = 40.0f;
+}
+
+EnemyObject::~EnemyObject()
+{
+}
+
+void EnemyObject::Update(float elapsedTime, XMFLOAT4X4* parent)
+{
+	if (mGotShot)
+	{
+		static float total = 0.0f;
+
+		total += elapsedTime;
+		if (total >= 0.1f)
+		{
+			mMaterial.Color = mOriginalColor;
+			total = 0.0f;
+			mGotShot = false;
+		}
+	}
+
+	if (mHealth == 0)
+	{
+		mActive = false;
+		SetPosition(-100.0f, -100.0f, -100.0f);
+	}
+
+	if (mActive) {
+		XMFLOAT3 playerPos = { mPlayer->GetPosition().x, 0.0f, mPlayer->GetPosition().z };
+		XMFLOAT3 pos = { mPosition.x, 0.0f, mPosition.z };
+		XMFLOAT3 direction = Vector3::Normalize(Vector3::Subtract(mPlayer->GetPosition(), mPosition));
+		XMFLOAT3 shift = Vector3::Add(XMFLOAT3(0.0f, 0.0f, 0.0f), direction, mMovingSpeed);
+		Player::Move(shift, false);
+	}
+	Player::Update(elapsedTime, parent);
+}
+
+void EnemyObject::SetMaterial(XMFLOAT4 color, XMFLOAT3 frenel, float roughness)
+{
+	GameObject::SetMaterial(color, frenel, roughness);
+	mOriginalColor = color;
+}
+
+void EnemyObject::GotShot()
+{
+	if (mHealth > 0) mHealth -= 1;
+
+	mGotShot = true;
+	mMaterial.Color = XMFLOAT4(0.6f, 0.6f, 0.6f, 1.0f);
 }

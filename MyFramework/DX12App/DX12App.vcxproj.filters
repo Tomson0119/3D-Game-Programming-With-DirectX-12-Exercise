@@ -13,15 +13,27 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="헤더 파일\Common">
+      <UniqueIdentifier>{f71e3892-8abe-4742-853a-7ff3a438acd0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\Common">
+      <UniqueIdentifier>{bc5629bc-a220-47ff-ae24-559e3d905bc1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="camera.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="framework.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="gameObject.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="gameScene.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="heightMapImage.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp">
@@ -39,24 +51,33 @@
     <ClCompile Include="shader.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="common.cpp">
-      <Filter>소스 파일</Filter>
+    <ClCompile Include="d3dFramework.cpp">
+      <Filter>소스 파일\Common</Filter>
     </ClCompile>
-    <ClCompile Include="gameFramework.cpp">
-      <Filter>소스 파일</Filter>
+    <ClCompile Include="dxException.cpp">
+      <Filter>소스 파일\Common</Filter>
     </ClCompile>
-    <ClCompile Include="frameResource.cpp">
-      <Filter>소스 파일</Filter>
+    <ClCompile Include="gameTimer.cpp">
+      <Filter>소스 파일\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>소스 파일\Common</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="camera.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="framework.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
     <ClInclude Include="gameObject.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="gameScene.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="heightMapImage.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="mesh.h">
@@ -71,24 +92,26 @@
     <ClInclude Include="shader.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="common.h">
-      <Filter>헤더 파일</Filter>
+    <ClInclude Include="basewin.h">
+      <Filter>헤더 파일\Common</Filter>
     </ClInclude>
-    <ClInclude Include="gameFramework.h">
-      <Filter>헤더 파일</Filter>
+    <ClInclude Include="constantBuffer.h">
+      <Filter>헤더 파일\Common</Filter>
     </ClInclude>
-    <ClInclude Include="frameResource.h">
-      <Filter>헤더 파일</Filter>
+    <ClInclude Include="d3dExtension.h">
+      <Filter>헤더 파일\Common</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Shaders\lighting.hlsl">
-      <Filter>리소스 파일</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="Shaders\TexShader.hlsl">
-      <Filter>리소스 파일</Filter>
-    </FxCompile>
+    <ClInclude Include="d3dFramework.h">
+      <Filter>헤더 파일\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="dxException.h">
+      <Filter>헤더 파일\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="gameTimer.h">
+      <Filter>헤더 파일\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="stdafx.h">
+      <Filter>헤더 파일\Common</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

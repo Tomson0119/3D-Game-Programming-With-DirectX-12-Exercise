@@ -1,7 +1,8 @@
 #pragma once
 
-class Mesh;
-struct ObjectConstants;
+#include "mesh.h"
+#include "constantBuffer.h"
+#include "camera.h"
 
 class GameObject
 {
@@ -76,4 +77,96 @@ protected:
 	GameObject* mParent = nullptr;
 	GameObject* mChild = nullptr;
 	GameObject* mSibling = nullptr;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+class LineObject : public GameObject
+{
+public:
+	LineObject(int offset,
+		ID3D12Device* device,
+		ID3D12GraphicsCommandList* cmdList,
+		float length);
+	LineObject(const LineObject& rhs) = delete;
+	LineObject& operator=(const LineObject& rhs) = delete;
+	virtual ~LineObject();
+
+	float GetLength() const { return mLength; }
+
+private:
+	float mLength = 0.0f;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+class CrossHairObject : public GameObject
+{
+public:
+	CrossHairObject(int offset,
+		ID3D12Device* device,
+		ID3D12GraphicsCommandList* cmdList);
+	CrossHairObject(const CrossHairObject& rhs) = delete;
+	CrossHairObject& operator=(const CrossHairObject& rhs) = delete;
+	virtual ~CrossHairObject();
+};
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+class GunObject : public GameObject
+{
+public:
+	GunObject(int offset, Mesh *mesh);
+	GunObject(const GunObject& rhs) = delete;
+	GunObject& operator=(const GunObject& rhs) = delete;
+	virtual ~GunObject();
+
+	void SetShootMotion() { mShooted = true; mOrigin = mPosition; }
+	virtual void Update(float elapsedTime, XMFLOAT4X4* parent) override;
+
+private:
+	float mMoveDistance = 10.0f;
+	bool mShooted = false;
+	XMFLOAT3 mOrigin = { };
+};
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+class TerrainObject : public GameObject
+{
+public:
+	TerrainObject(int offset);
+	TerrainObject(const TerrainObject& rhs) = delete;
+	TerrainObject& operator=(const TerrainObject& rhs) = delete;
+	virtual ~TerrainObject();
+
+	void BuildTerrainMeshes(
+		ID3D12Device* device,
+		ID3D12GraphicsCommandList* cmdList,
+		int width, int depth,
+		const XMFLOAT3& scale,
+		XMFLOAT4& color,
+		const std::wstring& path);
+
+public:
+	float GetHeight(float x, float z) const;
+	XMFLOAT3 GetNormal(float x, float z) const;
+
+	int GetHeightMapWidth() const { return mHeightMapImage->GetWidth(); }
+	int GetHeightMapDepth() const { return mHeightMapImage->GetDepth(); }
+
+	XMFLOAT3 GetScale() const { return mScale; }
+
+	float GetWidth() const { return mWidth * mScale.x; }
+	float GetDepth() const { return mDepth * mScale.z; }
+
+private:
+	std::unique_ptr<HeightMapImage> mHeightMapImage;
+	XMFLOAT3 mScale = { 1.0f, 1.0f, 1.0f };
+	int mWidth = 0;
+	int mDepth = 0;
 };

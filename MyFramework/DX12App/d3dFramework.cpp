@@ -12,12 +12,6 @@ D3DFramework::~D3DFramework()
 	if (mFenceEvent) CloseHandle(mFenceEvent);
 }
 
-void D3DFramework::SetResolution(UINT width, UINT height)
-{
-	mFrameWidth = width;
-	mFrameHeight = height;
-}
-
 bool D3DFramework::InitFramework()
 {
 	if(!InitWindow(mWndCaption.c_str(), mFrameWidth, mFrameHeight))
@@ -257,12 +251,12 @@ void D3DFramework::OnResize()
 
 void D3DFramework::CreateRenderTargetViews()
 {
-	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle(CurrentBackBufferView());
+	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(CurrentBackBufferView());
 	for (UINT i = 0; i < mSwapChainBufferCount; ++i)
 	{
 		ThrowIfFailed(mSwapChain->GetBuffer(i, IID_PPV_ARGS(&mSwapChainBuffers[i])));
 		mD3dDevice->CreateRenderTargetView(mSwapChainBuffers[i].Get(), nullptr, rtvHandle);
-		rtvHandle.ptr += mRtvDescriptorSize;
+		rtvHandle.Offset(1, mRtvDescriptorSize);
 	}
 }
 
@@ -286,9 +280,10 @@ void D3DFramework::CreateDepthStencilView()
 	clearValue.Format = mDepthStencilBufferFormat;
 	clearValue.DepthStencil.Depth = 1.0f;
 	clearValue.DepthStencil.Stencil = 0;
-	
+
+	CD3DX12_HEAP_PROPERTIES heapProperties(D3D12_HEAP_TYPE_DEFAULT);	
 	ThrowIfFailed(mD3dDevice->CreateCommittedResource(
-		&Extension::HeapProperties(D3D12_HEAP_TYPE_DEFAULT),
+		&heapProperties,
 		D3D12_HEAP_FLAG_NONE,
 		&resourceDesc,
 		D3D12_RESOURCE_STATE_DEPTH_WRITE,
@@ -308,14 +303,12 @@ void D3DFramework::CreateDepthStencilView()
 
 void D3DFramework::WaitUntilGPUComplete()
 {
-	++mCurrentFenceValue; // 울타리 지점을 전진시킨다.
-	// 새 울타리 지점을 설정하도록 커맨드 큐에 추가한다.
+	++mCurrentFenceValue;
 	ThrowIfFailed(mCommandQueue->Signal(mFence.Get(), mCurrentFenceValue));
-	if (mFence->GetCompletedValue() < mCurrentFenceValue) // 울타리 지점까지의 명령들을 처리
+	if (mFence->GetCompletedValue() < mCurrentFenceValue)
 	{
-		// 울타리 지점에 도달하면 이벤트 발동한다.
 		ThrowIfFailed(mFence->SetEventOnCompletion(mCurrentFenceValue, mFenceEvent));
-		WaitForSingleObject(mFenceEvent, INFINITE); // 이벤트가 발동될 때까지 기다린다.
+		WaitForSingleObject(mFenceEvent, INFINITE);
 	}
 }
 
@@ -432,6 +425,33 @@ LRESULT D3DFramework::OnProcessMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
+void D3DFramework::OnProcessMouseInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+}
+
+void D3DFramework::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	switch (uMsg)
+	{
+	case WM_KEYUP:
+		switch(wParam)
+		{
+		case VK_ESCAPE:
+			PostQuitMessage(0);
+			break;
+
+		case VK_F9:
+			ChangeFullScreenState();
+			break;
+		}
+	}
+}
+
+void D3DFramework::Update(const GameTimer& timer)
+{
+	UpdateFrameStates();
+}
+
 void D3DFramework::UpdateFrameStates()
 {
 	static int frameCount = 0;
@@ -479,14 +499,10 @@ ID3D12Resource* D3DFramework::CurrentBackBuffer() const
 
 D3D12_CPU_DESCRIPTOR_HANDLE D3DFramework::CurrentBackBufferView() const
 {
-	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = mRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-	rtvHandle.ptr += mCurrBackBufferIndex * mRtvDescriptorSize;
-	return rtvHandle;
+	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle{};
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE D3DFramework::DepthStencilView() const
 {
 	return mDsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 }
-
-

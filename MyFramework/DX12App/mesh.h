@@ -1,5 +1,40 @@
 #pragma once
 
+#include "heightMapImage.h"
+
+struct Vertex
+{
+	Vertex() = default;
+	Vertex(float x,  float y,  float z,
+		   float nx, float ny, float nz,
+		   float u,  float v)
+		: Position(x, y, z), Normal(nx, ny, nz), TexCoord(u, v) { }
+
+	Vertex(const XMFLOAT3& pos,
+		   const XMFLOAT3& normal,
+		   const XMFLOAT2& texC)
+		: Position(pos), Normal(normal), TexCoord(texC) { }
+
+	XMFLOAT3 Position;
+	XMFLOAT3 Normal;
+	XMFLOAT2 TexCoord;
+};
+
+struct DiffuseVertex
+{
+	DiffuseVertex() = default;
+	DiffuseVertex(float x, float y, float z,
+				  const XMFLOAT4& color)
+		: Position(x, y, z), Color(color) { }
+	DiffuseVertex(const XMFLOAT3& pos,
+				  const XMFLOAT4& color)
+		: Position(pos), Color(color) { }
+
+	XMFLOAT3 Position;
+	XMFLOAT4 Color;
+};
+
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 class Mesh 
@@ -50,4 +85,68 @@ public:
 	D3D12_INDEX_BUFFER_VIEW mIndexBufferView = {};
 
 	BoundingOrientedBox mOOBB;
+};
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+class LineMesh : public Mesh
+{
+public:
+	LineMesh(
+		ID3D12Device* device,
+		ID3D12GraphicsCommandList* cmdList,
+		float length);
+	virtual ~LineMesh();
+};
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+class CrossHairMesh : public Mesh
+{
+public:
+	CrossHairMesh(
+		ID3D12Device* device,
+		ID3D12GraphicsCommandList* cmdList,
+		XMFLOAT3& center, float length, XMFLOAT2& offset);
+	virtual ~CrossHairMesh();
+};
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+class BoxMesh : public Mesh
+{
+public:
+	BoxMesh(
+		ID3D12Device* device,
+		ID3D12GraphicsCommandList* cmdList,
+		float width, float height, float depth);
+	virtual ~BoxMesh();
+};
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+class HeightMapGridMesh : public Mesh
+{
+public:
+	HeightMapGridMesh(
+		ID3D12Device* device,
+		ID3D12GraphicsCommandList* cmdList,
+		int xStart, int zStart,
+		int width, int depth,
+		const XMFLOAT3& scale,
+		XMFLOAT4& color,
+		HeightMapImage* context);
+
+	virtual ~HeightMapGridMesh();
+
+	float GetHeight(int x, int z, HeightMapImage* context) const;
+	XMFLOAT4 GetColor(int x, int z, HeightMapImage* context) const;
+	
+private:
+	XMFLOAT3 mScale = {};
+
+	int mWidth = 0;
+	int mDepth = 0;	
 };

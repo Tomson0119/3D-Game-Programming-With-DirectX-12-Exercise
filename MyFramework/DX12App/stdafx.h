@@ -27,8 +27,7 @@
 #include <DirectXColors.h>
 #include <DirectXPackedVector.h>
 
-// #include "d3dx12.h"
-
+#include "d3dExtension.h"
 
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "d3dcompiler.lib")
@@ -46,7 +45,7 @@
 #include <iostream>
 #include <cmath>
 
-#include "d3dExtension.h"
+
 #include "dxException.h"
 
 using namespace DirectX;
@@ -84,6 +83,47 @@ inline std::wstring AnsiToWString(const std::string& str)
 }																		
 #endif
 
+
+////////////////////////////////////////////////////////////////////////////
+//
+#define NUM_LIGHTS 3
+
+struct Light
+{
+	XMFLOAT3A Position = XMFLOAT3A(0.0f, 0.0f, 0.0f);
+	XMFLOAT3A Direction = XMFLOAT3A(0.0f, 0.0f, 0.0f);
+	XMFLOAT3A Diffuse = XMFLOAT3A(0.0f, 0.0f, 0.0f);
+};
+
+struct LightConstants
+{
+	XMFLOAT4 Ambient;
+	Light Lights[NUM_LIGHTS];
+};
+
+struct CameraConstants
+{
+	XMFLOAT4X4 View;
+	XMFLOAT4X4 Proj;
+	XMFLOAT4X4 ViewProj;
+	XMFLOAT3 CameraPos;
+	float Aspect;
+};
+
+struct Material
+{
+	XMFLOAT4 Color;
+	XMFLOAT3 Frenel;
+	float Roughness;
+};
+
+struct ObjectConstants
+{
+	XMFLOAT4X4 World;
+	Material Mat;
+};
+
+
 ////////////////////////////////////////////////////////////////////////////
 //
 namespace Math
@@ -107,23 +147,6 @@ namespace Math
 	}
 }
 
-namespace Vector2
-{
-	inline XMFLOAT2 Add(XMFLOAT2& v0, XMFLOAT2& v1)
-	{
-		XMFLOAT2 ret;
-		XMStoreFloat2(&ret, XMLoadFloat2(&v0) + XMLoadFloat2(&v1));
-		return ret;
-	}
-
-	inline XMFLOAT2 Multiply(float scalar, XMFLOAT2& v1)
-	{
-		XMFLOAT2 ret;
-		XMStoreFloat2(&ret, scalar * XMLoadFloat2(&v1));
-		return ret;
-	}
-}
-
 namespace Vector3
 {
 	inline XMFLOAT3 Zero()
@@ -141,11 +164,6 @@ namespace Vector3
 	inline XMFLOAT3 Replicate(float value)
 	{
 		return VectorToFloat3(XMVectorReplicate(value));
-	}
-
-	inline XMFLOAT3 Multiply(float scalar, XMFLOAT3& v)
-	{
-		return VectorToFloat3(XMLoadFloat3(&v) * scalar);
 	}
 
 	inline XMFLOAT3 MultiplyAdd(float delta, XMFLOAT3& src, XMFLOAT3& dst)
