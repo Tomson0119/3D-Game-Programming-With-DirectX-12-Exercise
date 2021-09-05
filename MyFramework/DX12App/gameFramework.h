@@ -1,16 +1,15 @@
 #pragma once
 
-extern DXGI_SAMPLE_DESC gMsaaStateDesc;
+#include "d3dFramework.h"
+#include "gameScene.h"
 
-class Camera;
-class GameScene;
-class D3DFramwork;
-class Player;
+extern DXGI_SAMPLE_DESC gMsaaStateDesc;
 
 class GameFramework : public D3DFramework
 {
 public:
 	GameFramework();
+	GameFramework(UINT width, UINT height);
 	GameFramework(const GameFramework& rhs) = delete;
 	GameFramework& operator=(const GameFramework& rhs) = delete;
 	virtual ~GameFramework();
@@ -26,12 +25,5 @@ private:
 	virtual void Draw(const GameTimer& timer) override;
 
 private:
-	std::unique_ptr<FrameResource> mFrameResources[3];
-	FrameResource* mCurrFrameResource = nullptr;
-	static const UINT mFrameCount = 3;
-
-	std::unique_ptr<Camera> mCamera;
-	std::unique_ptr<Player> mPlayer;
-
 	std::stack<std::unique_ptr<GameScene>> mScenes;
 };
