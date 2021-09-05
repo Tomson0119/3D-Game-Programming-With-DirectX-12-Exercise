@@ -5,7 +5,6 @@
 
 Camera::Camera()
 {
-	SetLens(0.25f * Math::PI, 1.0f, 1.0f, 1000.0f);
 }
 
 Camera::~Camera()
@@ -22,6 +21,11 @@ void Camera::SetPosition(const XMFLOAT3& pos)
 {
 	mPosition = pos;
 	mViewDirty = true;
+}
+
+void Camera::SetLens(float aspect)
+{
+	SetLens(mFov.y, aspect, mNearZ, mFarZ);
 }
 
 void Camera::SetLens(float fovY, float aspect, float zn, float zf)

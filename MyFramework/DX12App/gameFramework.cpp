@@ -1,8 +1,10 @@
 #include "stdafx.h"
 #include "gameFramework.h"
-
+#include "camera.h"
 
 DXGI_SAMPLE_DESC gMsaaStateDesc;
+
+using namespace std;
 
 GameFramework::GameFramework()
 	: D3DFramework()
@@ -13,13 +15,6 @@ GameFramework::GameFramework()
 	gMsaaStateDesc.Quality = (mMsaa4xEnable) ? (mMsaa4xQualityLevels - 1) : 0;
 
 	mScenes.emplace(std::make_unique<GameScene>());
-}
-
-GameFramework::GameFramework(UINT width, UINT height)
-	: GameFramework()
-{
-	mFrameWidth = width;
-	mFrameHeight = height;
 }
 
 GameFramework::~GameFramework()
@@ -35,6 +30,9 @@ bool GameFramework::InitFramework()
 
 	// 초기화하는 명령어를 넣기 위해 커맨드 리스트를 개방한다.
 	ThrowIfFailed(mCommandList->Reset(mCommandAllocator.Get(), nullptr));
+
+	//mCamera = make_unique<Camera>();
+	//mCamera->SetLens(0.25f * Math::PI, 1.0f, 1.0f, 1000.0f);
 
 	if (!mScenes.empty())
 		mScenes.top()->BuildObjects(mD3dDevice.Get(), mCommandList.Get());
@@ -53,9 +51,8 @@ bool GameFramework::InitFramework()
 void GameFramework::OnResize()
 {
 	D3DFramework::OnResize();
-
-	if (!mScenes.empty())
-		mScenes.top().get()->Resize(GetAspect());
+	//if(mCamera) mCamera->SetLens(GetAspect());
+	if (!mScenes.empty()) mScenes.top()->Resize(GetAspect());
 }
 
 void GameFramework::OnProcessMouseInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -111,6 +108,7 @@ void GameFramework::Update(const GameTimer& timer)
 {
 	D3DFramework::UpdateFrameStates();
 
+	//mCamera->Update(timer.ElapsedTime());
 	if (!mScenes.empty()) mScenes.top()->Update(timer);
 }
 
@@ -126,7 +124,7 @@ void GameFramework::Draw(const GameTimer& timer)
 	mCommandList->RSSetScissorRects(1, &mScissorRect);
 
 	// 화면 버퍼의 상태를 Render Target 상태로 전이한다.
-	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+	mCommandList->ResourceBarrier(1, &Extension::ResourceBarrier(
 		CurrentBackBuffer(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
 	
 	// 화면 버퍼와 깊이 스텐실 버퍼를 초기화한다.
@@ -138,10 +136,10 @@ void GameFramework::Draw(const GameTimer& timer)
 	// 렌더링할 버퍼를 구체적으로 설정한다.
 	mCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), TRUE, &DepthStencilView());
 
-	if (!mScenes.empty()) mScenes.top()->Draw(mCommandList.Get(), timer);
+	if (!mScenes.empty()) mScenes.top()->Draw(mCommandList.Get());
 
 	// 화면 버퍼의 상태를 다시 PRESENT 상태로 전이한다.
-	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+	mCommandList->ResourceBarrier(1, &Extension::ResourceBarrier(
 		CurrentBackBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
 	
 	ThrowIfFailed(mCommandList->Close());

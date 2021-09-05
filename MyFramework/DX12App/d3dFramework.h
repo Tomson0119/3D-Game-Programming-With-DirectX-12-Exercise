@@ -94,11 +94,11 @@ protected:
 	D3D12_VIEWPORT mViewPort;
 	D3D12_RECT mScissorRect;
 
-	DXGI_FORMAT mSwapChainBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+	DXGI_FORMAT mSwapChainBufferFormat    = DXGI_FORMAT_R8G8B8A8_UNORM;
 	DXGI_FORMAT mDepthStencilBufferFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 
 	std::wstring mWndCaption = L"D3D12 App";
 
-	int mFrameWidth;
-	int mFrameHeight;
+	int mFrameWidth  = 0;
+	int mFrameHeight = 0;
 };

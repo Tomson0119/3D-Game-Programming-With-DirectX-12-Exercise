@@ -185,68 +185,6 @@ void Mesh::LoadFromBinary(
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-LineMesh::LineMesh(
-	ID3D12Device* device,
-	ID3D12GraphicsCommandList* cmdList, 
-	float length)
-{
-	float halfLength = length * 0.5f;
-	std::array<DiffuseVertex, 2> vertices =
-	{
-		DiffuseVertex(XMFLOAT3(0.0f, 0.0f, -halfLength), (XMFLOAT4)Colors::Black),
-		DiffuseVertex(XMFLOAT3(0.0f, 0.0f, +halfLength), (XMFLOAT4)Colors::Black)
-	};
-
-	std::array<UINT, 2> indices = { 0, 1 };
-
-	Mesh::CreateResourceInfo(device, cmdList, sizeof(DiffuseVertex), sizeof(UINT),
-		D3D_PRIMITIVE_TOPOLOGY_LINELIST,
-		vertices.data(), (UINT)vertices.size(), indices.data(), (UINT)indices.size());
-}
-
-LineMesh::~LineMesh()
-{
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-CrossHairMesh::CrossHairMesh(
-	ID3D12Device* device,
-	ID3D12GraphicsCommandList* cmdList,
-	XMFLOAT3& center, float length, XMFLOAT2& offset)
-{
-	float xStart = center.x + offset.x;
-	float yStart = center.y + offset.y;
-
-	std::array<DiffuseVertex, 8> vertices = 
-	{
-		DiffuseVertex(XMFLOAT3(center.x, yStart, center.z), (XMFLOAT4)Colors::Black),
-		DiffuseVertex(XMFLOAT3(center.x, yStart + length, center.z), (XMFLOAT4)Colors::Black),
-
-		DiffuseVertex(XMFLOAT3(center.x, -yStart, center.z), (XMFLOAT4)Colors::Black),
-		DiffuseVertex(XMFLOAT3(center.x, -(yStart + length), center.z), (XMFLOAT4)Colors::Black),
-
-		DiffuseVertex(XMFLOAT3(xStart, center.y, center.z), (XMFLOAT4)Colors::Black),
-		DiffuseVertex(XMFLOAT3(xStart + length, center.y, center.z), (XMFLOAT4)Colors::Black),
-
-		DiffuseVertex(XMFLOAT3(-xStart, center.y, center.z), (XMFLOAT4)Colors::Black),
-		DiffuseVertex(XMFLOAT3(-(xStart + length), center.y, center.z), (XMFLOAT4)Colors::Black)
-	};
-
-	std::array<UINT, 8> indices = { 0, 1, 2, 3, 4, 5, 6, 7 };
-
-	Mesh::CreateResourceInfo(device, cmdList, sizeof(DiffuseVertex), sizeof(UINT),
-		D3D_PRIMITIVE_TOPOLOGY_LINELIST, vertices.data(), (UINT)vertices.size(),
-		indices.data(), (UINT)indices.size());
-}
-
-CrossHairMesh::~CrossHairMesh()
-{
-}
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////
-//
 BoxMesh::BoxMesh(
 	ID3D12Device* device,
 	ID3D12GraphicsCommandList* cmdList,

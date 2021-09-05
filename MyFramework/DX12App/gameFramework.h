@@ -3,13 +3,14 @@
 #include "d3dFramework.h"
 #include "gameScene.h"
 
+class Camera;
+
 extern DXGI_SAMPLE_DESC gMsaaStateDesc;
 
 class GameFramework : public D3DFramework
 {
 public:
 	GameFramework();
-	GameFramework(UINT width, UINT height);
 	GameFramework(const GameFramework& rhs) = delete;
 	GameFramework& operator=(const GameFramework& rhs) = delete;
 	virtual ~GameFramework();
@@ -25,5 +26,7 @@ private:
 	virtual void Draw(const GameTimer& timer) override;
 
 private:
+	std::unique_ptr<Camera> mCamera;
+
 	std::stack<std::unique_ptr<GameScene>> mScenes;
 };

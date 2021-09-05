@@ -82,60 +82,6 @@ protected:
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-class LineObject : public GameObject
-{
-public:
-	LineObject(int offset,
-		ID3D12Device* device,
-		ID3D12GraphicsCommandList* cmdList,
-		float length);
-	LineObject(const LineObject& rhs) = delete;
-	LineObject& operator=(const LineObject& rhs) = delete;
-	virtual ~LineObject();
-
-	float GetLength() const { return mLength; }
-
-private:
-	float mLength = 0.0f;
-};
-
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-class CrossHairObject : public GameObject
-{
-public:
-	CrossHairObject(int offset,
-		ID3D12Device* device,
-		ID3D12GraphicsCommandList* cmdList);
-	CrossHairObject(const CrossHairObject& rhs) = delete;
-	CrossHairObject& operator=(const CrossHairObject& rhs) = delete;
-	virtual ~CrossHairObject();
-};
-
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-class GunObject : public GameObject
-{
-public:
-	GunObject(int offset, Mesh *mesh);
-	GunObject(const GunObject& rhs) = delete;
-	GunObject& operator=(const GunObject& rhs) = delete;
-	virtual ~GunObject();
-
-	void SetShootMotion() { mShooted = true; mOrigin = mPosition; }
-	virtual void Update(float elapsedTime, XMFLOAT4X4* parent) override;
-
-private:
-	float mMoveDistance = 10.0f;
-	bool mShooted = false;
-	XMFLOAT3 mOrigin = { };
-};
-
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////
-//
 class TerrainObject : public GameObject
 {
 public:

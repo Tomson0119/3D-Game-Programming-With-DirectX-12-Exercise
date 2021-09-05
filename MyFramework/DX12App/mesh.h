@@ -87,30 +87,6 @@ public:
 	BoundingOrientedBox mOOBB;
 };
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-class LineMesh : public Mesh
-{
-public:
-	LineMesh(
-		ID3D12Device* device,
-		ID3D12GraphicsCommandList* cmdList,
-		float length);
-	virtual ~LineMesh();
-};
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-class CrossHairMesh : public Mesh
-{
-public:
-	CrossHairMesh(
-		ID3D12Device* device,
-		ID3D12GraphicsCommandList* cmdList,
-		XMFLOAT3& center, float length, XMFLOAT2& offset);
-	virtual ~CrossHairMesh();
-};
-
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 //

@@ -23,12 +23,12 @@ public:
 	void Resize(float aspect);
 	void UpdateConstants();
 	void Update(const GameTimer& timer);
-	void Draw(ID3D12GraphicsCommandList* cmdList, const GameTimer& timer);
+	void Draw(ID3D12GraphicsCommandList* cmdList);
 
-	void OnProcessMouseDown(HWND hwnd, WPARAM buttonState);
-	void OnProcessMouseUp(WPARAM buttonState);
-	void OnProcessMouseMove(WPARAM buttonState) { }
-	void OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam);
+	void OnProcessMouseDown(HWND hwnd, WPARAM buttonState) {}
+	void OnProcessMouseUp(WPARAM buttonState) {}
+	void OnProcessMouseMove(WPARAM buttonState) {}
+	void OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam) {}
 
 	void OnKeyboardInput(const GameTimer& timer);
 	void OnMouseInput(const GameTimer& timer);
@@ -40,13 +40,6 @@ private:
 	void BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList);
 	void BuildConstantBuffers(ID3D12Device* device);
 	void BuildShadersAndPSOs(ID3D12Device* device);
-
-	XMFLOAT3 CenterPointScreenToWorld();
-	XMFLOAT3 GetCollisionPosWithObjects(XMFLOAT3& start, XMFLOAT3& dir);
-	bool OnCollisionWithEnemy(XMFLOAT3& point);
-	bool CheckEnemiesDeath();
-
-	void ShowManual();
 
 private:
 	XMFLOAT4 mFrameColor = (XMFLOAT4)Colors::LightSkyBlue;
@@ -64,18 +57,12 @@ private:
 	std::unordered_map<std::string, std::unique_ptr<Pipeline>> mPipelines;
 
 	std::vector<std::unique_ptr<GameObject>> mGameObjects;
-	std::array<EnemyObject*, 16> mEnemies;
 
 	Player* mPlayer = nullptr;
-	LineObject* mBulletTrack = nullptr;
-	GameObject* mHitIndicator = nullptr;
 	TerrainObject* mTerrain = nullptr;
-	EnemyObject* mBoss = nullptr;
-	GunObject* mGunSlide = nullptr;
 
 	CameraMode mLastCameraMode;
 	POINT mLastMousePos;
 
 	float mAspect = 0.0f;
-	bool mShowWireFrame = false;
 };
