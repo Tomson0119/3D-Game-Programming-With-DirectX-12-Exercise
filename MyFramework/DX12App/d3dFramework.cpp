@@ -257,12 +257,12 @@ void D3DFramework::OnResize()
 
 void D3DFramework::CreateRenderTargetViews()
 {
-	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(CurrentBackBufferView());
+	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle(CurrentBackBufferView());
 	for (UINT i = 0; i < mSwapChainBufferCount; ++i)
 	{
 		ThrowIfFailed(mSwapChain->GetBuffer(i, IID_PPV_ARGS(&mSwapChainBuffers[i])));
 		mD3dDevice->CreateRenderTargetView(mSwapChainBuffers[i].Get(), nullptr, rtvHandle);
-		rtvHandle.Offset(1, mRtvDescriptorSize);
+		rtvHandle.ptr += mRtvDescriptorSize;
 	}
 }
 
@@ -287,7 +287,7 @@ void D3DFramework::CreateDepthStencilView()
 	clearValue.DepthStencil.Depth = 1.0f;
 	clearValue.DepthStencil.Stencil = 0;
 
-	CD3DX12_HEAP_PROPERTIES heapProperties(D3D12_HEAP_TYPE_DEFAULT);	
+	D3D12_HEAP_PROPERTIES heapProperties = Extension::HeapProperties(D3D12_HEAP_TYPE_DEFAULT);
 	ThrowIfFailed(mD3dDevice->CreateCommittedResource(
 		&heapProperties,
 		D3D12_HEAP_FLAG_NONE,
@@ -478,9 +478,9 @@ ID3D12Resource* D3DFramework::CurrentBackBuffer() const
 
 D3D12_CPU_DESCRIPTOR_HANDLE D3DFramework::CurrentBackBufferView() const
 {
-	return CD3DX12_CPU_DESCRIPTOR_HANDLE(
-		mRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
-		mCurrBackBufferIndex, mRtvDescriptorSize);
+	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = mRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	rtvHandle.ptr += mCurrBackBufferIndex * mRtvDescriptorSize;
+	return rtvHandle;
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE D3DFramework::DepthStencilView() const
