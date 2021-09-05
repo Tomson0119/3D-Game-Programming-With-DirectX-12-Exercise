@@ -24,7 +24,7 @@
     <ClCompile Include="camera.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="framework.cpp">
+    <ClCompile Include="gameFramework.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="gameObject.cpp">
@@ -68,7 +68,7 @@
     <ClInclude Include="camera.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="framework.h">
+    <ClInclude Include="gameFramework.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="gameObject.h">

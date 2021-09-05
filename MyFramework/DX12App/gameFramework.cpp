@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "framework.h"
+#include "gameFramework.h"
 
 
 DXGI_SAMPLE_DESC gMsaaStateDesc;
@@ -89,14 +89,17 @@ void GameFramework::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
 		switch (wParam)
 		{
 		case VK_ESCAPE:
-			if (mScenes.size() > 1)
+			if (mScenes.size() > 0)
 				mScenes.pop();
-			else
-				PostQuitMessage(0);
-			return;
 
-		default:
-			D3DFramework::OnProcessKeyInput(uMsg, wParam, lParam);
+			if (mScenes.empty()) {
+				PostQuitMessage(0);
+				return;
+			}
+			break;
+
+		case VK_F9:
+			D3DFramework::ChangeFullScreenState();
 			break;
 		}
 		break;
@@ -106,7 +109,7 @@ void GameFramework::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 void GameFramework::Update(const GameTimer& timer)
 {
-	D3DFramework::Update(timer);
+	D3DFramework::UpdateFrameStates();
 
 	if (!mScenes.empty()) mScenes.top()->Update(timer);
 }
