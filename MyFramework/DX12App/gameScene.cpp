@@ -5,8 +5,8 @@ using namespace std;
 
 GameScene::GameScene()
 {
-	mCamera = std::make_unique<Camera>();
-	mCamera->SetPosition(0.0f, 0.0f, -10.0f);
+	//mCamera = std::make_unique<Camera>();
+	//mCamera->SetPosition(0.0f, 0.0f, -10.0f);
 }
 
 GameScene::~GameScene()
@@ -23,20 +23,14 @@ void GameScene::BuildObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cm
 
 void GameScene::Resize(float aspect)
 {
-	mAspect = aspect;
-	mCamera->SetLens(0.25f * Math::PI, aspect, 1.0f, 500.0f);
+	//mAspect = aspect;
+	//mCamera->SetLens(0.25f * Math::PI, aspect, 1.0f, 500.0f);
 }
 
-void GameScene::UpdateConstants()
+void GameScene::UpdateConstants(Camera* camera)
 {
 	// 카메라로부터 상수를 받는다.
-	CameraConstants cameraCnst;
-	cameraCnst.View = Matrix4x4::Transpose(mCamera->GetView());
-	cameraCnst.Proj = Matrix4x4::Transpose(mCamera->GetProj());
-	cameraCnst.ViewProj = Matrix4x4::Transpose(Matrix4x4::Multiply(mCamera->GetView(), mCamera->GetProj()));
-	cameraCnst.CameraPos = mCamera->GetPosition();
-	cameraCnst.Aspect = mAspect;
-	mCameraCB->CopyData(0, cameraCnst);
+	mCameraCB->CopyData(0, camera->GetConstants());
 
 	// 광원과 관련된 상수버퍼를 초기화 및 업데이트한다.
 	LightConstants lightCnst;
@@ -62,15 +56,10 @@ void GameScene::Update(const GameTimer& timer)
 {
 	const float dt = timer.ElapsedTime();
 
-	OnKeyboardInput(timer);
-	OnMouseInput(timer);
-
-	mCamera->Update(dt);
+	OnPreciseKeyInput(timer);
 
 	for (const auto& obj : mGameObjects)
 		obj->Update(dt, nullptr);
-
-	UpdateConstants();
 }
 
 void GameScene::Draw(ID3D12GraphicsCommandList* cmdList)
@@ -80,66 +69,6 @@ void GameScene::Draw(ID3D12GraphicsCommandList* cmdList)
 	cmdList->SetGraphicsRootConstantBufferView(1, mLightCB->GetGPUVirtualAddress());
 	
 	mPipelines["defaultLit"]->SetAndDraw(cmdList, mObjectCB.get());
-}
-
-void GameScene::OnProcessMouseDown(HWND hwnd, WPARAM buttonState)
-{
-	if (buttonState & MK_LBUTTON)
-	{
-		SetCapture(hwnd);
-		GetCursorPos(&mLastMousePos);
-	}
-}
-
-void GameScene::OnProcessMouseUp(WPARAM buttonState)
-{
-	ReleaseCapture();
-}
-
-void GameScene::OnKeyboardInput(const GameTimer& timer)
-{
-	const float dt = timer.ElapsedTime();
-
-	if (GetAsyncKeyState('W') & 0x8000) {
-		mCamera->Walk(5.0f * dt);
-	}
-
-	if (GetAsyncKeyState('A') & 0x8000) {
-		mCamera->Strafe(-5.0f * dt);
-	}
-	
-	if (GetAsyncKeyState('S') & 0x8000) {
-		mCamera->Walk(-5.0f * dt);
-	}
-
-	if (GetAsyncKeyState('D') & 0x8000) {
-		mCamera->Strafe(5.0f * dt);
-	}
-
-	if (GetAsyncKeyState(VK_SPACE) & 0x8000) {
-		mCamera->Upward(5.0f * dt);
-	}
-
-	if (GetAsyncKeyState(VK_LSHIFT) & 0x8000) {
-		mCamera->Upward(-5.0f * dt);
-	}
-}
-
-void GameScene::OnMouseInput(const GameTimer& timer)
-{
-	if (GetCapture())
-	{
-		POINT currMousePos{};
-		GetCursorPos(&currMousePos);
-		
-		float dx = static_cast<float>(currMousePos.x - mLastMousePos.x);
-		float dy = static_cast<float>(currMousePos.y - mLastMousePos.y);
-
-		mLastMousePos = currMousePos;
-
-		mCamera->RotateY(40.0f * dx * timer.ElapsedTime());
-		mCamera->Pitch(40.0f* dy * timer.ElapsedTime());
-	}
 }
 
 void GameScene::BuildRootSignature(ID3D12Device* device)

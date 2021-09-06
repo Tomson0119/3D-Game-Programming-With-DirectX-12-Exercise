@@ -22,17 +22,16 @@ public:
 	void BuildObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList);
 
 	void Resize(float aspect);
-	void UpdateConstants();
+	void UpdateConstants(Camera* camera);
 	void Update(const GameTimer& timer);
 	void Draw(ID3D12GraphicsCommandList* cmdList);
 
-	void OnProcessMouseDown(HWND hwnd, WPARAM buttonState);
-	void OnProcessMouseUp(WPARAM buttonState);
+	void OnProcessMouseDown(WPARAM buttonState, int x, int y) {}
+	void OnProcessMouseUp(WPARAM buttonState, int x, int y) {}
 	void OnProcessMouseMove(WPARAM buttonState) {}
 	void OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam) {}
 
-	void OnKeyboardInput(const GameTimer& timer);
-	void OnMouseInput(const GameTimer& timer);
+	void OnPreciseKeyInput(const GameTimer& timer) {}
 
 	XMFLOAT4 GetFrameColor() const { return mFrameColor; }
 
@@ -45,8 +44,6 @@ private:
 
 private:
 	XMFLOAT4 mFrameColor = (XMFLOAT4)Colors::LightSkyBlue;
-
-	std::unique_ptr<Camera> mCamera;
 
 	std::unique_ptr<ConstantBuffer<ObjectConstants>> mObjectCB;
 	std::unique_ptr<ConstantBuffer<CameraConstants>> mCameraCB;
@@ -63,8 +60,4 @@ private:
 
 	Player* mPlayer = nullptr;
 	TerrainObject* mTerrain = nullptr;
-
-	POINT mLastMousePos;
-
-	float mAspect = 0.0f;
 };
