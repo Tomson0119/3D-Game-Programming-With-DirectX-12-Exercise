@@ -1,15 +1,8 @@
 #include "stdafx.h"
 #include "pipeline.h"
 
-extern DXGI_SAMPLE_DESC gMsaaStateDesc;
-
 Pipeline::Pipeline()
 {
-}
-
-Pipeline::Pipeline(bool wired)
-{
-	mIsWiredFrame = wired;
 }
 
 Pipeline::~Pipeline()
@@ -46,8 +39,8 @@ void Pipeline::BuildPipeline(
 	psoDesc.NumRenderTargets = 1;
 	psoDesc.RTVFormats[0] = mBackBufferFormat;
 	psoDesc.DSVFormat = mDepthStencilFormat;
-	psoDesc.SampleDesc.Count = gMsaaStateDesc.Count;
-	psoDesc.SampleDesc.Quality = gMsaaStateDesc.Quality;
+	psoDesc.SampleDesc.Count = 1;
+	//psoDesc.SampleDesc.Quality = gMsaaStateDesc.Quality;
 
 	if (mIsWiredFrame)
 		psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_WIREFRAME;

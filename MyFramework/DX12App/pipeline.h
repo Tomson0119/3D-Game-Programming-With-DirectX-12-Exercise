@@ -7,7 +7,6 @@ class Pipeline
 {
 public:
 	Pipeline();
-	Pipeline(bool wired);
 	Pipeline(const Pipeline& rhs) = delete;
 	Pipeline& operator=(const Pipeline& rhs) = delete;
 	virtual ~Pipeline();
