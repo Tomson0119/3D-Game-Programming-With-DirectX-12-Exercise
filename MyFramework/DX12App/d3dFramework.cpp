@@ -42,8 +42,8 @@ void D3DFramework::Run()
 			mTimer.Tick();
 			
 			if (!mPaused) {
-				Update(mTimer);
-				Draw(mTimer);
+				Update();
+				Draw();
 			}
 			else
 			{
@@ -401,16 +401,23 @@ LRESULT D3DFramework::OnProcessMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 	case WM_GETMINMAXINFO:  // 윈도우의 최대 최소 크기를 지정한다.
 		reinterpret_cast<MINMAXINFO*>(lParam)->ptMinTrackSize = { 200, 200 };
 		break;
-
+	
 	case WM_LBUTTONDOWN:
 	case WM_MBUTTONDOWN:
 	case WM_RBUTTONDOWN:
+		OnProcessMouseDown(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+		break;
+
 	case WM_LBUTTONUP:
 	case WM_MBUTTONUP:
 	case WM_RBUTTONUP:
-	case WM_MOUSEMOVE:
-		OnProcessMouseInput(uMsg, wParam, lParam);
+		OnProcessMouseUp(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 		break;
+
+	case WM_MOUSEMOVE:
+		OnProcessMouseMove(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+		break;
+		
 
 	case WM_KEYDOWN:
 	case WM_KEYUP:

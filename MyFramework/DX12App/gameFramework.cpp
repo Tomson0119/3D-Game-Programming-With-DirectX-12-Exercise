@@ -7,7 +7,6 @@ using namespace std;
 GameFramework::GameFramework()
 	: D3DFramework()
 {
-	mScenes.emplace(std::make_unique<GameScene>());
 }
 
 GameFramework::~GameFramework()
@@ -24,11 +23,12 @@ bool GameFramework::InitFramework()
 	// 초기화하는 명령어를 넣기 위해 커맨드 리스트를 개방한다.
 	ThrowIfFailed(mCommandList->Reset(mCommandAllocator.Get(), nullptr));
 
-	//mCamera = make_unique<Camera>();
-	//mCamera->SetLens(0.25f * Math::PI, 1.0f, 1.0f, 1000.0f);
+	mCamera = make_unique<Camera>();
+	mCamera->SetPosition(0.0f, 0.0f, -10.0f);
+	mCamera->SetLens(0.25f * Math::PI, GetAspect(), 1.0f, 1000.0f);
 
-	if (!mScenes.empty())
-		mScenes.top()->BuildObjects(mD3dDevice.Get(), mCommandList.Get());
+	mScenes.push(make_unique<GameScene>());
+	mScenes.top()->BuildObjects(mD3dDevice.Get(), mCommandList.Get());
 
 	// Command List를 닫고 Queue에 명령어를 싣는다.
 	ThrowIfFailed(mCommandList->Close());
@@ -44,31 +44,41 @@ bool GameFramework::InitFramework()
 void GameFramework::OnResize()
 {
 	D3DFramework::OnResize();
-	//if(mCamera) mCamera->SetLens(GetAspect());
-	if (!mScenes.empty()) mScenes.top()->Resize(GetAspect());
+	if(mCamera) mCamera->SetLens(GetAspect());
+	//if (!mScenes.empty()) mScenes.top()->Resize(GetAspect());
 }
 
-void GameFramework::OnProcessMouseInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
+void GameFramework::OnProcessMouseDown(WPARAM buttonState, int x, int y)
 {
-	switch (uMsg)
+	if (buttonState & MK_LBUTTON)
 	{
-	case WM_LBUTTONDOWN:
-	case WM_RBUTTONDOWN:
-		if (!mScenes.empty())
-			mScenes.top()->OnProcessMouseDown(m_hwnd, wParam);
-		break;
-
-	case WM_LBUTTONUP:
-	case WM_RBUTTONUP:
-		if (!mScenes.empty())
-			mScenes.top()->OnProcessMouseUp(wParam);
-		break;
-
-	case WM_MOUSEMOVE:
-		if (!mScenes.empty())
-			mScenes.top()->OnProcessMouseMove(wParam);
-		break;
+		SetCapture(m_hwnd);
+		mLastMousePos.x = x;
+		mLastMousePos.y = y;
 	}
+	if (!mScenes.empty()) mScenes.top()->OnProcessMouseDown(buttonState, x, y);
+}
+
+void GameFramework::OnProcessMouseUp(WPARAM buttonState, int x, int y)
+{
+	if (buttonState & MK_LBUTTON) ReleaseCapture();
+	if (!mScenes.empty()) mScenes.top()->OnProcessMouseUp(buttonState, x, y);
+}
+
+void GameFramework::OnProcessMouseMove(WPARAM buttonState, int x, int y)
+{
+	if ((buttonState & MK_LBUTTON) && GetCapture())
+	{
+		float dx = static_cast<float>(x - mLastMousePos.x);
+		float dy = static_cast<float>(y - mLastMousePos.y);
+
+		mLastMousePos.x = x;
+		mLastMousePos.y = y;
+
+		mCamera->RotateY(65.0f * dx * mTimer.ElapsedTime());
+		mCamera->Pitch(65.0f * dy * mTimer.ElapsedTime());
+	}
+	if (!mScenes.empty()) mScenes.top()->OnProcessMouseMove(buttonState);
 }
 
 void GameFramework::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -97,15 +107,49 @@ void GameFramework::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
 	if (!mScenes.empty()) mScenes.top()->OnProcessKeyInput(uMsg, wParam, lParam);
 }
 
-void GameFramework::Update(const GameTimer& timer)
+void GameFramework::OnPreciseKeyInput()
 {
-	D3DFramework::UpdateFrameStates();
+	const float elapsed = mTimer.ElapsedTime();
 
-	//mCamera->Update(timer.ElapsedTime());
-	if (!mScenes.empty()) mScenes.top()->Update(timer);
+	if (GetAsyncKeyState('W') & 0x8000) {
+		mCamera->Walk(5.0f * elapsed);
+	}
+
+	if (GetAsyncKeyState('A') & 0x8000) {
+		mCamera->Strafe(-5.0f * elapsed);
+	}
+
+	if (GetAsyncKeyState('S') & 0x8000) {
+		mCamera->Walk(-5.0f * elapsed);
+	}
+
+	if (GetAsyncKeyState('D') & 0x8000) {
+		mCamera->Strafe(5.0f * elapsed);
+	}
+
+	if (GetAsyncKeyState(VK_SPACE) & 0x8000) {
+		mCamera->Upward(5.0f * elapsed);
+	}
+
+	if (GetAsyncKeyState(VK_LSHIFT) & 0x8000) {
+		mCamera->Upward(-5.0f * elapsed);
+	}
 }
 
-void GameFramework::Draw(const GameTimer& timer)
+void GameFramework::Update()
+{
+	D3DFramework::UpdateFrameStates();
+	
+	OnPreciseKeyInput();
+
+	mCamera->Update(mTimer.ElapsedTime());
+	if (!mScenes.empty()) {
+		mScenes.top()->Update(mTimer);
+		mScenes.top()->UpdateConstants(mCamera.get());
+	}
+}
+
+void GameFramework::Draw()
 {
 	// 명령어 할당자를 먼저 초기화해준다.
 	ThrowIfFailed(mCommandAllocator->Reset());

@@ -52,10 +52,12 @@ public:
 protected:
 	virtual void OnResize();
 
-	virtual void OnProcessMouseInput(UINT uMsg, WPARAM wParam, LPARAM lParam) = 0;
+	virtual void OnProcessMouseDown(WPARAM buttonState, int x, int y) = 0;
+	virtual void OnProcessMouseUp(WPARAM buttonState, int x, int y) = 0;
+	virtual void OnProcessMouseMove(WPARAM buttonState, int x, int y) = 0;
 	virtual void OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam) = 0;
-	virtual void Update(const GameTimer& timer) = 0;
-	virtual void Draw(const GameTimer& timer) = 0;
+	virtual void Update() = 0;
+	virtual void Draw() = 0;
 
 protected:
 	GameTimer mTimer;

@@ -17,14 +17,19 @@ public:
 
 private:
 	virtual void OnResize() override;
-	virtual void OnProcessMouseInput(UINT uMsg, WPARAM wParam, LPARAM lParam) override;
+	virtual void OnProcessMouseDown(WPARAM buttonState, int x, int y) override;
+	virtual void OnProcessMouseUp(WPARAM buttonState, int x, int y) override;
+	virtual void OnProcessMouseMove(WPARAM buttonState, int x, int y) override;
 	virtual void OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam) override;
 
-	virtual void Update(const GameTimer& timer) override;
-	virtual void Draw(const GameTimer& timer) override;
+	virtual void Update() override;
+	virtual void Draw() override;
+
+private:
+	void OnPreciseKeyInput();
 
 private:
 	std::unique_ptr<Camera> mCamera;
-
 	std::stack<std::unique_ptr<GameScene>> mScenes;
+	POINT mLastMousePos = { 0,0 };
 };
