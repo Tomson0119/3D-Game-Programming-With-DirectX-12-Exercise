@@ -51,13 +51,8 @@ private:
 
 	ComPtr<ID3D12RootSignature> mRootSignature;
 	
-	std::unordered_map<std::string, std::unique_ptr<Mesh>> mMeshes;
-	std::unordered_map<std::string, std::unique_ptr<Shader>> mShaders;
 	std::unordered_map<std::string, std::unique_ptr<Pipeline>> mPipelines;
 	std::unordered_map<std::string, std::unique_ptr<Texture>> mTextures;
 
-	std::vector<std::unique_ptr<GameObject>> mGameObjects;
-
-	Player* mPlayer = nullptr;
-	TerrainObject* mTerrain = nullptr;
+	UINT mGameObjectCount = 0;
 };
