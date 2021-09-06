@@ -82,7 +82,7 @@ protected:
 	UINT mCbvSrvUavDescriptorSize = 0;
 
 	ComPtr<ID3D12Fence> mFence;
-	UINT mCurrentFenceValue = 0;
+	UINT64 mFenceValues[mSwapChainBufferCount] = { 0, 0 };
 	HANDLE mFenceEvent = NULL;
 
 	ComPtr<IDXGISwapChain3> mSwapChain;

@@ -140,8 +140,12 @@ void GameFramework::Draw(const GameTimer& timer)
 	ID3D12CommandList* cmdList[] = { mCommandList.Get() };
 	mCommandQueue->ExecuteCommandLists(_countof(cmdList), cmdList);
 
-	ThrowIfFailed(mSwapChain->Present(0, 0));  // 화면버퍼를 Swap한다.
-	mCurrBackBufferIndex = mSwapChain->GetCurrentBackBufferIndex();
+	// 커맨드 리스트의 명령어들을 다 실행하기까지 기다린다.
+	WaitUntilGPUComplete();
 
+	ThrowIfFailed(mSwapChain->Present(0, 0));  // 화면버퍼를 Swap한다.
+
+	// 다음 후면버퍼 위치로 이동한 후 다시 기다린다.
+	mCurrBackBufferIndex = mSwapChain->GetCurrentBackBufferIndex();
 	WaitUntilGPUComplete();
 }

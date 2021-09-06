@@ -130,7 +130,7 @@ void D3DFramework::CreateD3DDevice()
 	mMsaa4xEnable = (mMsaa4xQualityLevels > 1) ? true : false;
 
 	ThrowIfFailed(mD3dDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mFence)));
-
+	for (int i = 0; i < mSwapChainBufferCount; i++) mFenceValues[i] = 1;
 	mFenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 }
 
@@ -309,11 +309,11 @@ void D3DFramework::CreateDepthStencilView()
 
 void D3DFramework::WaitUntilGPUComplete()
 {
-	++mCurrentFenceValue;
-	ThrowIfFailed(mCommandQueue->Signal(mFence.Get(), mCurrentFenceValue));
-	if (mFence->GetCompletedValue() < mCurrentFenceValue)
+	const UINT64 currFenceValue = ++mFenceValues[mCurrBackBufferIndex];
+	ThrowIfFailed(mCommandQueue->Signal(mFence.Get(), currFenceValue));
+	if (mFence->GetCompletedValue() < currFenceValue)
 	{
-		ThrowIfFailed(mFence->SetEventOnCompletion(mCurrentFenceValue, mFenceEvent));
+		ThrowIfFailed(mFence->SetEventOnCompletion(currFenceValue, mFenceEvent));
 		WaitForSingleObject(mFenceEvent, INFINITE);
 	}
 }
