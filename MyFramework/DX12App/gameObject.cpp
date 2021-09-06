@@ -7,12 +7,6 @@ GameObject::GameObject(int offset)
 {
 }
 
-GameObject::GameObject(int offset, Mesh* mesh)
-	: GameObject(offset)
-{
-	if (mesh) SetMesh(mesh);
-}
-
 GameObject::~GameObject()
 {
 }
@@ -211,14 +205,14 @@ ObjectConstants GameObject::GetObjectConstants()
 ///////////////////////////////////////////////////////////////////////////////
 //
 TerrainObject::TerrainObject(int offset)
-	: GameObject(offset, nullptr)
+	: GameObject(offset)
 {
 
 }
 
 TerrainObject::~TerrainObject()
 {
-	if (mMesh) delete mMesh;
+	//if (mMesh) delete mMesh;
 }
 
 void TerrainObject::BuildTerrainMeshes(
@@ -241,7 +235,7 @@ void TerrainObject::BuildTerrainMeshes(
 	long xBlocks = (mWidth - 1) / xQuadPerBlock;
 	long zBlocks = (mDepth - 1) / zQuadPerBlock;
 
-	if (mMesh) delete mMesh;
+	//if (mMesh) delete mMesh;
 	
 	HeightMapGridMesh* gridMesh = nullptr;
 	for (int z = 0, zStart = 0; z < zBlocks; ++z)
@@ -253,7 +247,7 @@ void TerrainObject::BuildTerrainMeshes(
 
 			gridMesh = new HeightMapGridMesh(device, cmdList, xStart, zStart,
 				width, depth, scale, color, mHeightMapImage.get());
-			SetMesh(gridMesh);
+			//SetMesh(gridMesh);
 		}
 	}
 }

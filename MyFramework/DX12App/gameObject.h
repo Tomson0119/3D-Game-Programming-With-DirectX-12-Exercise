@@ -8,7 +8,6 @@ class GameObject
 {
 public:
 	GameObject(int offset);
-	GameObject(int offset, Mesh* mesh);
 	GameObject(const GameObject& rhs) = delete;
 	GameObject& operator=(const GameObject& rhs) = delete;
 	virtual ~GameObject();
@@ -23,7 +22,7 @@ public:
 
 	virtual void SetChild(GameObject* child);
 
-	void SetMesh(Mesh* mesh) { mMesh = mesh; }
+	void SetMesh(const std::shared_ptr<Mesh>& mesh) { mMesh = mesh; }
 	virtual void SetPosition(float x, float y, float z);
 	virtual void SetPosition(XMFLOAT3 pos);
 	virtual void SetMaterial(XMFLOAT4 color, XMFLOAT3 frenel, float roughness);
@@ -69,7 +68,7 @@ protected:
 	XMFLOAT4X4 mWorld = Matrix4x4::Identity4x4();
 	Material mMaterial = {};
 
-	Mesh* mMesh = nullptr;
+	std::shared_ptr<Mesh> mMesh;
 	UINT mCBIndex = 0;
 
 	BoundingOrientedBox mOOBB = { };
