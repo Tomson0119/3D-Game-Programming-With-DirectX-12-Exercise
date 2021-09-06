@@ -212,7 +212,6 @@ TerrainObject::TerrainObject(int offset)
 
 TerrainObject::~TerrainObject()
 {
-	//if (mMesh) delete mMesh;
 }
 
 void TerrainObject::BuildTerrainMeshes(
@@ -234,10 +233,8 @@ void TerrainObject::BuildTerrainMeshes(
 
 	long xBlocks = (mWidth - 1) / xQuadPerBlock;
 	long zBlocks = (mDepth - 1) / zQuadPerBlock;
-
-	//if (mMesh) delete mMesh;
 	
-	HeightMapGridMesh* gridMesh = nullptr;
+	std::shared_ptr<HeightMapGridMesh> gridMesh;
 	for (int z = 0, zStart = 0; z < zBlocks; ++z)
 	{
 		for (int x = 0, xStart = 0; x < xBlocks; ++x)
@@ -245,9 +242,9 @@ void TerrainObject::BuildTerrainMeshes(
 			xStart = x * (width - 1);
 			zStart = z * (depth - 1);
 
-			gridMesh = new HeightMapGridMesh(device, cmdList, xStart, zStart,
+			gridMesh = std::make_shared<HeightMapGridMesh>(device, cmdList, xStart, zStart,
 				width, depth, scale, color, mHeightMapImage.get());
-			//SetMesh(gridMesh);
+			SetMesh(gridMesh);
 		}
 	}
 }

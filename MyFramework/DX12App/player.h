@@ -7,7 +7,7 @@
 class Player : public GameObject
 {
 public:
-	Player(int offset, Mesh* mesh);
+	Player(int offset);
 	Player(const Player& rhs) = delete;
 	Player& operator=(const Player& rhs) = delete;
 	virtual ~Player();
