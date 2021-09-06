@@ -75,8 +75,8 @@ void GameFramework::OnProcessMouseMove(WPARAM buttonState, int x, int y)
 		mLastMousePos.x = x;
 		mLastMousePos.y = y;
 
-		mCamera->RotateY(65.0f * dx * mTimer.ElapsedTime());
-		mCamera->Pitch(65.0f * dy * mTimer.ElapsedTime());
+		mCamera->RotateY(0.25f * dx);
+		mCamera->Pitch(0.25f * dy);
 	}
 	if (!mScenes.empty()) mScenes.top()->OnProcessMouseMove(buttonState);
 }
