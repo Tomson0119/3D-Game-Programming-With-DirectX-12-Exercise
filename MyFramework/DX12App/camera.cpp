@@ -69,6 +69,17 @@ XMFLOAT4X4 Camera::GetView() const
 	return mView;
 }
 
+CameraConstants Camera::GetConstants() const
+{
+	CameraConstants cameraCnst;
+	cameraCnst.View = Matrix4x4::Transpose(GetView());
+	cameraCnst.Proj = Matrix4x4::Transpose(GetProj());
+	cameraCnst.ViewProj = Matrix4x4::Transpose(Matrix4x4::Multiply(GetView(), GetProj()));
+	cameraCnst.CameraPos = GetPosition();
+	cameraCnst.Aspect = mAspect;
+	return cameraCnst;
+}
+
 void Camera::Move(float dx, float dy, float dz)
 {
 	mPosition = Vector3::MultiplyAdd(dx, mRight, mPosition);
