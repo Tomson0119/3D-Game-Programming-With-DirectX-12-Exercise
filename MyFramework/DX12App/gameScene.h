@@ -8,6 +8,7 @@
 #include "pipeline.h"
 #include "player.h"
 #include "shader.h"
+#include "texture.h"
 
 
 class GameScene
@@ -25,8 +26,8 @@ public:
 	void Update(const GameTimer& timer);
 	void Draw(ID3D12GraphicsCommandList* cmdList);
 
-	void OnProcessMouseDown(HWND hwnd, WPARAM buttonState) {}
-	void OnProcessMouseUp(WPARAM buttonState) {}
+	void OnProcessMouseDown(HWND hwnd, WPARAM buttonState);
+	void OnProcessMouseUp(WPARAM buttonState);
 	void OnProcessMouseMove(WPARAM buttonState) {}
 	void OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam) {}
 
@@ -40,6 +41,7 @@ private:
 	void BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList);
 	void BuildConstantBuffers(ID3D12Device* device);
 	void BuildShadersAndPSOs(ID3D12Device* device);
+	void BuildTextures(ID3D12Device* device);
 
 private:
 	XMFLOAT4 mFrameColor = (XMFLOAT4)Colors::LightSkyBlue;
@@ -55,13 +57,13 @@ private:
 	std::unordered_map<std::string, std::unique_ptr<Mesh>> mMeshes;
 	std::unordered_map<std::string, std::unique_ptr<Shader>> mShaders;
 	std::unordered_map<std::string, std::unique_ptr<Pipeline>> mPipelines;
+	std::unordered_map<std::string, std::unique_ptr<Texture>> mTextures;
 
 	std::vector<std::unique_ptr<GameObject>> mGameObjects;
 
 	Player* mPlayer = nullptr;
 	TerrainObject* mTerrain = nullptr;
 
-	CameraMode mLastCameraMode;
 	POINT mLastMousePos;
 
 	float mAspect = 0.0f;

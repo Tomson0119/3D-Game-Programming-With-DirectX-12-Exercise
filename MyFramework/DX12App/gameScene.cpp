@@ -82,6 +82,20 @@ void GameScene::Draw(ID3D12GraphicsCommandList* cmdList)
 	mPipelines["defaultLit"]->SetAndDraw(cmdList, mObjectCB.get());
 }
 
+void GameScene::OnProcessMouseDown(HWND hwnd, WPARAM buttonState)
+{
+	if (buttonState & MK_LBUTTON)
+	{
+		SetCapture(hwnd);
+		GetCursorPos(&mLastMousePos);
+	}
+}
+
+void GameScene::OnProcessMouseUp(WPARAM buttonState)
+{
+	ReleaseCapture();
+}
+
 void GameScene::OnKeyboardInput(const GameTimer& timer)
 {
 	const float dt = timer.ElapsedTime();
@@ -101,21 +115,41 @@ void GameScene::OnKeyboardInput(const GameTimer& timer)
 	if (GetAsyncKeyState('D') & 0x8000) {
 		mCamera->Strafe(5.0f * dt);
 	}
+
+	if (GetAsyncKeyState(VK_SPACE) & 0x8000) {
+		mCamera->Upward(5.0f * dt);
+	}
+
+	if (GetAsyncKeyState(VK_LSHIFT) & 0x8000) {
+		mCamera->Upward(-5.0f * dt);
+	}
 }
 
 void GameScene::OnMouseInput(const GameTimer& timer)
 {
-	
+	if (GetCapture())
+	{
+		POINT currMousePos{};
+		GetCursorPos(&currMousePos);
+		
+		float dx = static_cast<float>(currMousePos.x - mLastMousePos.x);
+		float dy = static_cast<float>(currMousePos.y - mLastMousePos.y);
+
+		mLastMousePos = currMousePos;
+
+		mCamera->RotateY(40.0f * dx * timer.ElapsedTime());
+		mCamera->Pitch(40.0f* dy * timer.ElapsedTime());
+	}
 }
 
 void GameScene::BuildRootSignature(ID3D12Device* device)
 {
-	CD3DX12_ROOT_PARAMETER parameters[3];	
-	parameters[0].InitAsConstantBufferView(0);  // CameraCB
-	parameters[1].InitAsConstantBufferView(1);  // LightCB
-	parameters[2].InitAsConstantBufferView(2);  // ObjectCB
+	D3D12_ROOT_PARAMETER parameters[3];	
+	parameters[0] = Extension::Descriptor(D3D12_ROOT_PARAMETER_TYPE_CBV, 0, D3D12_SHADER_VISIBILITY_ALL);  // CameraCB
+	parameters[1] = Extension::Descriptor(D3D12_ROOT_PARAMETER_TYPE_CBV, 1, D3D12_SHADER_VISIBILITY_ALL);  // LightCB
+	parameters[2] = Extension::Descriptor(D3D12_ROOT_PARAMETER_TYPE_CBV, 2, D3D12_SHADER_VISIBILITY_ALL);  // ObjectCB
 
-	CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(_countof(parameters), parameters, 
+	D3D12_ROOT_SIGNATURE_DESC rootSigDesc = Extension::RootSignatureDesc(_countof(parameters), parameters, 
 		0, nullptr,	D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
 	ComPtr<ID3DBlob> rootSigBlob = nullptr;
@@ -154,6 +188,10 @@ void GameScene::BuildShadersAndPSOs(ID3D12Device* device)
 {
 	mShaders["defaultLit"] = std::make_unique<DefaultShader>(L"Shaders\\defaultLit.hlsl");
 
-	mPipelines["defaultLit"] = std::make_unique<Pipeline>(false);
+	mPipelines["defaultLit"] = std::make_unique<Pipeline>();
 	mPipelines["defaultLit"]->BuildPipeline(device, mRootSignature.Get(), mShaders["defaultLit"].get());
+}
+
+void GameScene::BuildTextures(ID3D12Device* device)
+{
 }
