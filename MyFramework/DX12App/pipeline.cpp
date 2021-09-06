@@ -49,7 +49,7 @@ void Pipeline::BuildPipeline(
 		&psoDesc, IID_PPV_ARGS(&mPSO)));
 }
 
-void Pipeline::SetObject(GameObject* obj)
+void Pipeline::AppendObject(const std::shared_ptr<GameObject>& obj)
 {
 	mRenderObjects.push_back(obj);
 }

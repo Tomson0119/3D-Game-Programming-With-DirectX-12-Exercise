@@ -17,8 +17,20 @@ public:
 		Shader* shader);
 
 	void SetTopology(D3D12_PRIMITIVE_TOPOLOGY_TYPE topology) { mPrimitive = topology; }
-	void SetObject(GameObject* obj);
+	void AppendObject(const std::shared_ptr<GameObject>& obj);
 	void SetAndDraw(ID3D12GraphicsCommandList* cmdList, ConstantBuffer<ObjectConstants>* objCB);
+
+	void Update(const float elapsed)
+	{
+		for (const auto& obj : mRenderObjects)
+			obj->Update(elapsed, nullptr);
+	}
+
+	void UpdateConstants(ConstantBuffer<ObjectConstants>* objCB)
+	{
+		for (const auto& obj : mRenderObjects)
+			obj->UpdateConstants(objCB);
+	}
 
 protected:
 	ComPtr<ID3D12PipelineState> mPSO;
@@ -32,7 +44,7 @@ protected:
 
 	D3D12_PRIMITIVE_TOPOLOGY_TYPE mPrimitive = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 
-	std::vector<GameObject*> mRenderObjects;
+	std::vector<std::shared_ptr<GameObject>> mRenderObjects;
 
 	bool mIsWiredFrame = false;
 };

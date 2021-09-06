@@ -47,19 +47,21 @@ void GameScene::UpdateConstants(Camera* camera)
 
 	mLightCB->CopyData(0, lightCnst);
 
-	for (const auto& obj : mGameObjects)
-		// 오브젝트로부터 상수들을 받아 업데이트한다.
-		obj->UpdateConstants(mObjectCB.get());	
+	//for (const auto& obj : mGameObjects)
+	//	// 오브젝트로부터 상수들을 받아 업데이트한다.
+	//	obj->UpdateConstants(mObjectCB.get());
+	for (const auto& [_, pso] : mPipelines)
+		pso->UpdateConstants(mObjectCB.get());
 }
 
 void GameScene::Update(const GameTimer& timer)
 {
-	const float dt = timer.ElapsedTime();
-
 	OnPreciseKeyInput(timer);
 
-	for (const auto& obj : mGameObjects)
-		obj->Update(dt, nullptr);
+	/*for (const auto& obj : mGameObjects)
+		obj->Update(timer.ElapsedTime(), nullptr);*/
+	for (const auto& [_, pso] : mPipelines)
+		pso->Update(timer.ElapsedTime());
 }
 
 void GameScene::Draw(ID3D12GraphicsCommandList* cmdList)
@@ -94,31 +96,36 @@ void GameScene::BuildRootSignature(ID3D12Device* device)
 		IID_PPV_ARGS(&mRootSignature)));
 }
 
+void GameScene::BuildShadersAndPSOs(ID3D12Device* device)
+{
+	auto shader = make_unique<DefaultShader>(L"Shaders\\defaultLit.hlsl");
+
+	mPipelines["defaultLit"] = make_unique<Pipeline>();
+	mPipelines["defaultLit"]->BuildPipeline(device, mRootSignature.Get(), shader.get());
+}
+
 void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
 {
-	mMeshes["box"] = make_unique<BoxMesh>(device, cmdList, 1.0f, 1.0f, 1.0f);
-	
-	auto box = make_unique<GameObject>(0, mMeshes["box"].get());
-	box->SetPosition(0.0f, 0.0f, 0.0f);
-	box->SetMaterial(XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f), XMFLOAT3(0.1f, 0.1f, 0.1f), 0.25f);
+	const int BoxCount = 1000;
 
-	mPipelines["defaultLit"]->SetObject(box.get());
-	mGameObjects.push_back(move(box));
+	shared_ptr<BoxMesh> boxMesh = make_shared<BoxMesh>(device, cmdList, 1.0f, 1.0f, 1.0f);
+
+	for (int i = 0; i < BoxCount; i++) {
+		shared_ptr<GameObject> box = make_shared<GameObject>(i);
+		box->SetMesh(boxMesh);
+		box->SetPosition(-BoxCount + 1.1f * i, 0.0f, 0.0f);
+		box->SetMaterial(XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f), XMFLOAT3(0.1f, 0.1f, 0.1f), 0.25f);
+
+		mPipelines["defaultLit"]->AppendObject(box);
+		mGameObjectCount += 1;
+	}
 }
 
 void GameScene::BuildConstantBuffers(ID3D12Device* device)
 {
-	mObjectCB = std::make_unique<ConstantBuffer<ObjectConstants>>(device, (UINT)mGameObjects.size());
+	mObjectCB = std::make_unique<ConstantBuffer<ObjectConstants>>(device, mGameObjectCount);
 	mCameraCB = std::make_unique<ConstantBuffer<CameraConstants>>(device, 1);
 	mLightCB = std::make_unique<ConstantBuffer<LightConstants>>(device, 1);
-}
-
-void GameScene::BuildShadersAndPSOs(ID3D12Device* device)
-{
-	mShaders["defaultLit"] = std::make_unique<DefaultShader>(L"Shaders\\defaultLit.hlsl");
-
-	mPipelines["defaultLit"] = std::make_unique<Pipeline>();
-	mPipelines["defaultLit"]->BuildPipeline(device, mRootSignature.Get(), mShaders["defaultLit"].get());
 }
 
 void GameScene::BuildTextures(ID3D12Device* device)
