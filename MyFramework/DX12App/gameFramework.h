@@ -5,8 +5,6 @@
 
 class Camera;
 
-extern DXGI_SAMPLE_DESC gMsaaStateDesc;
-
 class GameFramework : public D3DFramework
 {
 public:

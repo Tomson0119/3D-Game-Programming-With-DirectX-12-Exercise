@@ -2,18 +2,11 @@
 #include "gameFramework.h"
 #include "camera.h"
 
-DXGI_SAMPLE_DESC gMsaaStateDesc;
-
 using namespace std;
 
 GameFramework::GameFramework()
 	: D3DFramework()
 {
-	// 전역 변수 멀티샘플링 서술자 세팅
-	// 파이프라인 객체를 생성할 때 쓰인다.
-	gMsaaStateDesc.Count = (mMsaa4xEnable) ? 4 : 1;
-	gMsaaStateDesc.Quality = (mMsaa4xEnable) ? (mMsaa4xQualityLevels - 1) : 0;
-
 	mScenes.emplace(std::make_unique<GameScene>());
 }
 
