@@ -22,7 +22,7 @@ float Pow5(float x)
 float3 CalcReflectPercent(float3 fresnel, float3 h, float3 l)
 {
     float oneMinusCosine = 1.0f - saturate(dot(h, l));
-    return fresnel + (1.0f - fresnel) * Pow5(oneMinusCosine);
+    return (fresnel + (1.0f - fresnel) * Pow5(oneMinusCosine));
 }
 
 float3 PhongModelLighting(float3 lightDiff, float3 lightVec, float3 normal, float3 view, Material mat)

@@ -61,10 +61,11 @@ float4 PS(VertexOut pin) : SV_Target
     float3 view = normalize(gCameraPos - pin.PosW);
     float4 ambient = gAmbient * diffuse;
     
-    float4 directLight = ComputeLighting(gLights, gMat, pin.NormalW, view);
+    Material mat = { diffuse, gMat.Fresnel, gMat.Roughness };
+    float4 directLight = ComputeLighting(gLights, mat, pin.NormalW, view);
     
     float4 result = ambient + directLight;
     result.a = gMat.Diffuse.a;
     
-    return result;
+    return ambient;
 }
