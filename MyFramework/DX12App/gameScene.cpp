@@ -29,9 +29,9 @@ void GameScene::UpdateConstants(Camera* camera)
 
 	// 광원과 관련된 상수버퍼를 초기화 및 업데이트한다.
 	LightConstants lightCnst;
-	lightCnst.Ambient = XMFLOAT4(0.5f, 0.5f, 0.5f, 0.5f);
+	lightCnst.Ambient = XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f);
 
-	lightCnst.Lights[0].Diffuse = { 0.8f, 0.8f, 0.8f };
+	lightCnst.Lights[0].Diffuse = { 0.5f, 0.5f, 0.5f };
 	lightCnst.Lights[0].Direction = { -1.0f, 1.0f, -1.0f };
 
 	lightCnst.Lights[1].Diffuse = { 0.15f, 0.15f, 0.15f };
@@ -65,8 +65,7 @@ void GameScene::Draw(ID3D12GraphicsCommandList* cmdList)
 	cmdList->SetGraphicsRootConstantBufferView(0, mCameraCB->GetGPUVirtualAddress());
 	cmdList->SetGraphicsRootConstantBufferView(1, mLightCB->GetGPUVirtualAddress());
 	
-	mPipelines["defaultLit"]->SetAndDraw(cmdList);
-	//mPipelines["wiredLit"]->SetAndDraw(cmdList);
+	mPipelines["texLit"]->SetAndDraw(cmdList);
 }
 
 void GameScene::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -86,25 +85,19 @@ void GameScene::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 void GameScene::BuildRootSignature(ID3D12Device* device)
 {
-	D3D12_DESCRIPTOR_RANGE descRange = Extension::DescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 2);
+	D3D12_DESCRIPTOR_RANGE descRanges[2];
+	descRanges[0] = Extension::DescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 2);
+	descRanges[1] = Extension::DescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);	
 
-	//D3D12_ROOT_PARAMETER parameters[4];
-	//parameters[0] = Extension::DescriptorTable(1, &descRange, D3D12_SHADER_VISIBILITY_PIXEL);			   // Texture
-	//parameters[1] = Extension::Descriptor(D3D12_ROOT_PARAMETER_TYPE_CBV, 0, D3D12_SHADER_VISIBILITY_ALL);  // CameraCB
-	//parameters[2] = Extension::Descriptor(D3D12_ROOT_PARAMETER_TYPE_CBV, 1, D3D12_SHADER_VISIBILITY_ALL);  // LightCB
-	//parameters[3] = Extension::Descriptor(D3D12_ROOT_PARAMETER_TYPE_CBV, 2, D3D12_SHADER_VISIBILITY_ALL);  // ObjectCB
-
-	//D3D12_STATIC_SAMPLER_DESC samplerDesc = Extension::SamplerDesc(0, D3D12_FILTER_ANISOTROPIC, D3D12_TEXTURE_ADDRESS_MODE_WRAP);
-	//D3D12_ROOT_SIGNATURE_DESC rootSigDesc = Extension::RootSignatureDesc(_countof(parameters), parameters, 
-	//	1, &samplerDesc, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
-
-	D3D12_ROOT_PARAMETER parameters[3];
+	D3D12_ROOT_PARAMETER parameters[4];
 	parameters[0] = Extension::Descriptor(D3D12_ROOT_PARAMETER_TYPE_CBV, 0, D3D12_SHADER_VISIBILITY_ALL);  // CameraCB
 	parameters[1] = Extension::Descriptor(D3D12_ROOT_PARAMETER_TYPE_CBV, 1, D3D12_SHADER_VISIBILITY_ALL);  // LightCB
-	parameters[2] = Extension::DescriptorTable(1, &descRange, D3D12_SHADER_VISIBILITY_ALL);  // ObjectCB
+	parameters[2] = Extension::DescriptorTable(1, &descRanges[0], D3D12_SHADER_VISIBILITY_ALL);			   // Object,  CBV
+	parameters[3] = Extension::DescriptorTable(1, &descRanges[1], D3D12_SHADER_VISIBILITY_PIXEL);		   // Texture, SRV
 
+	D3D12_STATIC_SAMPLER_DESC samplerDesc = Extension::SamplerDesc(0, D3D12_FILTER_ANISOTROPIC, D3D12_TEXTURE_ADDRESS_MODE_WRAP);
 	D3D12_ROOT_SIGNATURE_DESC rootSigDesc = Extension::RootSignatureDesc(_countof(parameters), parameters, 
-		0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+		1, &samplerDesc, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
 	ComPtr<ID3DBlob> rootSigBlob = nullptr;
 	ComPtr<ID3DBlob> errorBlob = nullptr;
@@ -121,20 +114,16 @@ void GameScene::BuildRootSignature(ID3D12Device* device)
 
 void GameScene::BuildShadersAndPSOs(ID3D12Device* device)
 {
-	auto shader = make_unique<DefaultShader>(L"Shaders\\defaultLit.hlsl");
+	auto shader = make_unique<DefaultShader>(L"Shaders\\texShader.hlsl");
 
-	mPipelines["defaultLit"] = make_unique<Pipeline>();
-	mPipelines["defaultLit"]->BuildPipeline(device, mRootSignature.Get(), shader.get());
-
-	//mPipelines["wiredLit"] = make_unique<Pipeline>();
-	//mPipelines["wiredLit"]->SetWiredFrame(true);
-	//mPipelines["wiredLit"]->BuildPipeline(device, mRootSignature.Get(), shader.get());
+	mPipelines["texLit"] = make_unique<Pipeline>();
+	mPipelines["texLit"]->BuildPipeline(device, mRootSignature.Get(), shader.get());
 }
 
 void GameScene::BuildDescriptorHeap(ID3D12Device* device)
 {
 	for (const auto& [_, pso] : mPipelines)
-		pso->BuildDescriptorHeap(device);
+		pso->BuildDescriptorHeap(device, 2, 3);
 }
 
 void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
@@ -143,26 +132,20 @@ void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList
 
 	shared_ptr<BoxMesh> boxMesh = make_shared<BoxMesh>(device, cmdList, 1.0f, 1.0f, 1.0f);
 	
-	//// Creating texture.
-	//auto boxTex = make_shared<Texture>();
-	//boxTex->CreateTextureResource(device, cmdList, L"Resources\\box.dds");
+	// Creating texture.
+	auto boxTex = make_shared<Texture>();
+	boxTex->CreateTextureResource(device, cmdList, L"Resources\\box.dds");
+	boxTex->SetDimension(D3D12_SRV_DIMENSION_TEXTURE2D);
+	mPipelines["texLit"]->AppendTexture(boxTex);
 
 	for (int i = 0; i < BoxCount; i++) {
 		shared_ptr<GameObject> box = make_shared<GameObject>();
 		box->SetMesh(boxMesh);
+		box->SetSRVIndex(0);
 		box->SetPosition(-BoxCount + 1.1f * i, 0.0f, 0.0f);
-		box->SetMaterial(XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f), XMFLOAT3(0.1f, 0.1f, 0.1f), 0.25f);
+		box->SetMaterial(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), XMFLOAT3(0.01f, 0.01f, 0.01f), 0.25f);
 
-		mPipelines["defaultLit"]->AppendObject(box);
-
-		/*shared_ptr<GameObject> wired = make_shared<GameObject>();
-		wired->SetMesh(boxMesh);
-		wired->SetPosition(-BoxCount + 1.1f * i, 0.0f, -1.5f);
-		wired->SetMaterial(XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f), XMFLOAT3(0.1f, 0.1f, 0.1f), 0.25f);
-
-		mPipelines["wiredLit"]->AppendObject(wired);*/
-
-		//mGameObjectCount += 2;
+		mPipelines["texLit"]->AppendObject(box);
 	}
 }
 
@@ -173,5 +156,5 @@ void GameScene::BuildConstantBuffers(ID3D12Device* device)
 	mLightCB = std::make_unique<ConstantBuffer<LightConstants>>(device, 1);
 
 	for (const auto& [_, pso] : mPipelines)
-		pso->BuildConstantBuffer(device, 2);
+		pso->BuildConstantBuffer(device);
 }
