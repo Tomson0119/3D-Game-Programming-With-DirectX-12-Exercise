@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <memory>
 #include <wrl.h>
+#include <vector>
 
 #include "d3dx12.h"
 

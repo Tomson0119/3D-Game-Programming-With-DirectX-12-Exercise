@@ -66,6 +66,9 @@
     <ClCompile Include="texture.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="DDSTextureLoader12.cpp">
+      <Filter>소스 파일\Common</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="camera.h">
@@ -119,12 +122,18 @@
     <ClInclude Include="texture.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="DDSTextureLoader12.h">
+      <Filter>헤더 파일\Common</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\defaultLit.hlsl">
+    <None Include="Shaders\TexShader.hlsl">
       <Filter>리소스 파일</Filter>
     </None>
     <None Include="Shaders\lighting.hlsl">
+      <Filter>리소스 파일</Filter>
+    </None>
+    <None Include="Shaders\defaultLit.hlsl">
       <Filter>리소스 파일</Filter>
     </None>
   </ItemGroup>

@@ -31,6 +31,12 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="DDSTextureLoader12.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="dxException.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Use</PrecompiledHeader>
@@ -116,6 +122,7 @@
     <ClInclude Include="constantBuffer.h" />
     <ClInclude Include="d3dExtension.h" />
     <ClInclude Include="d3dFramework.h" />
+    <ClInclude Include="DDSTextureLoader12.h" />
     <ClInclude Include="dxException.h" />
     <ClInclude Include="gameFramework.h" />
     <ClInclude Include="gameObject.h" />
@@ -130,10 +137,15 @@
     <ClInclude Include="texture.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\defaultLit.hlsl">
+    <None Include="Shaders\TexShader.hlsl">
       <FileType>Document</FileType>
     </None>
     <None Include="Shaders\lighting.hlsl">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\defaultLit.hlsl">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>
