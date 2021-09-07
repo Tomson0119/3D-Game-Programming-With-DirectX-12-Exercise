@@ -3,45 +3,44 @@
 #include "mesh.h"
 #include "constantBuffer.h"
 #include "camera.h"
+#include "texture.h"
 
 class GameObject
 {
 public:
-	GameObject(int offset);
+	GameObject();
 	GameObject(const GameObject& rhs) = delete;
 	GameObject& operator=(const GameObject& rhs) = delete;
 	virtual ~GameObject();
 
-	void UpdateConstants(ConstantBuffer<ObjectConstants>* objectCB);
-
 	virtual void Update(float elapsedTime, XMFLOAT4X4* parent);
 	virtual void Draw(ID3D12GraphicsCommandList* cmdList);
-
 	virtual void UpdateTransform(XMFLOAT4X4* parent);
+
 	void UpdateBoudingBox();
 
+public:
 	virtual void SetChild(GameObject* child);
-
-	void SetMesh(const std::shared_ptr<Mesh>& mesh) { mMesh = mesh; }
 	virtual void SetPosition(float x, float y, float z);
 	virtual void SetPosition(XMFLOAT3 pos);
 	virtual void SetMaterial(XMFLOAT4 color, XMFLOAT3 frenel, float roughness);
 
 	void SetLook(XMFLOAT3& look);
+	void SetMesh(const std::shared_ptr<Mesh>& mesh) { mMesh = mesh; }
 
 public:
-	void Move(float dx, float dy, float dz);
-	void Move(XMFLOAT3& dir, float dist);
-
 	virtual void Strafe(float dist, bool local=true);
 	virtual void Upward(float dist, bool local=true);
 	virtual void Walk(float dist, bool local=true);
 
-	void Rotate(float pitch, float yaw, float roll);
-	void Rotate(const XMFLOAT3& axis, float angle);
-
 	virtual void RotateY(float angle);
 	virtual void Pitch(float angle);
+
+	void Move(float dx, float dy, float dz);
+	void Move(XMFLOAT3& dir, float dist);
+
+	void Rotate(float pitch, float yaw, float roll);
+	void Rotate(const XMFLOAT3& axis, float angle);
 
 	void Scale(float xScale, float yScale, float zScale);
 	void Scale(const XMFLOAT3& scale);
@@ -53,10 +52,9 @@ public:
 	XMFLOAT3 GetLook() const { return mLook; }
 	XMFLOAT3 GetUp() const { return mUp; }
 	
-	UINT CBIndex() const { return mCBIndex; }
 	virtual ObjectConstants GetObjectConstants();
-	BoundingOrientedBox GetBoundingBox() const { return mOOBB; }
-	
+
+	BoundingOrientedBox GetBoundingBox() const { return mOOBB; }	
 	
 protected:
 	XMFLOAT3 mPosition = { 0.0f, 0.0f, 0.0f };
@@ -69,7 +67,6 @@ protected:
 	Material mMaterial = {};
 
 	std::shared_ptr<Mesh> mMesh;
-	UINT mCBIndex = 0;
 
 	BoundingOrientedBox mOOBB = { };
 
@@ -84,7 +81,7 @@ protected:
 class TerrainObject : public GameObject
 {
 public:
-	TerrainObject(int offset);
+	TerrainObject();
 	TerrainObject(const TerrainObject& rhs) = delete;
 	TerrainObject& operator=(const TerrainObject& rhs) = delete;
 	virtual ~TerrainObject();

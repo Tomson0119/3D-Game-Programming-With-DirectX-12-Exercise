@@ -2,18 +2,12 @@
 #include "gameObject.h"
 
 
-GameObject::GameObject(int offset)
-	: mCBIndex((UINT)offset)
+GameObject::GameObject()
 {
 }
 
 GameObject::~GameObject()
 {
-}
-
-void GameObject::UpdateConstants(ConstantBuffer<ObjectConstants>* objectCB)
-{
-	objectCB->CopyData(mCBIndex, GetObjectConstants());	
 }
 
 void GameObject::Update(float elapsedTime, XMFLOAT4X4* parent)
@@ -204,10 +198,9 @@ ObjectConstants GameObject::GetObjectConstants()
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-TerrainObject::TerrainObject(int offset)
-	: GameObject(offset)
+TerrainObject::TerrainObject()
+	: GameObject()
 {
-
 }
 
 TerrainObject::~TerrainObject()
