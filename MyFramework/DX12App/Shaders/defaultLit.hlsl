@@ -50,7 +50,7 @@ VertexOut VS(VertexIn vin)
 }
 
 float4 PS(VertexOut pin) : SV_Target
-{
+{    
     pin.NormalW = normalize(pin.NormalW);
     
     float3 view = normalize(gCameraPos - pin.PosW);
