@@ -28,6 +28,7 @@
 #include <DirectXPackedVector.h>
 
 #include "d3dx12.h"
+#include "DDSTextureLoader12.h"
 
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "d3dcompiler.lib")
@@ -61,12 +62,11 @@ extern ComPtr<ID3D12Resource> CreateBufferResource(
 	UINT64 byteSize,
 	ComPtr<ID3D12Resource>& uploadBuffer);
 
-extern ComPtr<ID3DBlob> CompileShader(
-	const std::wstring& fileName,
-	const std::string& entry,
-	const std::string& target,
-	const D3D_SHADER_MACRO* defines = nullptr);
 
+inline UINT GetConstantBufferSize(UINT bytes)
+{
+	return ((bytes + 255) & ~255);
+}
 
 inline std::wstring AnsiToWString(const std::string& str)
 {

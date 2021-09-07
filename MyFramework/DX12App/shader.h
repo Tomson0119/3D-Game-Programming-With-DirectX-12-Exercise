@@ -17,6 +17,13 @@ public:
 	ID3DBlob* GetGS() const { return GS.Get(); }
 	ID3DBlob* GetPS() const { return PS.Get(); }
 
+public:
+	static ComPtr<ID3DBlob> CompileShader(
+		const std::wstring& fileName,
+		const std::string& entry,
+		const std::string& target,
+		const D3D_SHADER_MACRO* defines = nullptr);
+
 protected:
 	std::vector<D3D12_INPUT_ELEMENT_DESC> mInputLayout;
 
