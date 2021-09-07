@@ -3,8 +3,8 @@
 #include "camera.h"
 
 
-Player::Player(int offset)
-	: GameObject(offset)
+Player::Player()
+	: GameObject()
 {
 
 }
@@ -163,8 +163,8 @@ void Player::Update(float elapsedTime, XMFLOAT4X4* parent)
 
 /////////////////////////////////////////////////////////////////////////////////////
 //
-TerrainPlayer::TerrainPlayer(int offset, Mesh* mesh, void* context)
-	: Player(offset, mesh)
+TerrainPlayer::TerrainPlayer(void* context)
+	: Player()
 {
 	TerrainObject* terrain = (TerrainObject*)context;
 	float xPos = terrain->GetWidth() * 0.5f;

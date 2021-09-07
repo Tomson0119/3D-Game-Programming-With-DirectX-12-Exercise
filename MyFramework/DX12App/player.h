@@ -7,7 +7,7 @@
 class Player : public GameObject
 {
 public:
-	Player(int offset);
+	Player();
 	Player(const Player& rhs) = delete;
 	Player& operator=(const Player& rhs) = delete;
 	virtual ~Player();
@@ -59,7 +59,7 @@ protected:
 class TerrainPlayer : public Player
 {
 public:
-	TerrainPlayer(int offset, Mesh* mesh, void* context);
+	TerrainPlayer(void* context);
 	TerrainPlayer(const TerrainPlayer& rhs) = delete;
 	TerrainPlayer& operator=(const TerrainPlayer& rhs) = delete;
 	virtual ~TerrainPlayer();
