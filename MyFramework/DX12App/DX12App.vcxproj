@@ -137,7 +137,7 @@
     <ClInclude Include="texture.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\TexShader.hlsl">
+    <None Include="Shaders\texShader.hlsl">
       <FileType>Document</FileType>
     </None>
     <None Include="Shaders\lighting.hlsl">

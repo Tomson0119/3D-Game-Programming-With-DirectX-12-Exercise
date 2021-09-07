@@ -127,7 +127,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\TexShader.hlsl">
+    <None Include="Shaders\texShader.hlsl">
       <Filter>리소스 파일</Filter>
     </None>
     <None Include="Shaders\lighting.hlsl">
