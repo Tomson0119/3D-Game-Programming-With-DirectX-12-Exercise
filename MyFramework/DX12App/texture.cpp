@@ -36,3 +36,45 @@ void Texture::CreateTextureResource(
 		mTexResource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, resourceStates);
 	cmdList->ResourceBarrier(1, &resourceBarrier);
 }
+
+D3D12_SHADER_RESOURCE_VIEW_DESC Texture::ShaderResourceView() const
+{
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.Format = mTexResource->GetDesc().Format;
+	srvDesc.ViewDimension = mViewDimension;
+
+	switch (mViewDimension)
+	{
+	case D3D12_SRV_DIMENSION_TEXTURE2D:
+		srvDesc.Texture2D.MipLevels = -1;
+		srvDesc.Texture2D.MostDetailedMip = 0;
+		srvDesc.Texture2D.PlaneSlice = 0;
+		srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
+		break;
+
+	case D3D12_SRV_DIMENSION_TEXTURE2DARRAY:
+		srvDesc.Texture2DArray.MipLevels = -1;
+		srvDesc.Texture2DArray.MostDetailedMip = 0;
+		srvDesc.Texture2DArray.PlaneSlice = 0;
+		srvDesc.Texture2DArray.ResourceMinLODClamp = 0.0f;
+		srvDesc.Texture2DArray.FirstArraySlice = 0;
+		srvDesc.Texture2DArray.ArraySize = mTexResource->GetDesc().DepthOrArraySize;
+		break;
+
+	case D3D12_SRV_DIMENSION_TEXTURECUBE:
+		srvDesc.TextureCube.MipLevels = -1;
+		srvDesc.TextureCube.MostDetailedMip = 0;
+		srvDesc.TextureCube.ResourceMinLODClamp = 0.0f;
+		break;
+
+	case D3D12_SRV_DIMENSION_BUFFER:
+		srvDesc.Format = mBufferFormats;
+		srvDesc.Buffer.FirstElement = 0;
+		srvDesc.Buffer.NumElements = mBufferElementsCount;
+		srvDesc.Buffer.StructureByteStride = 0;
+		srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+		break;
+	}
+	return srvDesc;
+}
