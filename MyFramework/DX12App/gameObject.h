@@ -25,6 +25,7 @@ public:
 	virtual void SetPosition(XMFLOAT3 pos);
 	virtual void SetMaterial(XMFLOAT4 color, XMFLOAT3 frenel, float roughness);
 
+	void SetSRVIndex(UINT idx) { mSrvIndex = idx; }
 	void SetLook(XMFLOAT3& look);
 	void SetMesh(const std::shared_ptr<Mesh>& mesh) { mMesh = mesh; }
 
@@ -51,6 +52,8 @@ public:
 	XMFLOAT3 GetRight() const { return mRight; }
 	XMFLOAT3 GetLook() const { return mLook; }
 	XMFLOAT3 GetUp() const { return mUp; }
+
+	UINT GetSRVIndex() const { return mSrvIndex; }
 	
 	virtual ObjectConstants GetObjectConstants();
 
@@ -64,8 +67,9 @@ protected:
 	XMFLOAT3 mScaling = { 1.0f, 1.0f, 1.0f };
 
 	XMFLOAT4X4 mWorld = Matrix4x4::Identity4x4();
-	Material mMaterial = {};
 
+	UINT mSrvIndex = 0;
+	Material mMaterial = {};
 	std::shared_ptr<Mesh> mMesh;
 
 	BoundingOrientedBox mOOBB = { };
