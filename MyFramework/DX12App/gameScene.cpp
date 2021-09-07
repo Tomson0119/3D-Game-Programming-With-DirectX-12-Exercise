@@ -66,7 +66,7 @@ void GameScene::Draw(ID3D12GraphicsCommandList* cmdList)
 	cmdList->SetGraphicsRootConstantBufferView(1, mLightCB->GetGPUVirtualAddress());
 	
 	mPipelines["defaultLit"]->SetAndDraw(cmdList);
-	mPipelines["wiredLit"]->SetAndDraw(cmdList);
+	//mPipelines["wiredLit"]->SetAndDraw(cmdList);
 }
 
 void GameScene::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -86,7 +86,7 @@ void GameScene::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 void GameScene::BuildRootSignature(ID3D12Device* device)
 {
-	//D3D12_DESCRIPTOR_RANGE descRange = Extension::DescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
+	D3D12_DESCRIPTOR_RANGE descRange = Extension::DescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 2);
 
 	//D3D12_ROOT_PARAMETER parameters[4];
 	//parameters[0] = Extension::DescriptorTable(1, &descRange, D3D12_SHADER_VISIBILITY_PIXEL);			   // Texture
@@ -101,7 +101,7 @@ void GameScene::BuildRootSignature(ID3D12Device* device)
 	D3D12_ROOT_PARAMETER parameters[3];
 	parameters[0] = Extension::Descriptor(D3D12_ROOT_PARAMETER_TYPE_CBV, 0, D3D12_SHADER_VISIBILITY_ALL);  // CameraCB
 	parameters[1] = Extension::Descriptor(D3D12_ROOT_PARAMETER_TYPE_CBV, 1, D3D12_SHADER_VISIBILITY_ALL);  // LightCB
-	parameters[2] = Extension::Descriptor(D3D12_ROOT_PARAMETER_TYPE_CBV, 2, D3D12_SHADER_VISIBILITY_ALL);  // ObjectCB
+	parameters[2] = Extension::DescriptorTable(1, &descRange, D3D12_SHADER_VISIBILITY_ALL);  // ObjectCB
 
 	D3D12_ROOT_SIGNATURE_DESC rootSigDesc = Extension::RootSignatureDesc(_countof(parameters), parameters, 
 		0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
@@ -126,9 +126,9 @@ void GameScene::BuildShadersAndPSOs(ID3D12Device* device)
 	mPipelines["defaultLit"] = make_unique<Pipeline>();
 	mPipelines["defaultLit"]->BuildPipeline(device, mRootSignature.Get(), shader.get());
 
-	mPipelines["wiredLit"] = make_unique<Pipeline>();
-	mPipelines["wiredLit"]->SetWiredFrame(true);
-	mPipelines["wiredLit"]->BuildPipeline(device, mRootSignature.Get(), shader.get());
+	//mPipelines["wiredLit"] = make_unique<Pipeline>();
+	//mPipelines["wiredLit"]->SetWiredFrame(true);
+	//mPipelines["wiredLit"]->BuildPipeline(device, mRootSignature.Get(), shader.get());
 }
 
 void GameScene::BuildDescriptorHeap(ID3D12Device* device)
@@ -155,14 +155,14 @@ void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList
 
 		mPipelines["defaultLit"]->AppendObject(box);
 
-		shared_ptr<GameObject> wired = make_shared<GameObject>();
+		/*shared_ptr<GameObject> wired = make_shared<GameObject>();
 		wired->SetMesh(boxMesh);
 		wired->SetPosition(-BoxCount + 1.1f * i, 0.0f, -1.5f);
 		wired->SetMaterial(XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f), XMFLOAT3(0.1f, 0.1f, 0.1f), 0.25f);
 
-		mPipelines["wiredLit"]->AppendObject(wired);
+		mPipelines["wiredLit"]->AppendObject(wired);*/
 
-		mGameObjectCount += 2;
+		//mGameObjectCount += 2;
 	}
 }
 

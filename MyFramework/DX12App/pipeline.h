@@ -47,5 +47,7 @@ protected:
 	UINT mTextureCount = 0;
 	UINT mRootParamIndex = 0;
 
+	UINT mCbvSrvDescriptorSize = 0;
+
 	bool mIsWiredFrame = false;
 };

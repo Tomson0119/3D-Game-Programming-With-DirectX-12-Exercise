@@ -58,18 +58,30 @@ void Pipeline::BuildConstantBuffer(ID3D12Device* device, UINT rootParameterIndex
 void Pipeline::BuildDescriptorHeap(ID3D12Device* device)
 {
 	D3D12_DESCRIPTOR_HEAP_DESC decriptorHeapDesc = 
-		Extension::DescriptorHeapDesc(mTextureCount + (UINT)mRenderObjects.size());
+		Extension::DescriptorHeapDesc((UINT)mRenderObjects.size());
 
 	ThrowIfFailed(device->CreateDescriptorHeap(
 		&decriptorHeapDesc, IID_PPV_ARGS(&mCbvSrvDescriptorHeap)));
 
+	mCbvSrvDescriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	
 	BuildCBV(device);
-
 }
 
 void Pipeline::BuildCBV(ID3D12Device* device)
 {
-	UINT stride = sizeof(ObjectConstants);
+	UINT stride = GetConstantBufferSize(sizeof(ObjectConstants));
+
+	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc{};
+	cbvDesc.SizeInBytes = stride;
+	for (int i = 0; i < mRenderObjects.size(); i++)
+	{
+		cbvDesc.BufferLocation = mObjectCB->GetGPUVirtualAddress() + (stride * i);
+		
+		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = mCbvSrvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+		cpuHandle.ptr += i * mCbvSrvDescriptorSize;
+		device->CreateConstantBufferView(&cbvDesc, cpuHandle);
+	}
 }
 
 void Pipeline::AppendObject(const std::shared_ptr<GameObject>& obj)
@@ -79,14 +91,16 @@ void Pipeline::AppendObject(const std::shared_ptr<GameObject>& obj)
 
 void Pipeline::SetAndDraw(ID3D12GraphicsCommandList* cmdList)
 {
+	ID3D12DescriptorHeap* descHeaps[] = { mCbvSrvDescriptorHeap.Get() };
+	cmdList->SetDescriptorHeaps(_countof(descHeaps), descHeaps);
 	cmdList->SetPipelineState(mPSO.Get());
 
 	for (int i = 0; i < mRenderObjects.size(); i++)
 	{
-		auto address = mObjectCB->GetGPUVirtualAddress() +
-			(UINT64)i * mObjectCB->GetByteSize();
-		
-		cmdList->SetGraphicsRootConstantBufferView(mRootParamIndex, address);
+		auto gpuHandle = mCbvSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+		gpuHandle.ptr += i * mCbvSrvDescriptorSize;
+
+		cmdList->SetGraphicsRootDescriptorTable(mRootParamIndex, gpuHandle);
 		mRenderObjects[i]->Draw(cmdList);
 	}
 }
