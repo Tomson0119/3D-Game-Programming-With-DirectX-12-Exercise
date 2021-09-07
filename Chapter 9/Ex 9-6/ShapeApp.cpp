@@ -20,7 +20,7 @@ bool MyShapeApp::Initialize()
 	// Reset the command list to prep for initialization commands.
 	ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), nullptr));
 
-	//LoadTextures();
+	LoadTextures();
 	BuildRootSignature();
 	BuildDescriptorHeaps();
 	BuildShadersAndInputLayout();
