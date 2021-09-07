@@ -16,14 +16,17 @@ public:
 		ID3D12RootSignature* rootSig,
 		Shader* shader);
 
-	void BuildConstantBuffer(ID3D12Device* device, UINT rootParameterIndex);
-	void BuildDescriptorHeap(ID3D12Device* device);
+	void BuildConstantBuffer(ID3D12Device* device);
+	void BuildDescriptorHeap(ID3D12Device* device, UINT cbvIndex, UINT srvIndex);
 	void BuildCBV(ID3D12Device* device);
+	void BuildSRV(ID3D12Device* device);
 
 	void SetWiredFrame(bool wired) { mIsWiredFrame = wired; }
 	void SetTopology(D3D12_PRIMITIVE_TOPOLOGY_TYPE topology) { mPrimitive = topology; }
 	void SetAndDraw(ID3D12GraphicsCommandList* cmdList);
+
 	void AppendObject(const std::shared_ptr<GameObject>& obj);
+	void AppendTexture(const std::shared_ptr<Texture>& tex);
 
 	void Update(const float elapsed);
 	void UpdateConstants();
@@ -43,10 +46,10 @@ protected:
 
 	std::unique_ptr<ConstantBuffer<ObjectConstants>> mObjectCB;
 	std::vector<std::shared_ptr<GameObject>> mRenderObjects;
-
-	UINT mTextureCount = 0;
-	UINT mRootParamIndex = 0;
-
+	std::vector<std::shared_ptr<Texture>> mTextures;
+	
+	UINT mRootParamCBVIndex = 0;
+	UINT mRootParamSRVIndex = 0;
 	UINT mCbvSrvDescriptorSize = 0;
 
 	bool mIsWiredFrame = false;

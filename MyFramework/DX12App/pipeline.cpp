@@ -49,28 +49,30 @@ void Pipeline::BuildPipeline(
 		&psoDesc, IID_PPV_ARGS(&mPSO)));
 }
 
-void Pipeline::BuildConstantBuffer(ID3D12Device* device, UINT rootParameterIndex)
+void Pipeline::BuildConstantBuffer(ID3D12Device* device)
 {
-	mRootParamIndex = rootParameterIndex;
 	mObjectCB = std::make_unique<ConstantBuffer<ObjectConstants>>(device, (UINT)mRenderObjects.size());
 }
 
-void Pipeline::BuildDescriptorHeap(ID3D12Device* device)
+void Pipeline::BuildDescriptorHeap(ID3D12Device* device, UINT cbvIndex, UINT srvIndex)
 {
 	D3D12_DESCRIPTOR_HEAP_DESC decriptorHeapDesc = 
-		Extension::DescriptorHeapDesc((UINT)mRenderObjects.size());
+		Extension::DescriptorHeapDesc((UINT)mTextures.size() + (UINT)mRenderObjects.size());
 
 	ThrowIfFailed(device->CreateDescriptorHeap(
 		&decriptorHeapDesc, IID_PPV_ARGS(&mCbvSrvDescriptorHeap)));
 
 	mCbvSrvDescriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	
+	mRootParamCBVIndex = cbvIndex;
+	mRootParamSRVIndex = srvIndex;
+
 	BuildCBV(device);
+	BuildSRV(device);
 }
 
 void Pipeline::BuildCBV(ID3D12Device* device)
 {
-	UINT stride = GetConstantBufferSize(sizeof(ObjectConstants));
+	UINT stride = mObjectCB->GetByteSize();
 
 	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc{};
 	cbvDesc.SizeInBytes = stride;
@@ -84,9 +86,27 @@ void Pipeline::BuildCBV(ID3D12Device* device)
 	}
 }
 
+void Pipeline::BuildSRV(ID3D12Device* device)
+{
+	D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = mCbvSrvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	cpuHandle.ptr += mRenderObjects.size() * mCbvSrvDescriptorSize;
+
+	for (int i = 0; i < mTextures.size(); i++)
+	{
+		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = mTextures[i]->ShaderResourceView();
+		device->CreateShaderResourceView(mTextures[i]->GetResource(), &srvDesc, cpuHandle);
+		cpuHandle.ptr += mCbvSrvDescriptorSize;
+	}
+}
+
 void Pipeline::AppendObject(const std::shared_ptr<GameObject>& obj)
 {
 	mRenderObjects.push_back(obj);
+}
+
+void Pipeline::AppendTexture(const std::shared_ptr<Texture>& tex)
+{
+	mTextures.push_back(tex);
 }
 
 void Pipeline::SetAndDraw(ID3D12GraphicsCommandList* cmdList)
@@ -99,8 +119,12 @@ void Pipeline::SetAndDraw(ID3D12GraphicsCommandList* cmdList)
 	{
 		auto gpuHandle = mCbvSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
 		gpuHandle.ptr += i * mCbvSrvDescriptorSize;
+		cmdList->SetGraphicsRootDescriptorTable(mRootParamCBVIndex, gpuHandle);
 
-		cmdList->SetGraphicsRootDescriptorTable(mRootParamIndex, gpuHandle);
+		gpuHandle = mCbvSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+		gpuHandle.ptr += (mRenderObjects.size() + mRenderObjects[i]->GetSRVIndex()) * mCbvSrvDescriptorSize;
+		cmdList->SetGraphicsRootDescriptorTable(mRootParamSRVIndex, gpuHandle);
+
 		mRenderObjects[i]->Draw(cmdList);
 	}
 }
