@@ -49,19 +49,56 @@ void Pipeline::BuildPipeline(
 		&psoDesc, IID_PPV_ARGS(&mPSO)));
 }
 
+void Pipeline::BuildConstantBuffer(ID3D12Device* device, UINT rootParameterIndex)
+{
+	mRootParamIndex = rootParameterIndex;
+	mObjectCB = std::make_unique<ConstantBuffer<ObjectConstants>>(device, (UINT)mRenderObjects.size());
+}
+
+void Pipeline::BuildDescriptorHeap(ID3D12Device* device)
+{
+	D3D12_DESCRIPTOR_HEAP_DESC decriptorHeapDesc = 
+		Extension::DescriptorHeapDesc(mTextureCount + (UINT)mRenderObjects.size());
+
+	ThrowIfFailed(device->CreateDescriptorHeap(
+		&decriptorHeapDesc, IID_PPV_ARGS(&mCbvSrvDescriptorHeap)));
+
+	BuildCBV(device);
+
+}
+
+void Pipeline::BuildCBV(ID3D12Device* device)
+{
+	UINT stride = sizeof(ObjectConstants);
+}
+
 void Pipeline::AppendObject(const std::shared_ptr<GameObject>& obj)
 {
 	mRenderObjects.push_back(obj);
 }
 
-void Pipeline::SetAndDraw(ID3D12GraphicsCommandList* cmdList, ConstantBuffer<ObjectConstants>* objCB)
+void Pipeline::SetAndDraw(ID3D12GraphicsCommandList* cmdList)
 {
 	cmdList->SetPipelineState(mPSO.Get());
 
-	for (const auto& item : mRenderObjects) {
-		auto address = objCB->GetGPUVirtualAddress() 
-			+ (UINT64)item->CBIndex() * objCB->GetByteSize();
-		cmdList->SetGraphicsRootConstantBufferView(2, address);
-		item->Draw(cmdList);
+	for (int i = 0; i < mRenderObjects.size(); i++)
+	{
+		auto address = mObjectCB->GetGPUVirtualAddress() +
+			(UINT64)i * mObjectCB->GetByteSize();
+		
+		cmdList->SetGraphicsRootConstantBufferView(mRootParamIndex, address);
+		mRenderObjects[i]->Draw(cmdList);
 	}
+}
+
+void Pipeline::Update(const float elapsed)
+{
+	for (const auto& obj : mRenderObjects)
+		obj->Update(elapsed, nullptr);
+}
+
+void Pipeline::UpdateConstants()
+{
+	for (int i = 0; i < mRenderObjects.size(); i++)
+		mObjectCB->CopyData(i, mRenderObjects[i]->GetObjectConstants());
 }

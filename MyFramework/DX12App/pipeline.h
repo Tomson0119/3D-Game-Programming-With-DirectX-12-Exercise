@@ -16,24 +16,21 @@ public:
 		ID3D12RootSignature* rootSig,
 		Shader* shader);
 
+	void BuildConstantBuffer(ID3D12Device* device, UINT rootParameterIndex);
+	void BuildDescriptorHeap(ID3D12Device* device);
+	void BuildCBV(ID3D12Device* device);
+
+	void SetWiredFrame(bool wired) { mIsWiredFrame = wired; }
 	void SetTopology(D3D12_PRIMITIVE_TOPOLOGY_TYPE topology) { mPrimitive = topology; }
+	void SetAndDraw(ID3D12GraphicsCommandList* cmdList);
 	void AppendObject(const std::shared_ptr<GameObject>& obj);
-	void SetAndDraw(ID3D12GraphicsCommandList* cmdList, ConstantBuffer<ObjectConstants>* objCB);
 
-	void Update(const float elapsed)
-	{
-		for (const auto& obj : mRenderObjects)
-			obj->Update(elapsed, nullptr);
-	}
-
-	void UpdateConstants(ConstantBuffer<ObjectConstants>* objCB)
-	{
-		for (const auto& obj : mRenderObjects)
-			obj->UpdateConstants(objCB);
-	}
+	void Update(const float elapsed);
+	void UpdateConstants();
 
 protected:
 	ComPtr<ID3D12PipelineState> mPSO;
+	ComPtr<ID3D12DescriptorHeap> mCbvSrvDescriptorHeap;
 
 	D3D12_RASTERIZER_DESC	  mRasterizerDesc   = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 	D3D12_BLEND_DESC		  mBlendDesc		= CD3DX12_BLEND_DESC(D3D12_DEFAULT);
@@ -44,7 +41,11 @@ protected:
 
 	D3D12_PRIMITIVE_TOPOLOGY_TYPE mPrimitive = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 
+	std::unique_ptr<ConstantBuffer<ObjectConstants>> mObjectCB;
 	std::vector<std::shared_ptr<GameObject>> mRenderObjects;
+
+	UINT mTextureCount = 0;
+	UINT mRootParamIndex = 0;
 
 	bool mIsWiredFrame = false;
 };
