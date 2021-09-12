@@ -192,4 +192,6 @@ void GameFramework::Draw()
 	// 다음 후면버퍼 위치로 이동한 후 다시 기다린다.
 	mCurrBackBufferIndex = mSwapChain->GetCurrentBackBufferIndex();
 	WaitUntilGPUComplete();
+
+	_CrtDumpMemoryLeaks();
 }

@@ -150,4 +150,6 @@ void GameFramework::Draw(const GameTimer& timer)
 	mCurrBackBufferIndex = mSwapChain->GetCurrentBackBufferIndex();
 
 	WaitUntilGPUComplete();
+
+	_CrtDumpMemoryLeaks();
 }
