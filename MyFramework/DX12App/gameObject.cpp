@@ -212,10 +212,10 @@ void TerrainObject::BuildHeightMap(const std::wstring& path)
 	mHeightMapImage = std::make_unique<HeightMapImage>(path, mWidth, mDepth, mScaling);
 }
 
-void TerrainObject::BuildTerrainMesh(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
+void TerrainObject::BuildTerrainMesh(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList, XMFLOAT4& color)
 {	
 	auto gridMesh = std::make_shared<HeightMapGridMesh>(
-		device, cmdList, mWidth, mDepth, mScaling, mHeightMapImage.get());
+		device, cmdList, mWidth, mDepth, mScaling, color, mHeightMapImage.get());
 	SetMesh(gridMesh);
 }
 
