@@ -271,7 +271,7 @@ void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList
 	auto terrain = std::make_unique<TerrainObject>(index++);
 	terrain->BuildTerrainMeshes(device, cmdList, 257, 257,
 		XMFLOAT3(2.0f, 0.5f, 2.0f), XMFLOAT4(0.2f, 0.4f, 0.0f, 1.0f),
-		L"Resources\\heightmap1.raw");
+		L"Resources\\heightmap2.raw");
 	mTerrain = terrain.get();
 
 	mPipelines["defaultColor"]->SetObject(terrain.get());
