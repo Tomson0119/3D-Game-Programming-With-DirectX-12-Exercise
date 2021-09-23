@@ -150,7 +150,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\defaultColor.hlsl">
+    <None Include="Shaders\diffuseTex.hlsl">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>

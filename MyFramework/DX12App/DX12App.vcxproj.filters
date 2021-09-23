@@ -136,7 +136,7 @@
     <None Include="Shaders\defaultLit.hlsl">
       <Filter>리소스 파일</Filter>
     </None>
-    <None Include="Shaders\defaultColor.hlsl">
+    <None Include="Shaders\diffuseTex.hlsl">
       <Filter>리소스 파일</Filter>
     </None>
   </ItemGroup>
