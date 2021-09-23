@@ -75,7 +75,7 @@ void GameScene::BuildRootSignature(ID3D12Device* device)
 {
 	D3D12_DESCRIPTOR_RANGE descRanges[2];
 	descRanges[0] = Extension::DescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 2);
-	descRanges[1] = Extension::DescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);	
+	descRanges[1] = Extension::DescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 2, 0);	
 
 	D3D12_ROOT_PARAMETER parameters[4];
 	parameters[0] = Extension::Descriptor(D3D12_ROOT_PARAMETER_TYPE_CBV, 0, D3D12_SHADER_VISIBILITY_ALL);  // CameraCB
@@ -129,6 +129,11 @@ void GameScene::BuildTextures(ID3D12Device* device, ID3D12GraphicsCommandList* c
 	grassTex->CreateTextureResource(device, cmdList, L"Resources\\grass.dds");
 	grassTex->SetDimension(D3D12_SRV_DIMENSION_TEXTURE2D);
 	mPipelines["diffTex"]->AppendTexture(grassTex);
+
+	auto gravelTex = make_shared<Texture>();
+	gravelTex->CreateTextureResource(device, cmdList, L"Resources\\gravel.dds");
+	gravelTex->SetDimension(D3D12_SRV_DIMENSION_TEXTURE2D);
+	mPipelines["diffTex"]->AppendTexture(gravelTex);
 }
 
 void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
@@ -141,9 +146,8 @@ void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList
 	mPipelines["texLit"]->AppendObject(box);
 
 	auto terrain = make_shared<TerrainObject>(257, 257);
-	terrain->Scale(1.0f, 0.5f, 1.0f);
 	terrain->BuildHeightMap(L"Resources\\terrain.raw");
-	terrain->BuildTerrainMesh(device, cmdList, XMFLOAT4(0.2f, 0.4f, 0.0f, 1.0f));
+	terrain->BuildTerrainMesh(device, cmdList, XMFLOAT4(0.1f, 0.3f, 0.0f, 1.0f));
 	terrain->SetSRVIndex(0);
 	terrain->SetMaterial(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), XMFLOAT3(0.01f, 0.01f, 0.01f), 0.25f);
 	mPipelines["diffTex"]->AppendObject(terrain);
