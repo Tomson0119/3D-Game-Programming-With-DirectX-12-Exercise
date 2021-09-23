@@ -284,26 +284,28 @@ GridMesh::GridMesh(
 HeightMapGridMesh::HeightMapGridMesh(
 	ID3D12Device* device,
 	ID3D12GraphicsCommandList* cmdList,
-	int xStart, int zStart,
 	int width, int depth,
 	const XMFLOAT3& scale,
-	XMFLOAT4& color,
 	HeightMapImage* context)
 	: Mesh(), mWidth(width), mDepth(depth), mScale(scale)
 {
 	const UINT verticesCount = width * depth;
 	const UINT indicesCount = (width * 2) * (depth - 1) + (depth - 1 - 1);
 
-	std::vector<DiffuseVertex> vertices(verticesCount);
+	std::vector<Vertex> vertices(verticesCount);
 	std::vector<UINT> indices(indicesCount);
 
+	const int hw = width * 0.5f;
+	const int hd = depth * 0.5f;
+
 	size_t k = 0;
-	for (int z = zStart; z < (zStart + depth); ++z)
+	for (int z = -hd; z <= hd; ++z)
 	{
-		for (int x = xStart; x < (xStart + width); ++x)
+		for (int x = -hw; x <= hw; ++x)
 		{
-			vertices[k].Position = XMFLOAT3((x * mScale.x), GetHeight(x, z, context), (z * mScale.z));
-			vertices[k++].Color = Vector4::Add(color, GetColor(x, z, context));
+			vertices[k].Position = XMFLOAT3((x * mScale.x), 0.0f, (z * mScale.z));
+			vertices[k].Normal = XMFLOAT3(0.0f, 1.0f, 0.0f);
+			vertices[k++].TexCoord = XMFLOAT2((float)(x + hw) / width, (float)(hd - z) / depth);
 		}
 	}		
 
@@ -332,7 +334,7 @@ HeightMapGridMesh::HeightMapGridMesh(
 		}
 	}
 
-	Mesh::CreateResourceInfo(device, cmdList, sizeof(DiffuseVertex), sizeof(UINT),
+	Mesh::CreateResourceInfo(device, cmdList, sizeof(Vertex), sizeof(UINT),
 		D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP,
 		vertices.data(), (UINT)vertices.size(), indices.data(), (UINT)indices.size());
 }

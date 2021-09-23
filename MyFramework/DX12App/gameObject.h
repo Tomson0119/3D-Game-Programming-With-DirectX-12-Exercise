@@ -85,18 +85,13 @@ protected:
 class TerrainObject : public GameObject
 {
 public:
-	TerrainObject();
+	TerrainObject(int width, int depth);
 	TerrainObject(const TerrainObject& rhs) = delete;
 	TerrainObject& operator=(const TerrainObject& rhs) = delete;
 	virtual ~TerrainObject();
 
-	void BuildTerrainMeshes(
-		ID3D12Device* device,
-		ID3D12GraphicsCommandList* cmdList,
-		int width, int depth,
-		const XMFLOAT3& scale,
-		XMFLOAT4& color,
-		const std::wstring& path);
+	void BuildHeightMap(const std::wstring& path);
+	void BuildTerrainMesh(ID3D12Device* device,	ID3D12GraphicsCommandList* cmdList);
 
 public:
 	float GetHeight(float x, float z) const;
@@ -105,14 +100,14 @@ public:
 	int GetHeightMapWidth() const { return mHeightMapImage->GetWidth(); }
 	int GetHeightMapDepth() const { return mHeightMapImage->GetDepth(); }
 
-	XMFLOAT3 GetScale() const { return mScale; }
+	XMFLOAT3 GetScale() const { return mScaling; }
 
-	float GetWidth() const { return mWidth * mScale.x; }
-	float GetDepth() const { return mDepth * mScale.z; }
+	float GetWidth() const { return mWidth * mScaling.x; }
+	float GetDepth() const { return mDepth * mScaling.z; }
 
 private:
 	std::unique_ptr<HeightMapImage> mHeightMapImage;
-	XMFLOAT3 mScale = { 1.0f, 1.0f, 1.0f };
+
 	int mWidth = 0;
 	int mDepth = 0;
 };

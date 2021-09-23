@@ -198,8 +198,8 @@ ObjectConstants GameObject::GetObjectConstants()
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-TerrainObject::TerrainObject()
-	: GameObject()
+TerrainObject::TerrainObject(int width, int depth)
+	: GameObject(), mWidth(width), mDepth(depth)
 {
 }
 
@@ -207,49 +207,26 @@ TerrainObject::~TerrainObject()
 {
 }
 
-void TerrainObject::BuildTerrainMeshes(
-	ID3D12Device* device, 
-	ID3D12GraphicsCommandList* cmdList, 
-	int width, int depth,
-	const XMFLOAT3& scale, 
-	XMFLOAT4& color, 
-	const std::wstring& path)
+void TerrainObject::BuildHeightMap(const std::wstring& path)
 {
-	mWidth = width;
-	mDepth = depth;
-	mScale = scale;
+	mHeightMapImage = std::make_unique<HeightMapImage>(path, mWidth, mDepth, mScaling);
+}
 
-	int xQuadPerBlock = width - 1;
-	int zQuadPerBlock = depth - 1;
-
-	mHeightMapImage = std::make_unique<HeightMapImage>(path, mWidth, mDepth, mScale);
-
-	long xBlocks = (mWidth - 1) / xQuadPerBlock;
-	long zBlocks = (mDepth - 1) / zQuadPerBlock;
-	
-	std::shared_ptr<HeightMapGridMesh> gridMesh;
-	for (int z = 0, zStart = 0; z < zBlocks; ++z)
-	{
-		for (int x = 0, xStart = 0; x < xBlocks; ++x)
-		{
-			xStart = x * (width - 1);
-			zStart = z * (depth - 1);
-
-			gridMesh = std::make_shared<HeightMapGridMesh>(device, cmdList, xStart, zStart,
-				width, depth, scale, color, mHeightMapImage.get());
-			SetMesh(gridMesh);
-		}
-	}
+void TerrainObject::BuildTerrainMesh(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
+{	
+	auto gridMesh = std::make_shared<HeightMapGridMesh>(
+		device, cmdList, mWidth, mDepth, mScaling, mHeightMapImage.get());
+	SetMesh(gridMesh);
 }
 
 float TerrainObject::GetHeight(float x, float z) const
 {
 	assert(mHeightMapImage && "HeightMapImage doesn't exist");
-	return mHeightMapImage->GetHeight(x / mScale.x, z / mScale.z) * mScale.y;
+	return mHeightMapImage->GetHeight(x / mScaling.x, z / mScaling.z) * mScaling.y;
 }
 
 XMFLOAT3 TerrainObject::GetNormal(float x, float z) const
 {
 	assert(mHeightMapImage && "HeightMapImage doesn't exist");
-	return mHeightMapImage->GetNormal((int)(x / mScale.x), (int)(z / mScale.z));
+	return mHeightMapImage->GetNormal((int)(x / mScaling.x), (int)(z / mScaling.z));
 }
