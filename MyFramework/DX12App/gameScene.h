@@ -54,11 +54,4 @@ private:
 	std::unordered_map<std::string, std::unique_ptr<Texture>> mTextures;
 	
 	GameObject* mPlayer = nullptr;
-
-	const int mMaxBoardSize = 8;
-
-	int mPlayerPosRow = 0;
-	int mPlayerPosCol = 0;
-
-	std::unordered_map<int, bool> mKeyStates;
 };
