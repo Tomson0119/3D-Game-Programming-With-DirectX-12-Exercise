@@ -71,13 +71,13 @@ void GameFramework::OnProcessMouseMove(WPARAM buttonState, int x, int y)
 	if ((buttonState & MK_LBUTTON) && GetCapture())
 	{
 		float dx = static_cast<float>(x - mLastMousePos.x);
+		float dy = static_cast<float>(y - mLastMousePos.y);
 
 		mLastMousePos.x = x;
 		mLastMousePos.y = y;
 
-		mCamera->Walk(mCameraRadius);
 		mCamera->RotateY(0.25f * dx);
-		mCamera->Walk(-mCameraRadius);
+		mCamera->Pitch(0.25f * dy);
 	}
 	if (!mScenes.empty()) mScenes.top()->OnProcessMouseMove(buttonState);
 }
@@ -113,19 +113,27 @@ void GameFramework::OnPreciseKeyInput()
 	const float elapsed = mTimer.ElapsedTime();
 
 	if (GetAsyncKeyState('W') & 0x8000) {
-		//mCamera->Walk(5.0f * elapsed);
+		mCamera->Walk(5.0f * elapsed);
 	}
 
 	if (GetAsyncKeyState('A') & 0x8000) {
-		//mCamera->Strafe(-5.0f * elapsed);
+		mCamera->Strafe(-5.0f * elapsed);
 	}
 
 	if (GetAsyncKeyState('S') & 0x8000) {
-		//mCamera->Walk(-5.0f * elapsed);
+		mCamera->Walk(-5.0f * elapsed);
 	}
 
 	if (GetAsyncKeyState('D') & 0x8000) {
-		//mCamera->Strafe(5.0f * elapsed);
+		mCamera->Strafe(5.0f * elapsed);
+	}
+
+	if (GetAsyncKeyState(VK_SPACE) & 0x8000) {
+		mCamera->Upward(5.0f * elapsed);
+	}
+
+	if (GetAsyncKeyState(VK_LSHIFT) & 0x8000) {
+		mCamera->Upward(-5.0f * elapsed);
 	}
 }
 
