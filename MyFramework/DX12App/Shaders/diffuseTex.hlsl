@@ -1,5 +1,8 @@
 #include "lighting.hlsl"
 
+Texture2D gTexture : register(t0);
+SamplerState gSamplerState : register(s0);
+
 cbuffer CameraCB : register(b0)
 {
     matrix gView : packoffset(c0);
@@ -24,7 +27,7 @@ cbuffer ObjectCB : register(b2)
 struct VertexIn
 {
     float3 PosL : POSITION;
-    float3 NormalL : NORMAL;
+    float4 Color : COLOR;
     float2 TexCoord : TEXCOORD;
 };
 
@@ -32,7 +35,7 @@ struct VertexOut
 {
     float4 PosH : SV_POSITION;
     float3 PosW : POSITION;
-    float3 NormalW : NORMAL;
+    float4 Color : COLOR;
     float2 TexCoord : TEXCOORD;
 };
 
@@ -42,8 +45,7 @@ VertexOut VS(VertexIn vin)
 	
     vout.PosW = mul(float4(vin.PosL, 1.0f), gWorld).xyz;
     vout.PosH = mul(float4(vout.PosW, 1.0f), gViewProj);
-    
-    vout.NormalW = mul(vin.NormalL, (float3x3) gWorld);
+    vout.Color = vin.Color;
     vout.TexCoord = vin.TexCoord;
 	
     return vout;
@@ -51,5 +53,7 @@ VertexOut VS(VertexIn vin)
 
 float4 PS(VertexOut pin) : SV_Target
 {
-    return gMat.Diffuse;
+    float4 diffuse = gTexture.Sample(gSamplerState, pin.TexCoord) * gMat.Diffuse;    
+    float4 result = saturate(diffuse * 0.5f + pin.Color * 0.5f);
+    return result;
 }
