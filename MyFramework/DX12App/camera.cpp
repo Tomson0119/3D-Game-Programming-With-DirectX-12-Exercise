@@ -60,7 +60,12 @@ void Camera::LookAt(XMFLOAT3& pos, XMFLOAT3& target, XMFLOAT3& up)
 
 void Camera::LookAt(XMFLOAT3& target)
 {
-	LookAt(mPosition, target, XMFLOAT3(0.0f, 1.0f, 0.0f));
+	LookAt(mPosition, target, GetUp());
+}
+
+void Camera::LookAt(float x, float y, float z)
+{
+	LookAt(mPosition, XMFLOAT3(x,y,z), GetUp());
 }
 
 XMFLOAT4X4 Camera::GetView() const

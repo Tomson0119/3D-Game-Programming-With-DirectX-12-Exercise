@@ -9,7 +9,7 @@ HeightMapImage::HeightMapImage(const std::wstring& path,
 
 	BYTE* pixels = new BYTE[imgSize];
 	std::ifstream file{ path, std::ios::binary };
-	file.read(reinterpret_cast<char*>(pixels), imgSize);
+	file.read((char*)pixels, imgSize);
 	file.close();
 	
 	mPixels.resize(imgSize);

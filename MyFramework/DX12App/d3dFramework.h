@@ -52,10 +52,10 @@ public:
 protected:
 	virtual void OnResize();
 
-	virtual void OnProcessMouseDown(WPARAM buttonState, int x, int y) = 0;
-	virtual void OnProcessMouseUp(WPARAM buttonState, int x, int y) = 0;
-	virtual void OnProcessMouseMove(WPARAM buttonState, int x, int y) = 0;
-	virtual void OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam) = 0;
+	virtual void OnProcessMouseDown(WPARAM buttonState, int x, int y) { }
+	virtual void OnProcessMouseUp(WPARAM buttonState, int x, int y) { }
+	virtual void OnProcessMouseMove(WPARAM buttonState, int x, int y) { }
+	virtual void OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam) { }
 	virtual void Update() = 0;
 	virtual void Draw() = 0;
 
@@ -84,7 +84,7 @@ protected:
 	UINT mCbvSrvUavDescriptorSize = 0;
 
 	ComPtr<ID3D12Fence> mFence;
-	UINT64 mFenceValues[mSwapChainBufferCount] = { 0, 0 };
+	UINT64 mFenceValues[mSwapChainBufferCount];
 	HANDLE mFenceEvent = NULL;
 
 	ComPtr<IDXGISwapChain3> mSwapChain;

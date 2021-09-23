@@ -2,13 +2,13 @@
 #include "d3dFramework.h"
 
 D3DFramework::D3DFramework()
-	: mViewPort{ }, mScissorRect{ }
+	: mViewPort{ }, mScissorRect{ }, mFenceValues{ }
 {
 }
 
 D3DFramework::~D3DFramework()
 {
-	if (mD3dDevice) WaitUntilGPUComplete();
+	//if(mD3dDevice) WaitUntilGPUComplete();
 	if (mFenceEvent) CloseHandle(mFenceEvent);
 }
 
@@ -309,7 +309,7 @@ void D3DFramework::CreateDepthStencilView()
 
 void D3DFramework::WaitUntilGPUComplete()
 {
-	const UINT64 currFenceValue = ++mFenceValues[mCurrBackBufferIndex];
+	UINT64 currFenceValue = ++mFenceValues[mCurrBackBufferIndex];
 	ThrowIfFailed(mCommandQueue->Signal(mFence.Get(), currFenceValue));
 	if (mFence->GetCompletedValue() < currFenceValue)
 	{
@@ -416,8 +416,7 @@ LRESULT D3DFramework::OnProcessMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 	case WM_MOUSEMOVE:
 		OnProcessMouseMove(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-		break;
-		
+		break;		
 
 	case WM_KEYDOWN:
 	case WM_KEYUP:

@@ -24,8 +24,10 @@ bool GameFramework::InitFramework()
 	ThrowIfFailed(mCommandList->Reset(mCommandAllocator.Get(), nullptr));
 
 	mCamera = make_unique<Camera>();
-	mCamera->SetPosition(0.0f, 0.0f, -10.0f);
+	mCamera->SetPosition(0.0f, 0.0f, 0.0f);
 	mCamera->SetLens(0.25f * Math::PI, GetAspect(), 1.0f, 1000.0f);
+	mCamera->Pitch(30.0f);
+	mCamera->Walk(-mCameraRadius);
 
 	mScenes.push(make_unique<GameScene>());
 	mScenes.top()->BuildObjects(mD3dDevice.Get(), mCommandList.Get());
@@ -45,7 +47,6 @@ void GameFramework::OnResize()
 {
 	D3DFramework::OnResize();
 	if(mCamera) mCamera->SetLens(GetAspect());
-	//if (!mScenes.empty()) mScenes.top()->Resize(GetAspect());
 }
 
 void GameFramework::OnProcessMouseDown(WPARAM buttonState, int x, int y)
@@ -61,7 +62,7 @@ void GameFramework::OnProcessMouseDown(WPARAM buttonState, int x, int y)
 
 void GameFramework::OnProcessMouseUp(WPARAM buttonState, int x, int y)
 {
-	if (buttonState & MK_LBUTTON) ReleaseCapture();
+	ReleaseCapture();
 	if (!mScenes.empty()) mScenes.top()->OnProcessMouseUp(buttonState, x, y);
 }
 
@@ -70,13 +71,13 @@ void GameFramework::OnProcessMouseMove(WPARAM buttonState, int x, int y)
 	if ((buttonState & MK_LBUTTON) && GetCapture())
 	{
 		float dx = static_cast<float>(x - mLastMousePos.x);
-		float dy = static_cast<float>(y - mLastMousePos.y);
 
 		mLastMousePos.x = x;
 		mLastMousePos.y = y;
 
+		mCamera->Walk(mCameraRadius);
 		mCamera->RotateY(0.25f * dx);
-		mCamera->Pitch(0.25f * dy);
+		mCamera->Walk(-mCameraRadius);
 	}
 	if (!mScenes.empty()) mScenes.top()->OnProcessMouseMove(buttonState);
 }
@@ -112,27 +113,19 @@ void GameFramework::OnPreciseKeyInput()
 	const float elapsed = mTimer.ElapsedTime();
 
 	if (GetAsyncKeyState('W') & 0x8000) {
-		mCamera->Walk(5.0f * elapsed);
+		//mCamera->Walk(5.0f * elapsed);
 	}
 
 	if (GetAsyncKeyState('A') & 0x8000) {
-		mCamera->Strafe(-5.0f * elapsed);
+		//mCamera->Strafe(-5.0f * elapsed);
 	}
 
 	if (GetAsyncKeyState('S') & 0x8000) {
-		mCamera->Walk(-5.0f * elapsed);
+		//mCamera->Walk(-5.0f * elapsed);
 	}
 
 	if (GetAsyncKeyState('D') & 0x8000) {
-		mCamera->Strafe(5.0f * elapsed);
-	}
-
-	if (GetAsyncKeyState(VK_SPACE) & 0x8000) {
-		mCamera->Upward(5.0f * elapsed);
-	}
-
-	if (GetAsyncKeyState(VK_LSHIFT) & 0x8000) {
-		mCamera->Upward(-5.0f * elapsed);
+		//mCamera->Strafe(5.0f * elapsed);
 	}
 }
 
@@ -192,6 +185,4 @@ void GameFramework::Draw()
 	// 다음 후면버퍼 위치로 이동한 후 다시 기다린다.
 	mCurrBackBufferIndex = mSwapChain->GetCurrentBackBufferIndex();
 	WaitUntilGPUComplete();
-
-	_CrtDumpMemoryLeaks();
 }

@@ -51,6 +51,7 @@ void Pipeline::BuildPipeline(
 
 void Pipeline::BuildConstantBuffer(ID3D12Device* device)
 {
+	std::cout << "BuildObjectCB\n";
 	mObjectCB = std::make_unique<ConstantBuffer<ObjectConstants>>(device, (UINT)mRenderObjects.size());
 }
 
@@ -121,9 +122,12 @@ void Pipeline::SetAndDraw(ID3D12GraphicsCommandList* cmdList)
 		gpuHandle.ptr += i * mCbvSrvDescriptorSize;
 		cmdList->SetGraphicsRootDescriptorTable(mRootParamCBVIndex, gpuHandle);
 
-		gpuHandle = mCbvSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
-		gpuHandle.ptr += (mRenderObjects.size() + mRenderObjects[i]->GetSRVIndex()) * mCbvSrvDescriptorSize;
-		cmdList->SetGraphicsRootDescriptorTable(mRootParamSRVIndex, gpuHandle);
+		if (mTextures.size() > 0)
+		{
+			gpuHandle = mCbvSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+			gpuHandle.ptr += (mRenderObjects.size() + mRenderObjects[i]->GetSRVIndex()) * mCbvSrvDescriptorSize;
+			cmdList->SetGraphicsRootDescriptorTable(mRootParamSRVIndex, gpuHandle);
+		}		
 
 		mRenderObjects[i]->Draw(cmdList);
 	}

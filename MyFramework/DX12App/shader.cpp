@@ -75,8 +75,8 @@ DiffuseShader::DiffuseShader(const std::wstring& path)
 
 void DiffuseShader::Compile(const std::wstring& path)
 {
-	VS = Shader::CompileShader(path, "VS", "vs_5_0");
-	PS = Shader::CompileShader(path, "PS", "ps_5_0");
+	VS = Shader::CompileShader(path, "VS", "vs_5_1");
+	PS = Shader::CompileShader(path, "PS", "ps_5_1");
 }
 
 void DiffuseShader::BuildInputLayout()

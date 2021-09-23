@@ -27,8 +27,10 @@ public:
 
 	void SetLens(float aspect);
 	void SetLens(float fovY, float aspect, float zn, float zf);
+	
 	void LookAt(XMFLOAT3& pos, XMFLOAT3& target, XMFLOAT3& up);
-	virtual void LookAt(XMFLOAT3& target);
+	void LookAt(XMFLOAT3& target);
+	void LookAt(float x, float y, float z);
 
 	virtual void Move(float dx, float dy, float dz);
 	virtual void Move(XMFLOAT3& dir, float dist);

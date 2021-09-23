@@ -44,7 +44,7 @@ public:
 	Mesh(ID3D12Device* device,
 		 ID3D12GraphicsCommandList* cmdList,
 		 const std::wstring& path);
-	virtual ~Mesh();
+	virtual ~Mesh() { }
 
 	void CreateResourceInfo(
 		ID3D12Device* device,
@@ -97,7 +97,20 @@ public:
 		ID3D12Device* device,
 		ID3D12GraphicsCommandList* cmdList,
 		float width, float height, float depth);
-	virtual ~BoxMesh();
+	virtual ~BoxMesh() { }
+};
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+class GridMesh : public Mesh
+{
+public:
+	GridMesh(
+		ID3D12Device* device,
+		ID3D12GraphicsCommandList* cmdList,
+		float width, float depth);
+	virtual ~GridMesh() { }
 };
 
 
@@ -115,7 +128,7 @@ public:
 		XMFLOAT4& color,
 		HeightMapImage* context);
 
-	virtual ~HeightMapGridMesh();
+	virtual ~HeightMapGridMesh() { }
 
 	float GetHeight(int x, int z, HeightMapImage* context) const;
 	XMFLOAT4 GetColor(int x, int z, HeightMapImage* context) const;
