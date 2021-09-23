@@ -286,6 +286,7 @@ HeightMapGridMesh::HeightMapGridMesh(
 	ID3D12GraphicsCommandList* cmdList,
 	int width, int depth,
 	const XMFLOAT3& scale,
+	XMFLOAT4& color,
 	HeightMapImage* context)
 	: Mesh(), mWidth(width), mDepth(depth), mScale(scale)
 {
@@ -305,7 +306,7 @@ HeightMapGridMesh::HeightMapGridMesh(
 		for (int x = -hw; x <= hw; ++x)
 		{
 			vertices[k].Position = XMFLOAT3((x * mScale.x), GetHeight(x + hw, z + hd, context), (z * mScale.z));
-			vertices[k].Color = Vector4::Add(XMFLOAT4(0.2f, 0.5f, 0.2f, 1.0f), GetColor(x + hw, z + hd, context));
+			vertices[k].Color = Vector4::Add(color, GetColor(x + hw, z + hd, context));
 			vertices[k++].TexCoord = XMFLOAT2((float)(x * texOffset), (float)(-z * texOffset));
 		}
 	}		
