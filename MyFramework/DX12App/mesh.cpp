@@ -292,20 +292,21 @@ HeightMapGridMesh::HeightMapGridMesh(
 	const UINT verticesCount = width * depth;
 	const UINT indicesCount = (width * 2) * (depth - 1) + (depth - 1 - 1);
 
-	std::vector<Vertex> vertices(verticesCount);
+	std::vector<DiffuseTexVertex> vertices(verticesCount);
 	std::vector<UINT> indices(indicesCount);
 
-	const int hw = width * 0.5f;
-	const int hd = depth * 0.5f;
+	const int hw = width / 2;
+	const int hd = depth / 2;
+	const int texOffset = 2;
 
 	size_t k = 0;
 	for (int z = -hd; z <= hd; ++z)
 	{
 		for (int x = -hw; x <= hw; ++x)
 		{
-			vertices[k].Position = XMFLOAT3((x * mScale.x), 0.0f, (z * mScale.z));
-			vertices[k].Normal = XMFLOAT3(0.0f, 1.0f, 0.0f);
-			vertices[k++].TexCoord = XMFLOAT2((float)(x + hw) / width, (float)(hd - z) / depth);
+			vertices[k].Position = XMFLOAT3((x * mScale.x), GetHeight(x + hw, z + hd, context), (z * mScale.z));
+			vertices[k].Color = Vector4::Add(XMFLOAT4(0.2f, 0.5f, 0.2f, 1.0f), GetColor(x + hw, z + hd, context));
+			vertices[k++].TexCoord = XMFLOAT2((float)(x * texOffset), (float)(-z * texOffset));
 		}
 	}		
 
@@ -334,7 +335,7 @@ HeightMapGridMesh::HeightMapGridMesh(
 		}
 	}
 
-	Mesh::CreateResourceInfo(device, cmdList, sizeof(Vertex), sizeof(UINT),
+	Mesh::CreateResourceInfo(device, cmdList, sizeof(DiffuseTexVertex), sizeof(UINT),
 		D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP,
 		vertices.data(), (UINT)vertices.size(), indices.data(), (UINT)indices.size());
 }
