@@ -60,6 +60,7 @@ void GameScene::Draw(ID3D12GraphicsCommandList* cmdList)
 	cmdList->SetGraphicsRootConstantBufferView(1, mLightCB->GetGPUVirtualAddress());
 	
 	mPipelines["texLit"]->SetAndDraw(cmdList);
+	mPipelines["diffTex"]->SetAndDraw(cmdList);
 }
 
 void GameScene::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -102,9 +103,13 @@ void GameScene::BuildRootSignature(ID3D12Device* device)
 void GameScene::BuildShadersAndPSOs(ID3D12Device* device)
 {
 	auto texShader = make_unique<DefaultShader>(L"Shaders\\texShader.hlsl");
+	auto diffTexShader = make_unique<DiffuseTexShader>(L"Shaders\\diffuseTex.hlsl");
 
 	mPipelines["texLit"] = make_unique<Pipeline>();
 	mPipelines["texLit"]->BuildPipeline(device, mRootSignature.Get(), texShader.get());
+
+	mPipelines["diffTex"] = make_unique<Pipeline>();
+	mPipelines["diffTex"]->BuildPipeline(device, mRootSignature.Get(), diffTexShader.get());
 }
 
 void GameScene::BuildDescriptorHeap(ID3D12Device* device)
@@ -119,6 +124,11 @@ void GameScene::BuildTextures(ID3D12Device* device, ID3D12GraphicsCommandList* c
 	boardTex->CreateTextureResource(device, cmdList, L"Resources\\box.dds");
 	boardTex->SetDimension(D3D12_SRV_DIMENSION_TEXTURE2D);
 	mPipelines["texLit"]->AppendTexture(boardTex);
+
+	auto grassTex = make_shared<Texture>();
+	grassTex->CreateTextureResource(device, cmdList, L"Resources\\grass.dds");
+	grassTex->SetDimension(D3D12_SRV_DIMENSION_TEXTURE2D);
+	mPipelines["diffTex"]->AppendTexture(grassTex);
 }
 
 void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
@@ -131,11 +141,12 @@ void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList
 	mPipelines["texLit"]->AppendObject(box);
 
 	auto terrain = make_shared<TerrainObject>(257, 257);
+	terrain->Scale(1.0f, 0.5f, 1.0f);
 	terrain->BuildHeightMap(L"Resources\\heightmap1.raw");
 	terrain->BuildTerrainMesh(device, cmdList);
 	terrain->SetSRVIndex(0);
 	terrain->SetMaterial(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), XMFLOAT3(0.01f, 0.01f, 0.01f), 0.25f);
-	mPipelines["texLit"]->AppendObject(terrain);
+	mPipelines["diffTex"]->AppendObject(terrain);
 }
 
 void GameScene::BuildConstantBuffers(ID3D12Device* device)
