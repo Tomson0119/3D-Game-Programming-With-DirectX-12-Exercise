@@ -274,8 +274,6 @@ void TerrainObject::BuildTerrainMeshes(
 	long xBlocks = (mWidth - 1) / xQuadPerBlock;
 	long zBlocks = (mDepth - 1) / zQuadPerBlock;
 
-	std::cout << xBlocks << std::endl;
-	std::cout << zBlocks << std::endl;
 	if (mMesh) delete mMesh;
 	
 	HeightMapGridMesh* gridMesh = nullptr;
