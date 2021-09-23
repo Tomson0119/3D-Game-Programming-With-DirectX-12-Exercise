@@ -20,18 +20,11 @@ struct Vertex
 	XMFLOAT2 TexCoord;
 };
 
-struct DiffuseVertex
+struct DiffuseTexVertex
 {
-	DiffuseVertex() = default;
-	DiffuseVertex(float x, float y, float z,
-				  const XMFLOAT4& color)
-		: Position(x, y, z), Color(color) { }
-	DiffuseVertex(const XMFLOAT3& pos,
-				  const XMFLOAT4& color)
-		: Position(pos), Color(color) { }
-
 	XMFLOAT3 Position;
 	XMFLOAT4 Color;
+	XMFLOAT2 TexCoord;
 };
 
 
