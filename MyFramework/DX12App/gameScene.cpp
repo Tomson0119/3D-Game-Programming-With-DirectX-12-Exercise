@@ -142,8 +142,8 @@ void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList
 
 	auto terrain = make_shared<TerrainObject>(257, 257);
 	terrain->Scale(1.0f, 0.5f, 1.0f);
-	terrain->BuildHeightMap(L"Resources\\heightmap1.raw");
-	terrain->BuildTerrainMesh(device, cmdList);
+	terrain->BuildHeightMap(L"Resources\\terrain.raw");
+	terrain->BuildTerrainMesh(device, cmdList, XMFLOAT4(0.2f, 0.4f, 0.0f, 1.0f));
 	terrain->SetSRVIndex(0);
 	terrain->SetMaterial(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), XMFLOAT3(0.01f, 0.01f, 0.01f), 0.25f);
 	mPipelines["diffTex"]->AppendObject(terrain);
