@@ -230,3 +230,28 @@ XMFLOAT3 TerrainObject::GetNormal(float x, float z) const
 	assert(mHeightMapImage && "HeightMapImage doesn't exist");
 	return mHeightMapImage->GetNormal((int)(x / mScaling.x), (int)(z / mScaling.z));
 }
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+Billboard::Billboard(
+	ID3D12Device* device,
+	ID3D12GraphicsCommandList* cmdList,
+	float width, float height)
+{
+	mMesh = std::make_shared<GridMesh>(device, cmdList, width, height);
+}
+
+Billboard::~Billboard()
+{
+}
+
+void Billboard::UpdateLook(Camera* camera)
+{
+	XMFLOAT3 pos = GetPosition();
+	XMFLOAT3 cameraPos = camera->GetPosition();
+	XMFLOAT3 newLook = Vector3::Normalize(Vector3::Subtract(pos, cameraPos));
+	mLook = { newLook.x, mLook.y, newLook.z };
+	//mUp = { 0.0f,1.0f,0.0f };
+	mRight = Vector3::Cross(mUp, mLook);
+}

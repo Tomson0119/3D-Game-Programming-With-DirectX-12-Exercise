@@ -111,3 +111,18 @@ private:
 	int mWidth = 0;
 	int mDepth = 0;
 };
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+class Billboard : public GameObject
+{
+public:
+	Billboard(
+		ID3D12Device* device, 
+		ID3D12GraphicsCommandList* cmdList, 
+		float width, float height);
+	virtual ~Billboard();
+
+	void UpdateLook(Camera* camera);	
+};
