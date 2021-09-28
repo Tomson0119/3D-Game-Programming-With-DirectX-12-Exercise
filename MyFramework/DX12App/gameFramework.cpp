@@ -145,7 +145,7 @@ void GameFramework::Update()
 
 	mCamera->Update(mTimer.ElapsedTime());
 	if (!mScenes.empty()) {
-		mScenes.top()->Update(mTimer);
+		mScenes.top()->Update(mTimer,mCamera.get());
 		mScenes.top()->UpdateConstants(mCamera.get());
 	}
 }
