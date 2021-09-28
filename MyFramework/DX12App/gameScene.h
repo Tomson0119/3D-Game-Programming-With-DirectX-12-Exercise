@@ -22,7 +22,7 @@ public:
 	void BuildObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList);
 
 	void UpdateConstants(Camera* camera);
-	void Update(const GameTimer& timer);
+	void Update(const GameTimer& timer, Camera* camera);
 	void Draw(ID3D12GraphicsCommandList* cmdList);
 
 	void OnProcessMouseDown(WPARAM buttonState, int x, int y) {}
@@ -54,4 +54,6 @@ private:
 	std::unordered_map<std::string, std::unique_ptr<Texture>> mTextures;
 	
 	GameObject* mPlayer = nullptr;
+
+	std::vector<Billboard*> mBillboards;
 };
