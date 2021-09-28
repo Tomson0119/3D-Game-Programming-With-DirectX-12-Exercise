@@ -259,16 +259,16 @@ BoxMesh::BoxMesh(
 GridMesh::GridMesh(
 	ID3D12Device* device, 
 	ID3D12GraphicsCommandList* cmdList, 
-	float width, float depth)
+	float width, float height)
 {
 	float hw = 0.5f * width;
-	float hd = 0.5f * depth;
+	float hh = 0.5f * height;
 
 	std::array<Vertex, 4> vertices = {
-		Vertex(-hw, 0.0f, +hd, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f),
-		Vertex(+hw, 0.0f, +hd, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f),
-		Vertex(+hw, 0.0f, -hd, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f),
-		Vertex(-hw, 0.0f, -hd, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f)
+		Vertex(-hw, +hh, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f),
+		Vertex(+hw, +hh, 0.0f, 0.0f, 0.0f, -1.0f, 1.0f, 0.0f),
+		Vertex(+hw, -hh, 0.0f, 0.0f, 0.0f, -1.0f, 1.0f, 1.0f),
+		Vertex(-hw, -hh, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f)
 	};
 
 	std::array<UINT, 6> indices = { 0, 1, 2, 0, 2, 3 };
