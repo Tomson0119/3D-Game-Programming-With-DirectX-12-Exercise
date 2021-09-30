@@ -113,27 +113,27 @@ void GameFramework::OnPreciseKeyInput()
 	const float elapsed = mTimer.ElapsedTime();
 
 	if (GetAsyncKeyState('W') & 0x8000) {
-		mCamera->Walk(5.0f * elapsed);
+		mCamera->Walk(50.0f * elapsed);
 	}
 
 	if (GetAsyncKeyState('A') & 0x8000) {
-		mCamera->Strafe(-5.0f * elapsed);
+		mCamera->Strafe(-50.0f * elapsed);
 	}
 
 	if (GetAsyncKeyState('S') & 0x8000) {
-		mCamera->Walk(-5.0f * elapsed);
+		mCamera->Walk(-50.0f * elapsed);
 	}
 
 	if (GetAsyncKeyState('D') & 0x8000) {
-		mCamera->Strafe(5.0f * elapsed);
+		mCamera->Strafe(50.0f * elapsed);
 	}
 
 	if (GetAsyncKeyState(VK_SPACE) & 0x8000) {
-		mCamera->Upward(5.0f * elapsed);
+		mCamera->Upward(50.0f * elapsed);
 	}
 
 	if (GetAsyncKeyState(VK_LSHIFT) & 0x8000) {
-		mCamera->Upward(-5.0f * elapsed);
+		mCamera->Upward(-50.0f * elapsed);
 	}
 }
 
