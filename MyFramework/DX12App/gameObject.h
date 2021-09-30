@@ -126,3 +126,16 @@ public:
 
 	void UpdateLook(Camera* camera);	
 };
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+class SkyBox : public GameObject
+{
+public:
+	SkyBox(
+		ID3D12Device* device,
+		ID3D12GraphicsCommandList* cmdList,
+		float width, float height);
+	virtual ~SkyBox();
+};

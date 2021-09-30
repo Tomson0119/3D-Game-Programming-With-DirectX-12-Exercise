@@ -255,3 +255,14 @@ void Billboard::UpdateLook(Camera* camera)
 	//mUp = { 0.0f,1.0f,0.0f };
 	mRight = Vector3::Cross(mUp, mLook);
 }
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+SkyBox::SkyBox(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList, float width, float height)
+{
+}
+
+SkyBox::~SkyBox()
+{
+}
