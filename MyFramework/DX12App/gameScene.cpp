@@ -157,8 +157,9 @@ void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList
 	box->SetMaterial(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), XMFLOAT3(0.01f, 0.01f, 0.01f), 0.25f);
 	mPipelines["texLit"]->AppendObject(box);
 
-	auto terrain = make_shared<TerrainObject>(257, 257);
-	terrain->BuildHeightMap(L"Resources\\terrain.raw");
+	auto terrain = make_shared<TerrainObject>(1025, 1025);
+	terrain->Scale(1.0f, 0.4f, 1.0f);
+	terrain->BuildHeightMap(L"Resources\\island.raw");
 	terrain->BuildTerrainMesh(device, cmdList, XMFLOAT4(0.1f, 0.3f, 0.0f, 1.0f));
 	terrain->SetSRVIndex(0);
 	terrain->SetMaterial(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), XMFLOAT3(0.01f, 0.01f, 0.01f), 0.25f);
