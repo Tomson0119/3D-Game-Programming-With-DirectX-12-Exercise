@@ -138,7 +138,7 @@
     <ClInclude Include="vertex.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\texShader.hlsl">
+    <None Include="Shaders\skybox.hlsl">
       <FileType>Document</FileType>
     </None>
     <None Include="Shaders\lighting.hlsl">

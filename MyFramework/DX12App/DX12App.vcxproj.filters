@@ -130,7 +130,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\texShader.hlsl">
+    <None Include="Shaders\skybox.hlsl">
       <Filter>리소스 파일</Filter>
     </None>
     <None Include="Shaders\lighting.hlsl">
