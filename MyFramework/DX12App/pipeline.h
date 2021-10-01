@@ -14,7 +14,7 @@ public:
 	virtual void BuildPipeline(
 		ID3D12Device* device, 
 		ID3D12RootSignature* rootSig,
-		Shader* shader);
+		Shader* shader=nullptr);
 
 	void BuildConstantBuffer(ID3D12Device* device);
 	void BuildDescriptorHeap(ID3D12Device* device, UINT cbvIndex, UINT srvIndex);
@@ -28,7 +28,7 @@ public:
 	void AppendObject(const std::shared_ptr<GameObject>& obj);
 	void AppendTexture(const std::shared_ptr<Texture>& tex);
 
-	void Update(const float elapsed);
+	virtual void Update(const float elapsed, Camera* camera=nullptr);
 	void UpdateConstants();
 
 protected:
@@ -53,4 +53,19 @@ protected:
 	UINT mCbvSrvDescriptorSize = 0;
 
 	bool mIsWiredFrame = false;
+};
+
+
+class SkyboxPipeline : public Pipeline
+{
+public:
+	SkyboxPipeline(ID3D12Device *device, ID3D12GraphicsCommandList* cmdList);
+	virtual ~SkyboxPipeline();
+
+	virtual void BuildPipeline(
+		ID3D12Device* device,
+		ID3D12RootSignature* rootSig,
+		Shader* shader = nullptr) override;
+
+	virtual void Update(const float elapsed, Camera* camera);
 };
