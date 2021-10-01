@@ -14,7 +14,7 @@ GameScene::~GameScene()
 void GameScene::BuildObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
 {
 	BuildRootSignature(device);
-	BuildShadersAndPSOs(device);
+	BuildShadersAndPSOs(device, cmdList);
 	BuildTextures(device, cmdList);
 	BuildGameObjects(device, cmdList);
 	BuildConstantBuffers(device);
@@ -50,7 +50,7 @@ void GameScene::Update(const GameTimer& timer, Camera* camera)
 	OnPreciseKeyInput(timer);
 
 	for (const auto& [_, pso] : mPipelines)
-		pso->Update(timer.ElapsedTime());
+		pso->Update(timer.ElapsedTime(), camera);
 
 	for (const auto& obj : mBillboards)
 		obj->UpdateLook(camera);
@@ -86,9 +86,12 @@ void GameScene::BuildRootSignature(ID3D12Device* device)
 	parameters[2] = Extension::DescriptorTable(1, &descRanges[0], D3D12_SHADER_VISIBILITY_ALL);			   // Object,  CBV
 	parameters[3] = Extension::DescriptorTable(1, &descRanges[1], D3D12_SHADER_VISIBILITY_PIXEL);		   // Texture, SRV
 
-	D3D12_STATIC_SAMPLER_DESC samplerDesc = Extension::SamplerDesc(0, D3D12_FILTER_ANISOTROPIC, D3D12_TEXTURE_ADDRESS_MODE_WRAP);
+	D3D12_STATIC_SAMPLER_DESC samplerDesc[2];
+	samplerDesc[0] = Extension::SamplerDesc(0, D3D12_FILTER_ANISOTROPIC, D3D12_TEXTURE_ADDRESS_MODE_WRAP);
+	samplerDesc[1] = Extension::SamplerDesc(1, D3D12_FILTER_ANISOTROPIC, D3D12_TEXTURE_ADDRESS_MODE_CLAMP);
+
 	D3D12_ROOT_SIGNATURE_DESC rootSigDesc = Extension::RootSignatureDesc(_countof(parameters), parameters, 
-		1, &samplerDesc, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+		_countof(samplerDesc), samplerDesc, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
 	ComPtr<ID3DBlob> rootSigBlob = nullptr;
 	ComPtr<ID3DBlob> errorBlob = nullptr;
@@ -103,14 +106,13 @@ void GameScene::BuildRootSignature(ID3D12Device* device)
 		IID_PPV_ARGS(&mRootSignature)));
 }
 
-void GameScene::BuildShadersAndPSOs(ID3D12Device* device)
+void GameScene::BuildShadersAndPSOs(ID3D12Device* device, ID3D12GraphicsCommandList *cmdList)
 {
-	auto texShader = make_unique<DefaultShader>(L"Shaders\\texShader.hlsl");
 	auto diffTexShader = make_unique<DiffuseTexShader>(L"Shaders\\diffuseTex.hlsl");
 	auto billboardShader = make_unique<DefaultShader>(L"Shaders\\billboard.hlsl");
 
-	mPipelines["texLit"] = make_unique<Pipeline>();
-	mPipelines["texLit"]->BuildPipeline(device, mRootSignature.Get(), texShader.get());
+	mPipelines["skybox"] = make_unique<SkyboxPipeline>(device, cmdList);
+	mPipelines["skybox"]->BuildPipeline(device, mRootSignature.Get());
 
 	mPipelines["diffTex"] = make_unique<Pipeline>();
 	mPipelines["diffTex"]->BuildPipeline(device, mRootSignature.Get(), diffTexShader.get());
@@ -127,11 +129,6 @@ void GameScene::BuildDescriptorHeap(ID3D12Device* device)
 
 void GameScene::BuildTextures(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
 {
-	auto boardTex = make_shared<Texture>();
-	boardTex->CreateTextureResource(device, cmdList, L"Resources\\box.dds");
-	boardTex->SetDimension(D3D12_SRV_DIMENSION_TEXTURE2D);
-	mPipelines["texLit"]->AppendTexture(boardTex);
-
 	auto grassTex = make_shared<Texture>();
 	grassTex->CreateTextureResource(device, cmdList, L"Resources\\grass.dds");
 	grassTex->SetDimension(D3D12_SRV_DIMENSION_TEXTURE2D);
@@ -150,22 +147,14 @@ void GameScene::BuildTextures(ID3D12Device* device, ID3D12GraphicsCommandList* c
 
 void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
 {
-	auto boxMesh = make_shared<BoxMesh>(device, cmdList, 5.0f, 5.0f, 5.0f);
-	auto box = make_shared<GameObject>();
-	box->SetMesh(boxMesh);
-	box->SetSRVIndex(0);
-	box->SetMaterial(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), XMFLOAT3(0.01f, 0.01f, 0.01f), 0.25f);
-	mPipelines["texLit"]->AppendObject(box);
-
 	auto terrain = make_shared<TerrainObject>(1025, 1025);
 	terrain->Scale(1.0f, 0.4f, 1.0f);
 	terrain->BuildHeightMap(L"Resources\\island.raw");
 	terrain->BuildTerrainMesh(device, cmdList, XMFLOAT4(0.1f, 0.3f, 0.0f, 1.0f));
 	terrain->SetSRVIndex(0);
-	terrain->SetMaterial(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), XMFLOAT3(0.01f, 0.01f, 0.01f), 0.25f);
 	mPipelines["diffTex"]->AppendObject(terrain);
 
-	for (int i = 0; i < 100; i++) {
+	for (int i = 0; i < 1; i++) {
 		auto billboard = make_shared<Billboard>(device, cmdList, 5.0f, 5.0f);
 
 		float hw = (float)terrain->GetWidth() * 0.5f;
@@ -179,7 +168,6 @@ void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList
 		billboard->SetPosition(pos_x, pos_y + 2.5f, pos_z);
 
 		billboard->SetSRVIndex(0);
-		billboard->SetMaterial(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), XMFLOAT3(0.01f, 0.01f, 0.01f), 0.25f);
 		mPipelines["billboard"]->AppendObject(billboard);
 		mBillboards.push_back(billboard.get());
 	}

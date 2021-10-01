@@ -39,7 +39,7 @@ private:
 	void BuildTextures(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList);
 	void BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList);
 	void BuildConstantBuffers(ID3D12Device* device);
-	void BuildShadersAndPSOs(ID3D12Device* device);
+	void BuildShadersAndPSOs(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList);
 	void BuildDescriptorHeap(ID3D12Device* device);
 
 private:
