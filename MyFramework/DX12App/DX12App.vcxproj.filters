@@ -139,7 +139,7 @@
     <None Include="Shaders\defaultLit.hlsl">
       <Filter>리소스 파일</Filter>
     </None>
-    <None Include="Shaders\diffuseTex.hlsl">
+    <None Include="Shaders\terrain.hlsl">
       <Filter>리소스 파일</Filter>
     </None>
     <None Include="Shaders\billboard.hlsl">

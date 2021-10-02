@@ -151,7 +151,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\diffuseTex.hlsl">
+    <None Include="Shaders\terrain.hlsl">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>
