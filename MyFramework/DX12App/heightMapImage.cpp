@@ -7,16 +7,17 @@ HeightMapImage::HeightMapImage(const std::wstring& path,
 {
 	const int imgSize = width * depth;
 
-	std::vector<BYTE> temp(imgSize * 2);
+	//std::vector<BYTE> temp(imgSize*2);
 	std::ifstream file{ path, std::ios::in | std::ios::binary };
-	file.read(reinterpret_cast<char*>(temp.data()), temp.size());
-	file.close();
+	//file.read(reinterpret_cast<char*>(temp.data()), temp.size());
+	//file.close();
 
 	std::vector<BYTE> pixels(imgSize);
-	for (int i = 0; i < pixels.size(); i++)
+	/*for (int i = 0; i < pixels.size(); i++)
 	{
 		pixels[i] = temp[i * 2 + 1];
-	}
+	}*/
+	file.read(reinterpret_cast<char*>(pixels.data()), imgSize);
 	
 	mPixels.resize(imgSize);
 	for (size_t z = 0; z < mDepth; ++z)
