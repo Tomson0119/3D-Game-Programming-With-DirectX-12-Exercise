@@ -66,30 +66,33 @@ void DefaultShader::BuildInputLayout()
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 //
-DiffuseTexShader::DiffuseTexShader(const std::wstring& path)
+TerrainShader::TerrainShader(const std::wstring& path)
 	: Shader()
 {
 	Compile(path);
 	BuildInputLayout();
 }
 
-void DiffuseTexShader::Compile(const std::wstring& path)
+void TerrainShader::Compile(const std::wstring& path)
 {
 	VS = Shader::CompileShader(path, "VS", "vs_5_1");
 	PS = Shader::CompileShader(path, "PS", "ps_5_1");
 }
 
-void DiffuseTexShader::BuildInputLayout()
+void TerrainShader::BuildInputLayout()
 {
 	mInputLayout =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
 			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 
-		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12,
+		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12,
 			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 28,
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24,
+			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+
+		{ "TEXCOORD", 1, DXGI_FORMAT_R32G32_FLOAT, 0, 32,
 			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
 	};
 }

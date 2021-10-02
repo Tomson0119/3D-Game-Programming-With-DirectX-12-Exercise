@@ -48,13 +48,13 @@ public:
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 //
-class DiffuseTexShader : public Shader
+class TerrainShader : public Shader
 {
 public:
-	DiffuseTexShader(const std::wstring& path);
-	DiffuseTexShader(const DiffuseTexShader& rhs) = delete;
-	DiffuseTexShader& operator=(const DiffuseTexShader& rhs) = delete;
-	virtual ~DiffuseTexShader() { }
+	TerrainShader(const std::wstring& path);
+	TerrainShader(const TerrainShader& rhs) = delete;
+	TerrainShader& operator=(const TerrainShader& rhs) = delete;
+	virtual ~TerrainShader() { }
 
 	virtual void Compile(const std::wstring& path) override;
 	virtual void BuildInputLayout() override;
