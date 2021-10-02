@@ -92,7 +92,6 @@ public:
 		ID3D12GraphicsCommandList* cmdList,
 		int width, int depth,
 		const XMFLOAT3& scale,
-		XMFLOAT4& color,
 		HeightMapImage* context);
 
 	virtual ~HeightMapGridMesh() { }
