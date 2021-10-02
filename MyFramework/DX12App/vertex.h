@@ -20,9 +20,10 @@ struct Vertex
 	XMFLOAT2 TexCoord;
 };
 
-struct DiffuseTexVertex
+struct TerrainVertex
 {
 	XMFLOAT3 Position;
-	XMFLOAT4 Color;
-	XMFLOAT2 TexCoord;
+	XMFLOAT3 Normal;
+	XMFLOAT2 TexCoord0;
+	XMFLOAT2 TexCoord1;
 };
