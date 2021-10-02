@@ -108,14 +108,14 @@ void GameScene::BuildRootSignature(ID3D12Device* device)
 
 void GameScene::BuildShadersAndPSOs(ID3D12Device* device, ID3D12GraphicsCommandList *cmdList)
 {
-	auto diffTexShader = make_unique<DiffuseTexShader>(L"Shaders\\diffuseTex.hlsl");
+	auto terrainShader = make_unique<TerrainShader>(L"Shaders\\terrain.hlsl");
 	auto billboardShader = make_unique<DefaultShader>(L"Shaders\\billboard.hlsl");
 
 	mPipelines["skybox"] = make_unique<SkyboxPipeline>(device, cmdList);
 	mPipelines["skybox"]->BuildPipeline(device, mRootSignature.Get());
 
-	mPipelines["diffTex"] = make_unique<Pipeline>();
-	mPipelines["diffTex"]->BuildPipeline(device, mRootSignature.Get(), diffTexShader.get());
+	mPipelines["terrain"] = make_unique<Pipeline>();
+	mPipelines["terrain"]->BuildPipeline(device, mRootSignature.Get(), terrainShader.get());
 
 	mPipelines["billboard"] = make_unique<Pipeline>();
 	mPipelines["billboard"]->BuildPipeline(device, mRootSignature.Get(), billboardShader.get());
@@ -130,14 +130,19 @@ void GameScene::BuildDescriptorHeap(ID3D12Device* device)
 void GameScene::BuildTextures(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
 {
 	auto grassTex = make_shared<Texture>();
-	grassTex->CreateTextureResource(device, cmdList, L"Resources\\grass.dds");
+	grassTex->CreateTextureResource(device, cmdList, L"Resources\\terrainTexture.dds");
 	grassTex->SetDimension(D3D12_SRV_DIMENSION_TEXTURE2D);
-	mPipelines["diffTex"]->AppendTexture(grassTex);
+	mPipelines["terrain"]->AppendTexture(grassTex);
 
 	auto gravelTex = make_shared<Texture>();
-	gravelTex->CreateTextureResource(device, cmdList, L"Resources\\gravel.dds");
+	gravelTex->CreateTextureResource(device, cmdList, L"Resources\\detailed.dds");
 	gravelTex->SetDimension(D3D12_SRV_DIMENSION_TEXTURE2D);
-	mPipelines["diffTex"]->AppendTexture(gravelTex);
+	mPipelines["terrain"]->AppendTexture(gravelTex);
+
+	auto roadTex = make_shared<Texture>();
+	roadTex->CreateTextureResource(device, cmdList, L"Resources\\road.dds");
+	roadTex->SetDimension(D3D12_SRV_DIMENSION_TEXTURE2D);
+	mPipelines["terrain"]->AppendTexture(roadTex);
 
 	auto treeArrayTex = make_shared<Texture>();
 	treeArrayTex->CreateTextureResource(device, cmdList, L"Resources\\treearray.dds");
@@ -147,12 +152,14 @@ void GameScene::BuildTextures(ID3D12Device* device, ID3D12GraphicsCommandList* c
 
 void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
 {
-	auto terrain = make_shared<TerrainObject>(1025, 1025);
-	terrain->Scale(1.0f, 0.4f, 1.0f);
-	terrain->BuildHeightMap(L"Resources\\island.raw");
-	terrain->BuildTerrainMesh(device, cmdList, XMFLOAT4(0.1f, 0.3f, 0.0f, 1.0f));
+	auto terrain = make_shared<TerrainObject>(1024, 1024);
+	terrain->Scale(1.0f, 1.0f, 1.0f);
+	terrain->BuildHeightMap(L"Resources\\heightmapWithoutSkipping.raw");
+	terrain->BuildTerrainMesh(device, cmdList);
+	terrain->SetMaterial(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), XMFLOAT3(0.001f, 0.001f, 0.001f), 0.9f);
 	terrain->SetSRVIndex(0);
-	mPipelines["diffTex"]->AppendObject(terrain);
+	//terrain->SetPosition(-257, 0.0f, -257);
+	mPipelines["terrain"]->AppendObject(terrain);
 
 	for (int i = 0; i < 1; i++) {
 		auto billboard = make_shared<Billboard>(device, cmdList, 5.0f, 5.0f);
@@ -162,7 +169,7 @@ void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList
 		
 		float pos_x = Math::RandFloat(-hw, hw);
 		float pos_z = Math::RandFloat(-hd, hd);
-
+		  
 		float pos_y = terrain->GetHeight(pos_x, pos_z);
 		if (pos_y < 0.0f) pos_y = 0.0f;
 		billboard->SetPosition(pos_x, pos_y + 2.5f, pos_z);
