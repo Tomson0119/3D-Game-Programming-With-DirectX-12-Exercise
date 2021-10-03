@@ -62,9 +62,18 @@ float4 PS(VertexOut pin) : SV_Target
 {
     float4 baseTexDiffuse = gBaseTexture.Sample(gSamplerState, pin.TexCoord0) * gMat.Diffuse;    
     float4 detailedTexDiffuse = gDetailedTexture.Sample(gSamplerState, pin.TexCoord1) * gMat.Diffuse;
-    float4 roadTexDiffuse = gRoadTexture.Sample(gSamplerState, pin.TexCoord1) * gMat.Diffuse;    
+    float4 roadTexDiffuse = gRoadTexture.Sample(gSamplerState, pin.TexCoord0) * gMat.Diffuse;    
     
-    float4 finalDiffuse = saturate(baseTexDiffuse * 0.7f + detailedTexDiffuse * 0.3f);
+    float4 finalDiffuse = 0.0f;
+    if(roadTexDiffuse.a < 0.4f)
+    {
+        finalDiffuse = saturate(baseTexDiffuse * 0.6f + detailedTexDiffuse * 0.4f);        
+    }
+    else
+    {
+        finalDiffuse = roadTexDiffuse;
+    }
+        
     pin.NormalW = normalize(pin.NormalW);
     
     float3 view = normalize(gCameraPos - pin.PosW);
