@@ -1,7 +1,7 @@
 #include "lighting.hlsl"
 
-Texture2DArray gTreeTextureMap : register(t0);
-SamplerState gSamplerState     : register(s0);
+Texture2DArray gTexture : register(t0);
+SamplerState gSamplerState : register(s0);
 
 cbuffer CameraCB : register(b0)
 {
@@ -26,38 +26,82 @@ cbuffer ObjectCB : register(b2)
 
 struct VertexIn
 {
-	float3 PosL		: POSITION;
-    float3 NormalL	: NORMAL;
-    float2 TexCoord : TEXCOORD;
+	float3 PosW  : POSITION;
+    float2 Size : SIZE;
+};
+
+struct GeoIn
+{
+    float3 PosW : POSITION;
+    float2 Size : SIZE;
 };
 
 struct VertexOut
 {
-	float4 PosH     : SV_POSITION;
+    float4 PosH     : SV_POSITION;
     float3 PosW     : POSITION;
     float3 NormalW  : NORMAL;
     float2 TexCoord : TEXCOORD;
+    uint PrimID     : SV_PrimitiveID;
 };
 
-VertexOut VS(VertexIn vin)
+GeoIn VS(VertexIn vin)
 {
-	VertexOut vout;
-	
-    vout.PosW = mul(float4(vin.PosL, 1.0f), gWorld).xyz;    
-    vout.PosH = mul(float4(vout.PosW, 1.0f), gViewProj);
-    
-    vout.NormalW = mul(vin.NormalL, (float3x3) gWorld);
-    vout.TexCoord = vin.TexCoord;
-	
-	return vout;
+    GeoIn gout;
+    gout.PosW = vin.PosW;
+    gout.Size = vin.Size;
+    return gout;
 }
 
-float4 PS(VertexOut pin, uint primID : SV_PrimitiveID) : SV_Target
+[maxvertexcount(4)]
+void GS(point GeoIn gin[1],
+        uint primID : SV_PrimitiveID,
+        inout TriangleStream<VertexOut> triStream)
 {
-    float3 uvw = float3(pin.TexCoord, primID%4);
-    float4 diffuse = gTreeTextureMap.Sample(gSamplerState, uvw) * gMat.Diffuse;
+    float3 up = float3(0.0f, 1.0f, 0.0f);
+    float3 look = gCameraPos - gin[0].PosW;
     
-    clip(diffuse.a - 0.1f);
+    look.y = 0.0f;
+    look = normalize(look);
+    
+    float3 right = cross(up, look);
+    
+    float hw = gin[0].Size.x * 0.5f;
+    float hh = gin[0].Size.y * 0.5f;
+    
+    float4 v[4];
+    v[0] = float4(gin[0].PosW + hw * right - hh * up, 1.0f);
+    v[1] = float4(gin[0].PosW + hw * right + hh * up, 1.0f);
+    v[2] = float4(gin[0].PosW - hw * right - hh * up, 1.0f);
+    v[3] = float4(gin[0].PosW - hw * right + hh * up, 1.0f);
+    
+    float2 TexCoord[4] =
+    {
+        float2(0.0f, 1.0f),
+        float2(0.0f, 0.0f),
+        float2(1.0f, 1.0f),
+        float2(1.0f, 0.0f)
+    };
+
+    VertexOut vout;
+    [unroll]
+    for (int i = 0; i < 4;i++)
+    {
+        vout.PosH = mul(v[i], gViewProj);
+        vout.PosW = v[i].xyz;
+        vout.NormalW = look;
+        vout.TexCoord = TexCoord[i];
+        vout.PrimID = primID;
+        triStream.Append(vout);
+    }
+}
+
+float4 PS(VertexOut pin) : SV_Target
+{
+    float3 uvw = float3(pin.TexCoord, pin.PrimID % 4);
+    float4 diffuse = gTexture.Sample(gSamplerState, uvw) * gMat.Diffuse;
+    
+    clip(diffuse.a - 0.5f);
     
     pin.NormalW = normalize(pin.NormalW);
     
@@ -70,5 +114,5 @@ float4 PS(VertexOut pin, uint primID : SV_PrimitiveID) : SV_Target
     float4 result = ambient + directLight;
     result.a = gMat.Diffuse.a;
     
-    return ambient;
+    return result;
 }
