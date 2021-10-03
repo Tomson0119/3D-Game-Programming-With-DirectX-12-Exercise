@@ -295,18 +295,15 @@ HeightMapGridMesh::HeightMapGridMesh(
 	std::vector<TerrainVertex> vertices(verticesCount);
 	std::vector<UINT> indices(indicesCount);
 
-	const int hw = width / 2;
-	const int hd = depth / 2;
-
 	size_t k = 0;
-	for (int z = 0; z < depth; ++z)
+	for (int z = 0; z < depth; z++)
 	{
-		for (int x = 0; x < width; ++x)
+		for (int x = 0; x < width; x++)
 		{
-			vertices[k].Position = XMFLOAT3((x * mScale.x), GetHeight(x, z, context), (z * mScale.z));
+			vertices[k].Position = XMFLOAT3((x * mScale.x), GetHeight(x,z,context), (z * mScale.z));
 			vertices[k].Normal = context->GetNormal(x, z);
-			vertices[k].TexCoord0 = XMFLOAT2(float(x) / width, float(-z) / depth);
-			vertices[k++].TexCoord1 = XMFLOAT2(float(x) *0.5f, float(z) * 0.5f);
+			vertices[k].TexCoord0 = XMFLOAT2((float)x / width, (float)-z / depth);
+			vertices[k++].TexCoord1 = XMFLOAT2((float)x, (float)-z);
 		}
 	}		
 
@@ -325,7 +322,7 @@ HeightMapGridMesh::HeightMapGridMesh(
 		}
 		else
 		{
-			for (int x = width - 1; x >= 0; --x)
+			for (int x = (UINT)width - 1; x >= 0; --x)
 			{
 				if (x == (width - 1))
 					indices[k++] = x + (z * width);
