@@ -27,6 +27,13 @@ void Pipeline::BuildPipeline(
 		reinterpret_cast<BYTE*>(shader->GetVS()->GetBufferPointer()),
 		shader->GetVS()->GetBufferSize()
 	};
+	if (shader->GetGS() != nullptr)
+	{
+		psoDesc.GS = {
+			reinterpret_cast<BYTE*>(shader->GetGS()->GetBufferPointer()),
+			shader->GetGS()->GetBufferSize()
+		};
+	}
 	psoDesc.PS = {
 		reinterpret_cast<BYTE*>(shader->GetPS()->GetBufferPointer()),
 		shader->GetPS()->GetBufferSize()
