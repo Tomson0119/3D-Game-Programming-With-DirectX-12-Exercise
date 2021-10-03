@@ -24,7 +24,7 @@ bool GameFramework::InitFramework()
 	ThrowIfFailed(mCommandList->Reset(mCommandAllocator.Get(), nullptr));
 
 	mCamera = make_unique<Camera>();
-	mCamera->SetPosition(0.0f, 0.0f, 0.0f);
+	mCamera->SetPosition(512, 512, 512);
 	mCamera->SetLens(0.25f * Math::PI, GetAspect(), 1.0f, 1000.0f);
 	mCamera->Pitch(30.0f);
 	mCamera->Walk(-mCameraRadius);
