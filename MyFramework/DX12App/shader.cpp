@@ -96,3 +96,32 @@ void TerrainShader::BuildInputLayout()
 			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
 	};
 }
+
+
+///////////////////////////////////////////////////////////////////////////////////////////
+//
+BillboardShader::BillboardShader(const std::wstring& path)
+	: Shader()
+{
+	Compile(path);
+	BuildInputLayout();
+}
+
+void BillboardShader::Compile(const std::wstring& path)
+{
+	VS = Shader::CompileShader(path, "VS", "vs_5_1");
+	GS = Shader::CompileShader(path, "GS", "gs_5_1");
+	PS = Shader::CompileShader(path, "PS", "ps_5_1");
+}
+
+void BillboardShader::BuildInputLayout()
+{
+	mInputLayout =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
+			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+
+		{ "SIZE", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12,
+			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+	};
+}

@@ -4,8 +4,6 @@ class Shader
 {
 public:
 	Shader();
-	Shader(const Shader& rhs) = delete;
-	Shader& operator=(const Shader& rhs) = delete;
 	virtual ~Shader() { }
 
 	virtual void Compile(const std::wstring& path) = 0;
@@ -38,8 +36,6 @@ class DefaultShader : public Shader
 {
 public:
 	DefaultShader(const std::wstring& path);
-	DefaultShader(const DefaultShader& rhs) = delete;
-	DefaultShader& operator=(const DefaultShader& rhs) = delete;
 	virtual ~DefaultShader() { }
 
 	virtual void Compile(const std::wstring& path) override;
@@ -52,9 +48,19 @@ class TerrainShader : public Shader
 {
 public:
 	TerrainShader(const std::wstring& path);
-	TerrainShader(const TerrainShader& rhs) = delete;
-	TerrainShader& operator=(const TerrainShader& rhs) = delete;
 	virtual ~TerrainShader() { }
+
+	virtual void Compile(const std::wstring& path) override;
+	virtual void BuildInputLayout() override;
+};
+
+///////////////////////////////////////////////////////////////////////////////////////////
+//
+class BillboardShader : public Shader
+{
+public:
+	BillboardShader(const std::wstring& path);
+	virtual ~BillboardShader() { }
 
 	virtual void Compile(const std::wstring& path) override;
 	virtual void BuildInputLayout() override;
