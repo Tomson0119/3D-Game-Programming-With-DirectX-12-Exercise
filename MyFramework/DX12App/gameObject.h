@@ -91,7 +91,7 @@ public:
 	virtual ~TerrainObject();
 
 	void BuildHeightMap(const std::wstring& path);
-	void BuildTerrainMesh(ID3D12Device* device,	ID3D12GraphicsCommandList* cmdList, XMFLOAT4& color);
+	void BuildTerrainMesh(ID3D12Device* device,	ID3D12GraphicsCommandList* cmdList);
 
 public:
 	float GetHeight(float x, float z) const;
@@ -118,11 +118,25 @@ private:
 class Billboard : public GameObject
 {
 public:
-	Billboard(
-		ID3D12Device* device, 
-		ID3D12GraphicsCommandList* cmdList, 
-		float width, float height);
+	struct BillboardVertex
+	{
+		XMFLOAT3 Position;
+		XMFLOAT2 Size;
+	};
+
+public:
+	Billboard(float width, float height);
 	virtual ~Billboard();
 
-	void UpdateLook(Camera* camera);	
+	void AppendBillboard(const XMFLOAT3& pos);
+	void BuildMesh(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList);
+
+	void UpdateLook(Camera* camera);
+
+private:
+	float mWidth = 0.0f;
+	float mHeight = 0.0f;
+
+	std::vector<BillboardVertex> mVertices;
+	std::vector<UINT> mIndices;
 };

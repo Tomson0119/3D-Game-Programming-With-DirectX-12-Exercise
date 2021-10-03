@@ -235,16 +235,30 @@ XMFLOAT3 TerrainObject::GetNormal(float x, float z) const
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-Billboard::Billboard(
-	ID3D12Device* device,
-	ID3D12GraphicsCommandList* cmdList,
-	float width, float height)
+Billboard::Billboard(float width, float height)
 {
-	mMesh = std::make_shared<GridMesh>(device, cmdList, width, height);
+	mWidth = width;
+	mHeight = height;
 }
 
 Billboard::~Billboard()
 {
+}
+
+void Billboard::AppendBillboard(const XMFLOAT3& pos)
+{
+	BillboardVertex vertex = { pos, XMFLOAT2(mWidth, mHeight) };
+	
+	mVertices.push_back(vertex);
+	mIndices.push_back((UINT)mIndices.size());
+}
+
+void Billboard::BuildMesh(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
+{
+	mMesh = std::make_unique<Mesh>();
+	mMesh->CreateResourceInfo(device, cmdList,
+		sizeof(BillboardVertex), sizeof(UINT), D3D_PRIMITIVE_TOPOLOGY_POINTLIST,
+		mVertices.data(), (UINT)mVertices.size(), mIndices.data(), (UINT)mIndices.size());
 }
 
 void Billboard::UpdateLook(Camera* camera)
@@ -253,6 +267,5 @@ void Billboard::UpdateLook(Camera* camera)
 	XMFLOAT3 cameraPos = camera->GetPosition();
 	XMFLOAT3 newLook = Vector3::Normalize(Vector3::Subtract(pos, cameraPos));
 	mLook = { newLook.x, mLook.y, newLook.z };
-	//mUp = { 0.0f,1.0f,0.0f };
 	mRight = Vector3::Cross(mUp, mLook);
 }
