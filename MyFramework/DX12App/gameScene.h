@@ -50,7 +50,7 @@ private:
 
 	ComPtr<ID3D12RootSignature> mRootSignature;
 	
-	std::unordered_map<std::string, std::unique_ptr<Pipeline>> mPipelines;
+	std::unordered_map<Layer, std::unique_ptr<Pipeline>> mPipelines;
 	std::unordered_map<std::string, std::unique_ptr<Texture>> mTextures;
 	
 	GameObject* mPlayer = nullptr;
