@@ -90,7 +90,8 @@ namespace Extension
 	inline D3D12_STATIC_SAMPLER_DESC SamplerDesc(
 		UINT shaderRegister,
 		D3D12_FILTER filter,
-		D3D12_TEXTURE_ADDRESS_MODE addressMode)
+		D3D12_TEXTURE_ADDRESS_MODE addressMode,
+		D3D12_SHADER_VISIBILITY shaderVisibility=D3D12_SHADER_VISIBILITY_PIXEL)
 	{
 		D3D12_STATIC_SAMPLER_DESC samplerDesc{};
 		samplerDesc.Filter = filter;
@@ -105,7 +106,7 @@ namespace Extension
 		samplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
 		samplerDesc.ShaderRegister = shaderRegister;
 		samplerDesc.RegisterSpace = 0;
-		samplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+		samplerDesc.ShaderVisibility = shaderVisibility;
 		return samplerDesc;
 	}
 
