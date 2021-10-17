@@ -3,6 +3,14 @@
 #include "Shader.h"
 #include "gameObject.h"
 
+enum class Layer : int
+{
+	SkyBox,
+	Terrain,
+	Billboard,
+	Default
+};
+
 class Pipeline
 {
 public:
