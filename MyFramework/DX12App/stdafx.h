@@ -41,6 +41,7 @@
 #include <stack>
 #include <unordered_map>
 #include <string>
+#include <sstream>
 #include <memory>
 #include <fstream>
 #include <iostream>
