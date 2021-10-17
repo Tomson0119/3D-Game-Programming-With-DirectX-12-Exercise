@@ -59,8 +59,8 @@ void GameScene::Draw(ID3D12GraphicsCommandList* cmdList)
 	cmdList->SetGraphicsRootConstantBufferView(0, mCameraCB->GetGPUVirtualAddress());
 	cmdList->SetGraphicsRootConstantBufferView(1, mLightCB->GetGPUVirtualAddress());
 	
-	for (const auto& [_, pso] : mPipelines)
-		pso->SetAndDraw(cmdList);
+	for (const auto& [layer, pso] : mPipelines)
+		if(layer != Layer::Billboard) pso->SetAndDraw(cmdList);
 }
 
 void GameScene::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -75,17 +75,17 @@ void GameScene::BuildRootSignature(ID3D12Device* device)
 {
 	D3D12_DESCRIPTOR_RANGE descRanges[2];
 	descRanges[0] = Extension::DescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 2);
-	descRanges[1] = Extension::DescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 3, 0);
+	descRanges[1] = Extension::DescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 5, 0);
 
 	D3D12_ROOT_PARAMETER parameters[4];
 	parameters[0] = Extension::Descriptor(D3D12_ROOT_PARAMETER_TYPE_CBV, 0, D3D12_SHADER_VISIBILITY_ALL);  // CameraCB
 	parameters[1] = Extension::Descriptor(D3D12_ROOT_PARAMETER_TYPE_CBV, 1, D3D12_SHADER_VISIBILITY_ALL);  // LightCB
 	parameters[2] = Extension::DescriptorTable(1, &descRanges[0], D3D12_SHADER_VISIBILITY_ALL);			   // Object,  CBV
-	parameters[3] = Extension::DescriptorTable(1, &descRanges[1], D3D12_SHADER_VISIBILITY_PIXEL);		   // Texture, SRV
+	parameters[3] = Extension::DescriptorTable(1, &descRanges[1], D3D12_SHADER_VISIBILITY_ALL);		   // Texture, SRV
 
 	D3D12_STATIC_SAMPLER_DESC samplerDesc[2];
-	samplerDesc[0] = Extension::SamplerDesc(0, D3D12_FILTER_ANISOTROPIC, D3D12_TEXTURE_ADDRESS_MODE_WRAP);
-	samplerDesc[1] = Extension::SamplerDesc(1, D3D12_FILTER_ANISOTROPIC, D3D12_TEXTURE_ADDRESS_MODE_CLAMP);
+	samplerDesc[0] = Extension::SamplerDesc(0, D3D12_FILTER_ANISOTROPIC, D3D12_TEXTURE_ADDRESS_MODE_WRAP, D3D12_SHADER_VISIBILITY_ALL);
+	samplerDesc[1] = Extension::SamplerDesc(1, D3D12_FILTER_ANISOTROPIC, D3D12_TEXTURE_ADDRESS_MODE_CLAMP, D3D12_SHADER_VISIBILITY_ALL);
 
 	D3D12_ROOT_SIGNATURE_DESC rootSigDesc = Extension::RootSignatureDesc(_countof(parameters), parameters, 
 		_countof(samplerDesc), samplerDesc, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
@@ -107,18 +107,21 @@ void GameScene::BuildShadersAndPSOs(ID3D12Device* device, ID3D12GraphicsCommandL
 {
 	auto terrainShader = make_unique<TerrainShader>(L"Shaders\\terrain.hlsl");
 	auto billboardShader = make_unique<BillboardShader>(L"Shaders\\billboard.hlsl");
+	auto defaultShader = make_unique<DefaultShader>(L"Shaders\\defaultLit.hlsl");
 
-	mPipelines["skybox"] = make_unique<SkyboxPipeline>(device, cmdList);
-	mPipelines["skybox"]->BuildPipeline(device, mRootSignature.Get());
+	mPipelines[Layer::SkyBox] = make_unique<SkyboxPipeline>(device, cmdList);
+	mPipelines[Layer::SkyBox]->BuildPipeline(device, mRootSignature.Get());
 
-	// skybox 다음으로 그려야 한다.
-	// TODO: mPipeline을 Layer로 분리하여 그리기.
-	mPipelines["terrain"] = make_unique<Pipeline>();
-	mPipelines["terrain"]->BuildPipeline(device, mRootSignature.Get(), terrainShader.get());
+	mPipelines[Layer::Terrain] = make_unique<Pipeline>();
+	//mPipelines[Layer::Terrain]->SetWiredFrame(true);
+	mPipelines[Layer::Terrain]->BuildPipeline(device, mRootSignature.Get(), terrainShader.get());
 
-	mPipelines["billboard"] = make_unique<Pipeline>();
-	mPipelines["billboard"]->SetTopology(D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT);
-	mPipelines["billboard"]->BuildPipeline(device, mRootSignature.Get(), billboardShader.get());
+	mPipelines[Layer::Billboard] = make_unique<Pipeline>();
+	mPipelines[Layer::Billboard]->SetTopology(D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT);
+	mPipelines[Layer::Billboard]->BuildPipeline(device, mRootSignature.Get(), billboardShader.get());
+
+	mPipelines[Layer::Default] = make_unique<Pipeline>();
+	mPipelines[Layer::Default]->BuildPipeline(device, mRootSignature.Get(), defaultShader.get());
 }
 
 void GameScene::BuildDescriptorHeap(ID3D12Device* device)
@@ -132,38 +135,51 @@ void GameScene::BuildTextures(ID3D12Device* device, ID3D12GraphicsCommandList* c
 	auto grassTex = make_shared<Texture>();
 	grassTex->CreateTextureResource(device, cmdList, L"Resources\\terrainTexture.dds");
 	grassTex->SetDimension(D3D12_SRV_DIMENSION_TEXTURE2D);
-	mPipelines["terrain"]->AppendTexture(grassTex);
+	mPipelines[Layer::Terrain]->AppendTexture(grassTex);
 
 	auto gravelTex = make_shared<Texture>();
 	gravelTex->CreateTextureResource(device, cmdList, L"Resources\\rocky.dds");
 	gravelTex->SetDimension(D3D12_SRV_DIMENSION_TEXTURE2D);
-	mPipelines["terrain"]->AppendTexture(gravelTex);
+	mPipelines[Layer::Terrain]->AppendTexture(gravelTex);
 
 	auto roadTex = make_shared<Texture>();
 	roadTex->CreateTextureResource(device, cmdList, L"Resources\\road.dds");
 	roadTex->SetDimension(D3D12_SRV_DIMENSION_TEXTURE2D);
-	mPipelines["terrain"]->AppendTexture(roadTex);
+	mPipelines[Layer::Terrain]->AppendTexture(roadTex);
+
+	auto heightmapTex = make_shared<Texture>();
+	heightmapTex->CreateTextureResource(device, cmdList, L"Resources\\heightmap.dds");
+	heightmapTex->SetDimension(D3D12_SRV_DIMENSION_TEXTURE2D);
+	mPipelines[Layer::Terrain]->AppendTexture(heightmapTex);
+
+	auto normalmapTex = make_shared<Texture>();
+	normalmapTex->CreateTextureResource(device, cmdList, L"Resources\\normalmap.dds");
+	normalmapTex->SetDimension(D3D12_SRV_DIMENSION_TEXTURE2D);
+	mPipelines[Layer::Terrain]->AppendTexture(normalmapTex);
 
 	auto grassarray = make_shared<Texture>();
 	grassarray->CreateTextureResource(device, cmdList, L"Resources\\grassarray.dds");
 	grassarray->SetDimension(D3D12_SRV_DIMENSION_TEXTURE2DARRAY);
-	mPipelines["billboard"]->AppendTexture(grassarray);
+	mPipelines[Layer::Billboard]->AppendTexture(grassarray);
 
 	auto treeArrayTex = make_shared<Texture>();
 	treeArrayTex->CreateTextureResource(device, cmdList, L"Resources\\treearray.dds");
 	treeArrayTex->SetDimension(D3D12_SRV_DIMENSION_TEXTURE2DARRAY);
-	mPipelines["billboard"]->AppendTexture(treeArrayTex);
+	mPipelines[Layer::Billboard]->AppendTexture(treeArrayTex);
+
+	auto boxTex = make_shared<Texture>();
+	boxTex->CreateTextureResource(device, cmdList, L"Resources\\box.dds");
+	boxTex->SetDimension(D3D12_SRV_DIMENSION_TEXTURE2D);
+	mPipelines[Layer::Default]->AppendTexture(boxTex);
 }
 
 void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
 {
 	auto terrain = make_shared<TerrainObject>(1024, 1024);
-	terrain->Scale(1.0f, 1.0f, 1.0f);
+	terrain->SetSRVIndex(0);
 	terrain->BuildHeightMap(L"Resources\\heightmap.raw");
 	terrain->BuildTerrainMesh(device, cmdList);
-	terrain->SetMaterial(XMFLOAT4(0.7f, 0.7f, 0.7f, 1.0f), XMFLOAT3(0.001f, 0.001f, 0.001f), 0.9f);
-	terrain->SetSRVIndex(0);
-	mPipelines["terrain"]->AppendObject(terrain);
+	mPipelines[Layer::Terrain]->AppendObject(terrain);
 
 	auto grassBillboard = make_shared<Billboard>(2.0f, 2.0f);
 	grassBillboard->SetSRVIndex(0);
@@ -177,7 +193,7 @@ void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList
 		grassBillboard->AppendBillboard(XMFLOAT3(pos_x, pos_y, pos_z));
 	}
 	grassBillboard->BuildMesh(device, cmdList);
-	mPipelines["billboard"]->AppendObject(grassBillboard);
+	mPipelines[Layer::Billboard]->AppendObject(grassBillboard);
 
 	auto treeBillboard = make_shared<Billboard>(5.0f, 8.0f);
 	treeBillboard->SetSRVIndex(1);
@@ -191,7 +207,16 @@ void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList
 		treeBillboard->AppendBillboard(XMFLOAT3(pos_x, pos_y, pos_z));
 	}
 	treeBillboard->BuildMesh(device, cmdList);
-	mPipelines["billboard"]->AppendObject(treeBillboard);
+	mPipelines[Layer::Billboard]->AppendObject(treeBillboard);
+
+	auto boxMesh = make_shared<Mesh>();
+	boxMesh->LoadFromObj(device, cmdList, L"Resources\\box.obj");
+
+	auto boxObj = make_shared<GameObject>();
+	boxObj->SetMesh(boxMesh);
+	boxObj->SetSRVIndex(0);
+	boxObj->SetPosition(512.0f, 400.0f, 512.0f);
+	mPipelines[Layer::Default]->AppendObject(boxObj);
 }
 
 void GameScene::BuildConstantBuffers(ID3D12Device* device)
