@@ -1,5 +1,8 @@
 #include "lighting.hlsl"
 
+Texture2D gTexture : register(t0);
+SamplerState gSampler : register(s0);
+
 cbuffer CameraCB : register(b0)
 {
     matrix gView	  : packoffset(c0);
@@ -50,13 +53,16 @@ VertexOut VS(VertexIn vin)
 }
 
 float4 PS(VertexOut pin) : SV_Target
-{    
+{  
+    float4 diffuse = gTexture.Sample(gSampler, pin.TexCoord) * gMat.Diffuse;
+    
     pin.NormalW = normalize(pin.NormalW);
     
     float3 view = normalize(gCameraPos - pin.PosW);
-    float4 ambient = gAmbient * gMat.Diffuse;
+    float4 ambient = gAmbient * diffuse;
     
-    float4 directLight = ComputeLighting(gLights, gMat, pin.NormalW, view);
+    Material mat = { diffuse, gMat.Fresnel, gMat.Roughness };
+    float4 directLight = ComputeLighting(gLights, mat, pin.NormalW, view);
     
     float4 result = ambient + directLight;
     result.a = gMat.Diffuse.a;
