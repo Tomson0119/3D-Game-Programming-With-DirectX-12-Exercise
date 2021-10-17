@@ -85,7 +85,7 @@ protected:
 class TerrainObject : public GameObject
 {
 public:
-	TerrainObject(int width, int depth);
+	TerrainObject(int width, int depth, const XMFLOAT3& scale = { 1.0f,1.0f,1.0f });
 	TerrainObject(const TerrainObject& rhs) = delete;
 	TerrainObject& operator=(const TerrainObject& rhs) = delete;
 	virtual ~TerrainObject();
@@ -99,17 +99,20 @@ public:
 
 	int GetHeightMapWidth() const { return mHeightMapImage->GetWidth(); }
 	int GetHeightMapDepth() const { return mHeightMapImage->GetDepth(); }
+	
+	void SetScale(const XMFLOAT3& scale) { mTerrainScale = scale; }
+	XMFLOAT3 GetTerrainScale() const { return mTerrainScale; }
 
-	XMFLOAT3 GetScale() const { return mScaling; }
-
-	float GetWidth() const { return mWidth * mScaling.x; }
-	float GetDepth() const { return mDepth * mScaling.z; }
+	float GetWidth() const { return mWidth * mTerrainScale.x; }
+	float GetDepth() const { return mDepth * mTerrainScale.z; }
 
 private:
 	std::unique_ptr<HeightMapImage> mHeightMapImage;
 
 	int mWidth = 0;
 	int mDepth = 0;
+
+	XMFLOAT3 mTerrainScale = { 1.0f,1.0f,1.0f };
 };
 
 

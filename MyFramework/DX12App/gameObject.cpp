@@ -199,9 +199,10 @@ ObjectConstants GameObject::GetObjectConstants()
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-TerrainObject::TerrainObject(int width, int depth)
-	: GameObject(), mWidth(width), mDepth(depth)
+TerrainObject::TerrainObject(int width, int depth, const XMFLOAT3& scale)
+	: GameObject(), mWidth(width), mDepth(depth), mTerrainScale(scale)
 {
+	mMaterial = { XMFLOAT4(0.7f,0.7f,0.7f,1.0f),XMFLOAT3(0.01f,0.01f,0.01f),0.8f };
 }
 
 TerrainObject::~TerrainObject()
@@ -210,26 +211,26 @@ TerrainObject::~TerrainObject()
 
 void TerrainObject::BuildHeightMap(const std::wstring& path)
 {
-	mHeightMapImage = std::make_unique<HeightMapImage>(path, mWidth, mDepth, mScaling);
+	mHeightMapImage = std::make_unique<HeightMapImage>(path, mWidth, mDepth, mTerrainScale);
 }
 
 void TerrainObject::BuildTerrainMesh(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
 {	
 	auto gridMesh = std::make_shared<HeightMapGridMesh>(
-		device, cmdList, mWidth, mDepth, mScaling, mHeightMapImage.get());
+		device, cmdList, mWidth, mDepth, mTerrainScale, mHeightMapImage.get());
 	SetMesh(gridMesh);
 }
 
 float TerrainObject::GetHeight(float x, float z) const
 {
 	assert(mHeightMapImage && "HeightMapImage doesn't exist");
-	return mHeightMapImage->GetHeight(x / mScaling.x, z / mScaling.z) * mScaling.y;
+	return mHeightMapImage->GetHeight(x, z) * mTerrainScale.y;
 }
 
 XMFLOAT3 TerrainObject::GetNormal(float x, float z) const
 {
 	assert(mHeightMapImage && "HeightMapImage doesn't exist");
-	return mHeightMapImage->GetNormal((int)(x / mScaling.x), (int)(z / mScaling.z));
+	return mHeightMapImage->GetNormal((int)(x / mTerrainScale.x), (int)(z / mTerrainScale.z));
 }
 
 
