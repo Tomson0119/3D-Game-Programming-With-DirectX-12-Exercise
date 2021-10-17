@@ -8,13 +8,14 @@ HeightMapImage::HeightMapImage(const std::wstring& path,
 	const int imgSize = width * depth;
 
 	std::ifstream file{ path, std::ios::in | std::ios::binary };
+	assert(file.is_open() && "No such file in directory.");
 	std::vector<BYTE> pixels(imgSize);
 	file.read(reinterpret_cast<char*>(pixels.data()), imgSize);
 	
 	mPixels.resize(imgSize);
-	for (size_t z = 0; z < mDepth; ++z)
+	for (size_t z = 0; z < mDepth; z++)
 	{
-		for (size_t x = 0; x < mWidth; ++x)
+		for (size_t x = 0; x < mWidth; x++)
 		{
 			mPixels[x + ((mDepth - 1 - z) * mWidth)] = pixels[x + (z * mWidth)];
 		}
@@ -27,8 +28,11 @@ HeightMapImage::~HeightMapImage()
 
 float HeightMapImage::GetHeight(float fx, float fz) const
 {
+	fx /= mScale.x;
+	fz /= mScale.z;
+
 	if (fx < 0.0f || fz < 0.0f || fx >= (mWidth-1) || fz >= (mDepth-1))
-		return -100.0f;
+		return 0.0f;
 
 	const size_t x = (size_t)fx;
 	const size_t z = (size_t)fz;

@@ -76,6 +76,7 @@ TerrainShader::TerrainShader(const std::wstring& path)
 void TerrainShader::Compile(const std::wstring& path)
 {
 	VS = Shader::CompileShader(path, "VS", "vs_5_1");
+	GS = Shader::CompileShader(path, "GS", "gs_5_1");
 	PS = Shader::CompileShader(path, "PS", "ps_5_1");
 }
 

@@ -14,7 +14,7 @@ public:
 	XMFLOAT3 GetNormal(int x, int z) const;
 
 	std::vector<BYTE> GetPixels() const { return mPixels; }
-	float GetPixelValue(int index) const { return mPixels[index]; }
+	float GetPixelValue(int index) const { return (float)mPixels[index]; }
 
 	XMFLOAT3 GetScale() const { return mScale; }
 	int GetWidth() const { return mWidth; }
