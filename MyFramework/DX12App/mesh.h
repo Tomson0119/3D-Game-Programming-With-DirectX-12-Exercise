@@ -33,6 +33,11 @@ public:
 		ID3D12Device* device,
 		ID3D12GraphicsCommandList* cmdList,
 		const std::wstring& path);
+
+	void LoadFromObj(
+		ID3D12Device* device,
+		ID3D12GraphicsCommandList* cmdList,
+		const std::wstring& path);
 	
 protected:
 	ComPtr<ID3D12Resource> mVertexBufferGPU;

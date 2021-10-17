@@ -178,6 +178,86 @@ void Mesh::LoadFromBinary(
 		vertices.data(), (UINT)vertices.size(), indices.data(), (UINT)indices.size());
 }
 
+void Mesh::LoadFromObj(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList, const std::wstring& path)
+{
+	std::ifstream file{ path, std::ios::binary };
+	
+	assert(file.is_open() && "No such file in directory.");
+
+	std::vector<XMFLOAT3> positions;
+	std::vector<XMFLOAT3> normals;
+	std::vector<XMFLOAT2> texcoords;
+	
+	struct UINT3
+	{
+		UINT vertIndex;
+		UINT normIndex;
+		UINT texIndex;
+	};
+	std::vector<UINT3> temp_indices;
+
+	std::string info;
+	while (std::getline(file, info))
+	{
+		std::stringstream ss(info);
+		std::string type;
+
+		ss >> type;
+
+		if (type == "v")
+		{
+			XMFLOAT3 pos;
+			ss >> pos.x >> pos.y >> pos.z;
+			positions.push_back(pos);
+		}
+		else if (type == "vt")
+		{
+			XMFLOAT2 tex;
+			ss >> tex.x >> tex.y;
+			texcoords.push_back(tex);
+		}
+		else if (type == "vn")
+		{
+			XMFLOAT3 norm;
+			ss >> norm.x >> norm.y >> norm.z;
+			normals.push_back(norm);
+		}
+		else if (type == "f")
+		{
+			char ignore[2];
+			UINT v, vt, vn;
+
+			while (ss >> v >> ignore[0] >> vt >> ignore[1] >> vn)
+			{
+				temp_indices.push_back({ v-1, vn-1, vt-1 });
+			}
+		}
+	}
+
+	std::vector<Vertex> vertices;
+	std::vector<UINT> indices;
+	for (int i = 0; i < temp_indices.size(); i++)
+	{
+		Vertex v;
+		v.Position = positions[temp_indices[i].vertIndex];
+		v.Normal = normals[temp_indices[i].normIndex];
+		v.TexCoord = texcoords[temp_indices[i].texIndex];
+		vertices.push_back(v);
+
+		if (i > 0 && indices.size() % 6 == 3)
+		{
+			indices.push_back(*(indices.end()-3));
+			indices.push_back(*(indices.end()-2));
+		}
+		indices.push_back(i);
+	}
+
+
+	Mesh::CreateResourceInfo(device, cmdList, sizeof(Vertex), sizeof(UINT),
+		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
+		vertices.data(), (UINT)vertices.size(), indices.data(), (UINT)indices.size());
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -290,7 +370,7 @@ HeightMapGridMesh::HeightMapGridMesh(
 	: Mesh(), mWidth(width), mDepth(depth), mScale(scale)
 {
 	const UINT verticesCount = width * depth;
-	const UINT indicesCount = (width * 2) * (depth - 1) + (depth - 1 - 1);
+	const UINT indicesCount = ((width * 2) * (depth - 1)) + (depth - 1 - 1);
 
 	std::vector<TerrainVertex> vertices(verticesCount);
 	std::vector<UINT> indices(indicesCount);
@@ -306,28 +386,28 @@ HeightMapGridMesh::HeightMapGridMesh(
 			vertices[k++].TexCoord1 = XMFLOAT2((float)x, (float)-z);
 		}
 	}		
-
+	
 	k = 0;
-	for (UINT z = 0; z < (UINT)depth - 1; ++z)
+	for (int z = 0; z < depth - 1; z++)
 	{
 		if (!(z & 1))
 		{
-			for (UINT x = 0; x < (UINT)width; ++x)
+			for (int x = 0; x < width; x++)
 			{
 				if ((x == 0) && (z > 0))
-					indices[k++] = x + (z * width);
-				indices[k++] = x + (z * width);
-				indices[k++] = x + ((z + 1) * width);
+					indices[k++] = (UINT)(x + (z * width));
+				indices[k++] = (UINT)(x + (z * width));
+				indices[k++] = (UINT)((x + (z * width)) + width);
 			}
 		}
 		else
 		{
-			for (int x = (UINT)width - 1; x >= 0; --x)
+			for (int x = width - 1; x >= 0; x--)
 			{
 				if (x == (width - 1))
-					indices[k++] = x + (z * width);
-				indices[k++] = x + (z * width);
-				indices[k++] = x + ((z + 1) * width);
+					indices[k++] = (UINT)(x + (z * width));
+				indices[k++] = (UINT)(x + (z * width));
+				indices[k++] = (UINT)((x + (z * width)) + width);
 			}
 		}
 	}
@@ -339,8 +419,8 @@ HeightMapGridMesh::HeightMapGridMesh(
 
 float HeightMapGridMesh::GetHeight(int x, int z, HeightMapImage* context) const
 {
-	float height = context->GetPixelValue(x + (z * mWidth));
 	XMFLOAT3 scale = context->GetScale();
+	float height = context->GetPixelValue(x + (z * mWidth));
 	return height * scale.y;
 }
 
