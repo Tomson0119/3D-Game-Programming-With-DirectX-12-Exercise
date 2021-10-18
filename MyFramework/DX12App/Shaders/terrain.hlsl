@@ -42,6 +42,7 @@ struct GeoOut
     float4 PosH : SV_POSITION;
     float3 PosW : POSITION;
     float3 NormalW : NORMAL;
+    float3 TangentW : TANGENT;
     float2 TexCoord0 : TEXCOORD0;
     float2 TexCoord1 : TEXCOORD1;
 };
@@ -79,6 +80,18 @@ void GS(triangle VertexIn gin[3], inout TriangleStream<GeoOut> triStream)
     vertices[4] = midPoint(gin[1], gin[2]);
     vertices[5] = midPoint(gin[0], gin[2]);
     
+    float3 edge1 = gin[1].PosL - gin[0].PosL;
+    float3 edge2 = gin[2].PosL - gin[0].PosL;
+    float2 duv1 = gin[1].TexCoord0 - gin[0].TexCoord0;
+    float2 duv2 = gin[2].TexCoord0 - gin[0].TexCoord0;
+    
+    float f = 1.0f / (duv1.x * duv2.y - duv2.x * duv1.y);
+    
+    float3 tangent;
+    tangent.x = f * (duv2.y * edge1.x - duv1.y * edge2.x);
+    tangent.y = f * (duv2.y * edge1.y - duv1.y * edge2.y);
+    tangent.z = f * (duv2.y * edge1.z - duv1.y * edge2.z);
+    
     GeoOut gout[6];
     
     [unroll]
@@ -88,6 +101,7 @@ void GS(triangle VertexIn gin[3], inout TriangleStream<GeoOut> triStream)
         gout[i].PosH = mul(float4(gout[i].PosW, 1.0f), gViewProj);
         float4x4 tWorld = transpose(gWorld);
         gout[i].NormalW = mul((float3x3)tWorld, vertices[i].NormalL);
+        gout[i].TangentW = mul((float3x3)tWorld, tangent);
         gout[i].TexCoord0 = vertices[i].TexCoord0;
         gout[i].TexCoord1 = vertices[i].TexCoord1;
     }
@@ -109,7 +123,6 @@ float4 PS(GeoOut pin) : SV_Target
     float4 detailedTexDiffuse = gDetailedTexture.Sample(gSamplerState, pin.TexCoord1) * gMat.Diffuse;
     float4 roadTexDiffuse = gRoadTexture.Sample(gSamplerState, pin.TexCoord0) * gMat.Diffuse;
     
-    
     float4 finalDiffuse = 0.0f;
     if (roadTexDiffuse.a < 0.4f)
     {
@@ -122,11 +135,21 @@ float4 PS(GeoOut pin) : SV_Target
     
     pin.NormalW = normalize(pin.NormalW);
     
+    float4 normalMapColor = gNormalmap.Sample(gSamplerState, pin.TexCoord0);
+    float3 normalVec = 2.0f * normalMapColor.rgb - 1.0f;
+    
+    float3 N = pin.NormalW;
+    float3 T = normalize(pin.TangentW - dot(pin.TangentW, N) * N);
+    float3 B = cross(N, T);
+    
+    float3x3 TBN = float3x3(T, B, N);
+    float3 normalW = mul(normalVec, TBN);
+    
     float3 view = normalize(gCameraPos - pin.PosW);
     float4 ambient = gAmbient * finalDiffuse;
     
     Material mat = { finalDiffuse, gMat.Fresnel, gMat.Roughness };
-    float4 directLight = ComputeLighting(gLights, mat, pin.NormalW, view);
+    float4 directLight = ComputeLighting(gLights, mat, normalW, view);
     
     float4 result = finalDiffuse + directLight;
     result.a = gMat.Diffuse.a;
