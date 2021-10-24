@@ -57,13 +57,13 @@ void GameFramework::OnProcessMouseDown(WPARAM buttonState, int x, int y)
 		mLastMousePos.x = x;
 		mLastMousePos.y = y;
 	}
-	if (!mScenes.empty()) mScenes.top()->OnProcessMouseDown(buttonState, x, y);
+	mScenes.top()->OnProcessMouseDown(buttonState, x, y);
 }
 
 void GameFramework::OnProcessMouseUp(WPARAM buttonState, int x, int y)
 {
 	ReleaseCapture();
-	if (!mScenes.empty()) mScenes.top()->OnProcessMouseUp(buttonState, x, y);
+	mScenes.top()->OnProcessMouseUp(buttonState, x, y);
 }
 
 void GameFramework::OnProcessMouseMove(WPARAM buttonState, int x, int y)
@@ -79,7 +79,7 @@ void GameFramework::OnProcessMouseMove(WPARAM buttonState, int x, int y)
 		mCamera->RotateY(0.25f * dx);
 		mCamera->Pitch(0.25f * dy);
 	}
-	if (!mScenes.empty()) mScenes.top()->OnProcessMouseMove(buttonState);
+	mScenes.top()->OnProcessMouseMove(buttonState);
 }
 
 void GameFramework::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -105,7 +105,7 @@ void GameFramework::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
 		}
 		break;
 	}
-	if (!mScenes.empty()) mScenes.top()->OnProcessKeyInput(uMsg, wParam, lParam);
+	mScenes.top()->OnProcessKeyInput(uMsg, wParam, lParam);
 }
 
 void GameFramework::OnPreciseKeyInput()
@@ -144,10 +144,8 @@ void GameFramework::Update()
 	OnPreciseKeyInput();
 
 	mCamera->Update(mTimer.ElapsedTime());
-	if (!mScenes.empty()) {
-		mScenes.top()->Update(mTimer,mCamera.get());
-		mScenes.top()->UpdateConstants(mCamera.get());
-	}
+	mScenes.top()->Update(mTimer,mCamera.get());
+	mScenes.top()->UpdateConstants(mCamera.get());
 }
 
 void GameFramework::Draw()
@@ -158,28 +156,32 @@ void GameFramework::Draw()
 	// Command List를 Pipeline State로 묶는다. 
 	ThrowIfFailed(mCommandList->Reset(mCommandAllocator.Get(), nullptr));
 
+	mCommandList->SetGraphicsRootSignature(mScenes.top()->GetRootSignature());
+
+	mScenes.top()->PrepareCubeMap(mD3dDevice.Get(), mCommandList.Get());
+
 	mCommandList->RSSetViewports(1, &mViewPort);
 	mCommandList->RSSetScissorRects(1, &mScissorRect);
 
 	// 화면 버퍼의 상태를 Render Target 상태로 전이한다.
 	mCommandList->ResourceBarrier(1, &Extension::ResourceBarrier(
 		CurrentBackBuffer(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
-	
+
 	// 화면 버퍼와 깊이 스텐실 버퍼를 초기화한다.
-	XMFLOAT4 color = (!mScenes.empty()) ? mScenes.top()->GetFrameColor() : (XMFLOAT4)Colors::White;
+	XMFLOAT4 color = mScenes.top()->GetFrameColor();
 
 	mCommandList->ClearRenderTargetView(CurrentBackBufferView(), (FLOAT*)&color, 0, nullptr);
 	mCommandList->ClearDepthStencilView(DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
-	
+
 	// 렌더링할 버퍼를 구체적으로 설정한다.
 	mCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), TRUE, &DepthStencilView());
 
-	if (!mScenes.empty()) mScenes.top()->Draw(mCommandList.Get());
+	mScenes.top()->Draw(mCommandList.Get());
 
 	// 화면 버퍼의 상태를 다시 PRESENT 상태로 전이한다.
 	mCommandList->ResourceBarrier(1, &Extension::ResourceBarrier(
 		CurrentBackBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
-	
+
 	ThrowIfFailed(mCommandList->Close());
 
 	ID3D12CommandList* cmdList[] = { mCommandList.Get() };
@@ -188,9 +190,12 @@ void GameFramework::Draw()
 	// 커맨드 리스트의 명령어들을 다 실행하기까지 기다린다.
 	WaitUntilGPUComplete();
 
+	ThrowIfFailed(mD3dDevice->GetDeviceRemovedReason());
 	ThrowIfFailed(mSwapChain->Present(0, 0));  // 화면버퍼를 Swap한다.
+	
 
 	// 다음 후면버퍼 위치로 이동한 후 다시 기다린다.
 	mCurrBackBufferIndex = mSwapChain->GetCurrentBackBufferIndex();
 	WaitUntilGPUComplete();
 }
+
