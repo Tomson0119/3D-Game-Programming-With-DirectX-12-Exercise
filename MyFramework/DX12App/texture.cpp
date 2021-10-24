@@ -2,7 +2,7 @@
 #include "texture.h"
 
 
-void Texture::CreateTextureResource(
+void Texture::LoadTextureFromDDS(
 	ID3D12Device* device,
 	ID3D12GraphicsCommandList* cmdList,
 	const std::wstring& filePath,
@@ -35,6 +35,15 @@ void Texture::CreateTextureResource(
 	D3D12_RESOURCE_BARRIER resourceBarrier = Extension::ResourceBarrier(
 		mTexResource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, resourceStates);
 	cmdList->ResourceBarrier(1, &resourceBarrier);
+}
+
+void Texture::CreateTexture(
+	ID3D12Device* device, 
+	UINT width, UINT height, UINT elements, UINT miplevels,
+	DXGI_FORMAT format, D3D12_RESOURCE_FLAGS resourceFlags, 
+	D3D12_RESOURCE_STATES resourceStates, D3D12_CLEAR_VALUE* clearValue)
+{
+	mTexResource = CreateTexture2DResource(device, width, height, elements, miplevels, format, resourceFlags, resourceStates, clearValue);
 }
 
 D3D12_SHADER_RESOURCE_VIEW_DESC Texture::ShaderResourceView() const
