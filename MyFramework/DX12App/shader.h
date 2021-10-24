@@ -65,3 +65,15 @@ public:
 	virtual void Compile(const std::wstring& path) override;
 	virtual void BuildInputLayout() override;
 };
+
+///////////////////////////////////////////////////////////////////////////////////////////
+//
+class CubeMapShader : public Shader
+{
+public:
+	CubeMapShader(const std::wstring& path);
+	virtual ~CubeMapShader() { }
+
+	virtual void Compile(const std::wstring& path) override;
+	virtual void BuildInputLayout() override;
+};

@@ -3,7 +3,7 @@
 
 
 Shader::Shader()
-{	
+{
 }
 
 ComPtr<ID3DBlob> Shader::CompileShader(
@@ -58,7 +58,10 @@ void DefaultShader::BuildInputLayout()
 		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12,
 			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24,
+		{ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 24,
+			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 36,
 			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
 	};
 }
@@ -123,6 +126,34 @@ void BillboardShader::BuildInputLayout()
 			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 
 		{ "SIZE", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12,
+			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+	};
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////
+//
+CubeMapShader::CubeMapShader(const std::wstring& path)
+	: Shader()
+{
+	Compile(path);
+	BuildInputLayout();
+}
+
+void CubeMapShader::Compile(const std::wstring& path)
+{
+	VS = Shader::CompileShader(path, "VS", "vs_5_1");
+	PS = Shader::CompileShader(path, "PS", "ps_5_1");
+}
+
+void CubeMapShader::BuildInputLayout()
+{
+	mInputLayout =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
+			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+
+		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12,
 			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
 	};
 }
