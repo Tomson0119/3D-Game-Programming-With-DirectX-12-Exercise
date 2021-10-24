@@ -43,6 +43,9 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="dynamicCubeRenderer.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="gameFramework.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Use</PrecompiledHeader>
@@ -124,6 +127,7 @@
     <ClInclude Include="d3dFramework.h" />
     <ClInclude Include="DDSTextureLoader12.h" />
     <ClInclude Include="dxException.h" />
+    <ClInclude Include="dynamicCubeRenderer.h" />
     <ClInclude Include="gameFramework.h" />
     <ClInclude Include="gameObject.h" />
     <ClInclude Include="gameScene.h" />
@@ -157,6 +161,16 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\billboard.hlsl">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\cubemap.hlsl">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\common.hlsl">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>
