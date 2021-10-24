@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "gameObject.h"
+#include "gameScene.h"
 
 
 GameObject::GameObject()
@@ -270,3 +271,121 @@ void Billboard::UpdateLook(Camera* camera)
 	mLook = { newLook.x, mLook.y, newLook.z };
 	mRight = Vector3::Cross(mUp, mLook);
 }
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+DynamicCubeMapObject::DynamicCubeMapObject(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList, LONG cubeMapSize)
+	: mCubeMapSize(cubeMapSize)
+{
+	mViewPort = { 0.0f, 0.0f, float(cubeMapSize), float(cubeMapSize), 0.0f, 1.0f };
+	mScissorRect = { 0, 0, cubeMapSize, cubeMapSize };
+
+	for (std::unique_ptr<Camera>& camera : mCameras)
+	{
+		camera = std::make_unique<Camera>();
+		camera->SetLens(0.5f*Math::PI, 1.0f, 0.1f, 5000.0f);
+	}
+}
+
+DynamicCubeMapObject::~DynamicCubeMapObject()
+{
+}
+
+void DynamicCubeMapObject::BuildDsvRtvView(
+	ID3D12Device* device,
+	ID3D12Resource* rtvResource,
+	D3D12_CPU_DESCRIPTOR_HANDLE rtvCPUHandle, 
+	D3D12_CPU_DESCRIPTOR_HANDLE dsvCPUHandle)
+{
+	assert(mCubeMapSize > 0 && "CubeMapSize is not assigned.");
+
+	D3D12_CLEAR_VALUE clearValue{};
+	clearValue.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	clearValue.DepthStencil.Depth = 1.0f;
+	clearValue.DepthStencil.Stencil = 0;
+
+	mDepthStencilBuffer = CreateTexture2DResource(
+		device,
+		mCubeMapSize, mCubeMapSize,
+		1, 1, DXGI_FORMAT_D24_UNORM_S8_UINT,
+		D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL,
+		D3D12_RESOURCE_STATE_DEPTH_WRITE, &clearValue);
+
+	mDsvCPUDescriptorHandle = dsvCPUHandle;
+	device->CreateDepthStencilView(mDepthStencilBuffer.Get(), NULL, mDsvCPUDescriptorHandle);
+
+	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc{};
+	rtvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
+	rtvDesc.Texture2DArray.MipSlice = 0;
+	rtvDesc.Texture2DArray.PlaneSlice = 0;
+	rtvDesc.Texture2DArray.ArraySize = 1;
+
+	for (int i = 0; i < RtvCounts; i++)
+	{
+		mRtvCPUDescriptorHandles[i] = rtvCPUHandle;
+		rtvDesc.Texture2DArray.FirstArraySlice = i;
+		device->CreateRenderTargetView(rtvResource, &rtvDesc, mRtvCPUDescriptorHandles[i]);
+		rtvCPUHandle.ptr += gRtvDescriptorSize;
+	}
+}
+
+void DynamicCubeMapObject::BuildCameras()
+{
+	static XMFLOAT3 lookAts[RtvCounts] =
+	{
+		XMFLOAT3(+1.0f, 0.0f,  0.0f),
+		XMFLOAT3(-1.0f, 0.0f,  0.0f),
+		XMFLOAT3(0.0f, +1.0f,  0.0f),
+		XMFLOAT3(0.0f, -1.0f,  0.0f),
+		XMFLOAT3(0.0f,  0.0f, +1.0f),
+		XMFLOAT3(0.0f,  0.0f, -1.0f)
+	};
+
+	static XMFLOAT3 ups[RtvCounts] =
+	{
+		XMFLOAT3(0.0f, +1.0f,  0.0f),
+		XMFLOAT3(0.0f, +1.0f,  0.0f),
+		XMFLOAT3(0.0f,  0.0f, -1.0f),
+		XMFLOAT3(0.0f,  0.0f, +1.0f),
+		XMFLOAT3(0.0f, +1.0f,  0.0f),
+		XMFLOAT3(0.0f, +1.0f,  0.0f)
+	};
+
+	XMFLOAT3 pos = GetPosition();
+	for (int i = 0; i < RtvCounts; i++)
+	{
+		mCameras[i]->SetPosition(pos);
+		mCameras[i]->LookAt(pos, Vector3::Add(lookAts[i], pos), ups[i]);
+		mCameras[i]->UpdateViewMatrix();
+	}
+}
+
+void DynamicCubeMapObject::PreDraw(ID3D12GraphicsCommandList* cmdList, ID3D12Resource* rtvResource, GameScene* scene)
+{
+	BuildCameras();
+
+	cmdList->RSSetViewports(1, &mViewPort);
+	cmdList->RSSetScissorRects(1, &mScissorRect);
+
+	// resource barrier
+	cmdList->ResourceBarrier(1, &Extension::ResourceBarrier(
+		rtvResource, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET));
+
+	FLOAT clearValue[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+	for (int i = 0; i < RtvCounts; i++)
+	{
+		cmdList->ClearRenderTargetView(mRtvCPUDescriptorHandles[i], clearValue, 0, NULL);
+		cmdList->ClearDepthStencilView(mDsvCPUDescriptorHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, NULL);
+		cmdList->OMSetRenderTargets(1, &mRtvCPUDescriptorHandles[i], TRUE, &mDsvCPUDescriptorHandle);
+
+		scene->UpdateCameraConstant(i + 1, mCameras[i].get());
+		scene->Draw(cmdList, i + 1, true);
+	}
+
+	// resource barrier
+	cmdList->ResourceBarrier(1, &Extension::ResourceBarrier(
+		rtvResource, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ));
+}
+

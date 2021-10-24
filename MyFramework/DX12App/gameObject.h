@@ -5,6 +5,8 @@
 #include "camera.h"
 #include "texture.h"
 
+class GameScene;
+
 class GameObject
 {
 public:
@@ -28,6 +30,15 @@ public:
 	void SetSRVIndex(UINT idx) { mSrvIndex = idx; }
 	void SetLook(XMFLOAT3& look);
 	void SetMesh(const std::shared_ptr<Mesh>& mesh) { mMesh = mesh; }
+
+public:
+	virtual void PreDraw(ID3D12GraphicsCommandList* cmdList, ID3D12Resource* rtvResource, GameScene* scene) { }
+	
+	virtual void BuildDsvRtvView(
+		ID3D12Device* device,
+		ID3D12Resource* rtvResource,
+		D3D12_CPU_DESCRIPTOR_HANDLE rtvCPUHandle,
+		D3D12_CPU_DESCRIPTOR_HANDLE dsvCPUHandle) { }
 
 public:
 	virtual void Strafe(float dist, bool local=true);
@@ -54,6 +65,8 @@ public:
 	XMFLOAT3 GetUp() const { return mUp; }
 
 	UINT GetSRVIndex() const { return mSrvIndex; }
+
+	virtual ULONG GetCubeMapSize() const { return 0; }
 	
 	virtual ObjectConstants GetObjectConstants();
 
@@ -142,4 +155,43 @@ private:
 
 	std::vector<BillboardVertex> mVertices;
 	std::vector<UINT> mIndices;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+class DynamicCubeMapObject : public GameObject
+{
+public:
+	DynamicCubeMapObject(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList, LONG cubeMapSize);
+	virtual ~DynamicCubeMapObject();
+
+	virtual void BuildDsvRtvView(
+		ID3D12Device* device,
+		ID3D12Resource* rtvResource,
+		D3D12_CPU_DESCRIPTOR_HANDLE rtvCPUHandle,
+		D3D12_CPU_DESCRIPTOR_HANDLE dsvCPUHandle) override;
+
+	void BuildCameras();
+
+	virtual void PreDraw(ID3D12GraphicsCommandList* cmdList, ID3D12Resource* rtvResource, GameScene* scene) override;
+
+
+public:
+	virtual ULONG GetCubeMapSize() const { return mCubeMapSize; }
+
+private:
+	static const int RtvCounts = 6;
+
+	ULONG mCubeMapSize = 0;
+
+	std::array<std::unique_ptr<Camera>, RtvCounts> mCameras;
+
+	D3D12_CPU_DESCRIPTOR_HANDLE mRtvCPUDescriptorHandles[RtvCounts];
+	D3D12_CPU_DESCRIPTOR_HANDLE mDsvCPUDescriptorHandle;
+
+	ComPtr<ID3D12Resource> mDepthStencilBuffer;
+
+	D3D12_VIEWPORT mViewPort;
+	D3D12_RECT mScissorRect;
 };
