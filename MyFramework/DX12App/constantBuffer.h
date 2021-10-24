@@ -29,9 +29,9 @@ public:
 		mData = nullptr;
 	}
 
-	D3D12_GPU_VIRTUAL_ADDRESS GetGPUVirtualAddress() const
+	D3D12_GPU_VIRTUAL_ADDRESS GetGPUVirtualAddress(int idx) const
 	{
-		return mUploadBuffer.Get()->GetGPUVirtualAddress();
+		return mUploadBuffer.Get()->GetGPUVirtualAddress() + idx * mByteSize;
 	}
 
 	void CopyData(int index, const Cnst& data)
