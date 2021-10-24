@@ -127,12 +127,14 @@ namespace Extension
 	}
 
 	inline D3D12_DESCRIPTOR_HEAP_DESC DescriptorHeapDesc(
-		UINT numDescriptors)
+		UINT numDescriptors, 
+		D3D12_DESCRIPTOR_HEAP_TYPE descriptorType,
+		D3D12_DESCRIPTOR_HEAP_FLAGS descriptorFlags)
 	{
 		D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc{};
 		descriptorHeapDesc.NumDescriptors = numDescriptors;
-		descriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-		descriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+		descriptorHeapDesc.Type = descriptorType;
+		descriptorHeapDesc.Flags = descriptorFlags;
 		descriptorHeapDesc.NodeMask = 0;
 		return descriptorHeapDesc;
 	}
