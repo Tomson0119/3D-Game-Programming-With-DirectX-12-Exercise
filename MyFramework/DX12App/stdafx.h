@@ -56,6 +56,10 @@ using namespace DirectX::PackedVector;
 
 using Microsoft::WRL::ComPtr;
 
+extern UINT gRtvDescriptorSize;
+extern UINT gDsvDescriptorSize;
+extern UINT gCbvSrvUavDescriptorSize;
+
 extern ComPtr<ID3D12Resource> CreateBufferResource(
 	ID3D12Device* device,
 	ID3D12GraphicsCommandList* cmdList,
@@ -63,6 +67,11 @@ extern ComPtr<ID3D12Resource> CreateBufferResource(
 	UINT64 byteSize,
 	ComPtr<ID3D12Resource>& uploadBuffer);
 
+extern ComPtr<ID3D12Resource> CreateTexture2DResource(
+	ID3D12Device* device,
+	UINT width, UINT height, UINT elements, UINT miplevels,
+	DXGI_FORMAT format, D3D12_RESOURCE_FLAGS resourceFlags,
+	D3D12_RESOURCE_STATES resourceStates, D3D12_CLEAR_VALUE* clearValue);
 
 inline UINT GetConstantBufferSize(UINT bytes)
 {
