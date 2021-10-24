@@ -8,7 +8,8 @@ enum class Layer : int
 	SkyBox,
 	Terrain,
 	Billboard,
-	Default
+	Default,
+	DynamicCubeMap
 };
 
 class Pipeline
@@ -24,8 +25,9 @@ public:
 		ID3D12RootSignature* rootSig,
 		Shader* shader=nullptr);
 
+	virtual void BuildDescriptorHeap(ID3D12Device* device, UINT cbvIndex, UINT srvIndex);
+
 	void BuildConstantBuffer(ID3D12Device* device);
-	void BuildDescriptorHeap(ID3D12Device* device, UINT cbvIndex, UINT srvIndex);
 	void BuildCBV(ID3D12Device* device);
 	void BuildSRV(ID3D12Device* device);
 
@@ -58,12 +60,13 @@ protected:
 	
 	UINT mRootParamCBVIndex = 0;
 	UINT mRootParamSRVIndex = 0;
-	UINT mCbvSrvDescriptorSize = 0;
 
 	bool mIsWiredFrame = false;
 };
 
 
+//////////////////////////////////////////////////////////////////////////////////
+//
 class SkyboxPipeline : public Pipeline
 {
 public:
