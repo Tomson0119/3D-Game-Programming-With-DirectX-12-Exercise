@@ -79,10 +79,6 @@ protected:
 	ComPtr<ID3D12Resource> mSwapChainBuffers[mSwapChainBufferCount];
 	ComPtr<ID3D12Resource> mDepthStencilBuffer;
 
-	UINT mRtvDescriptorSize = 0;
-	UINT mDsvDescriptorSize = 0;
-	UINT mCbvSrvUavDescriptorSize = 0;
-
 	ComPtr<ID3D12Fence> mFence;
 	UINT64 mFenceValues[mSwapChainBufferCount];
 	HANDLE mFenceEvent = NULL;

@@ -204,8 +204,6 @@ void D3DFramework::CreateRtvDsvDescriptorHeaps()
 		&d3dDescriptorHeapDesc,
 		IID_PPV_ARGS(&mRtvDescriptorHeap)));
 
-	mRtvDescriptorSize = mD3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-
 	// For Depth Stencil Descriptor Heap
 	d3dDescriptorHeapDesc.NumDescriptors = 1;
 	d3dDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
@@ -214,8 +212,9 @@ void D3DFramework::CreateRtvDsvDescriptorHeaps()
 		&d3dDescriptorHeapDesc,
 		IID_PPV_ARGS(&mDsvDescriptorHeap)));
 	
-	mDsvDescriptorSize = mD3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
-	mCbvSrvUavDescriptorSize = mD3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	gRtvDescriptorSize = mD3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+	gDsvDescriptorSize = mD3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+	gCbvSrvUavDescriptorSize = mD3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 }
 
 void D3DFramework::OnResize()
@@ -262,7 +261,7 @@ void D3DFramework::CreateRenderTargetViews()
 	{
 		ThrowIfFailed(mSwapChain->GetBuffer(i, IID_PPV_ARGS(&mSwapChainBuffers[i])));
 		mD3dDevice->CreateRenderTargetView(mSwapChainBuffers[i].Get(), nullptr, rtvHandle);
-		rtvHandle.ptr += mRtvDescriptorSize;
+		rtvHandle.ptr += gRtvDescriptorSize;
 	}
 }
 
@@ -485,7 +484,7 @@ ID3D12Resource* D3DFramework::CurrentBackBuffer() const
 D3D12_CPU_DESCRIPTOR_HANDLE D3DFramework::CurrentBackBufferView() const
 {
 	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = mRtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-	rtvHandle.ptr += mCurrBackBufferIndex * mRtvDescriptorSize;
+	rtvHandle.ptr += mCurrBackBufferIndex * gRtvDescriptorSize;
 	return rtvHandle;
 }
 
