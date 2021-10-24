@@ -1,33 +1,10 @@
-#include "lighting.hlsl"
+#include "common.hlsl"
 
 Texture2D gBaseTexture     : register(t0);
 Texture2D gDetailedTexture : register(t1);
 Texture2D gRoadTexture     : register(t2);
 Texture2D gHeightmap       : register(t3);
 Texture2D gNormalmap       : register(t4);
-
-SamplerState gSamplerState : register(s0);
-
-cbuffer CameraCB : register(b0)
-{
-    matrix gView      : packoffset(c0);
-    matrix gProj      : packoffset(c4);
-    matrix gViewProj  : packoffset(c8);
-    float3 gCameraPos : packoffset(c12);
-    float gAspect     : packoffset(c12.w);
-}
-
-cbuffer LightCB : register(b1)
-{
-    float4 gAmbient           : packoffset(c0);
-    Light gLights[NUM_LIGHTS] : packoffset(c1);
-}
-
-cbuffer ObjectCB : register(b2)
-{
-    matrix gWorld : packoffset(c0);
-    Material gMat : packoffset(c4);
-}
 
 struct VertexIn
 {
@@ -72,13 +49,10 @@ void GS(triangle VertexIn gin[3], inout TriangleStream<GeoOut> triStream)
     //   m0 -- m1
     //   / \  / \
     // v1 - m2 - v2
-    VertexIn vertices[6];
+    VertexIn vertices[3];
     vertices[0] = gin[0];
     vertices[1] = gin[1];
     vertices[2] = gin[2];
-    vertices[3] = midPoint(gin[0], gin[1]);
-    vertices[4] = midPoint(gin[1], gin[2]);
-    vertices[5] = midPoint(gin[0], gin[2]);
     
     float3 edge1 = gin[1].PosL - gin[0].PosL;
     float3 edge2 = gin[2].PosL - gin[0].PosL;
@@ -92,10 +66,10 @@ void GS(triangle VertexIn gin[3], inout TriangleStream<GeoOut> triStream)
     tangent.y = f * (duv2.y * edge1.y - duv1.y * edge2.y);
     tangent.z = f * (duv2.y * edge1.z - duv1.y * edge2.z);
     
-    GeoOut gout[6];
+    GeoOut gout[3];
     
     [unroll]
-    for (int i = 0; i < 6;i++)
+    for (int i = 0; i < 3;i++)
     {
         gout[i].PosW = mul(float4(vertices[i].PosL, 1.0f), gWorld).xyz;        
         gout[i].PosH = mul(float4(gout[i].PosW, 1.0f), gViewProj);
@@ -106,22 +80,15 @@ void GS(triangle VertexIn gin[3], inout TriangleStream<GeoOut> triStream)
         gout[i].TexCoord1 = vertices[i].TexCoord1;
     }
     triStream.Append(gout[0]);
-    triStream.Append(gout[3]);
-    triStream.Append(gout[5]);
-    triStream.Append(gout[4]);
-    triStream.Append(gout[2]);
-    triStream.RestartStrip();
-    triStream.Append(gout[3]);
     triStream.Append(gout[1]);
-    triStream.Append(gout[4]);
-    triStream.RestartStrip();
+    triStream.Append(gout[2]);
 }
 
 float4 PS(GeoOut pin) : SV_Target
 {
-    float4 baseTexDiffuse = gBaseTexture.Sample(gSamplerState, pin.TexCoord0) * gMat.Diffuse;
-    float4 detailedTexDiffuse = gDetailedTexture.Sample(gSamplerState, pin.TexCoord1) * gMat.Diffuse;
-    float4 roadTexDiffuse = gRoadTexture.Sample(gSamplerState, pin.TexCoord0) * gMat.Diffuse;
+    float4 baseTexDiffuse = gBaseTexture.Sample(gAnisotropicWrap, pin.TexCoord0) * gMat.Diffuse;
+    float4 detailedTexDiffuse = gDetailedTexture.Sample(gAnisotropicWrap, pin.TexCoord1) * gMat.Diffuse;
+    float4 roadTexDiffuse = gRoadTexture.Sample(gAnisotropicWrap, pin.TexCoord0) * gMat.Diffuse;
     
     float4 finalDiffuse = 0.0f;
     if (roadTexDiffuse.a < 0.4f)
@@ -135,7 +102,7 @@ float4 PS(GeoOut pin) : SV_Target
     
     pin.NormalW = normalize(pin.NormalW);
     
-    float4 normalMapColor = gNormalmap.Sample(gSamplerState, pin.TexCoord0);
+    float4 normalMapColor = gNormalmap.Sample(gAnisotropicWrap, pin.TexCoord0);
     float3 normalVec = 2.0f * normalMapColor.rgb - 1.0f;
     
     float3 N = pin.NormalW;
