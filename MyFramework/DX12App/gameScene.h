@@ -10,6 +10,7 @@
 #include "shader.h"
 #include "texture.h"
 
+class DynamicCubeRenderer;
 
 class GameScene
 {
@@ -20,19 +21,22 @@ public:
 	virtual ~GameScene();
 
 	void BuildObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList);
-
+	void UpdateCameraConstant(int idx, Camera* camera);
 	void UpdateConstants(Camera* camera);
 	void Update(const GameTimer& timer, Camera* camera);
-	void Draw(ID3D12GraphicsCommandList* cmdList);
+	void Draw(ID3D12GraphicsCommandList* cmdList, int cameraCBIndex = 0, bool predraw = false);
+
+	void PrepareCubeMap(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList);
 
 	void OnProcessMouseDown(WPARAM buttonState, int x, int y) {}
 	void OnProcessMouseUp(WPARAM buttonState, int x, int y) {}
 	void OnProcessMouseMove(WPARAM buttonState) {}
-	void OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam);
+	void OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam) { }
 
-	void OnPreciseKeyInput(const GameTimer& timer);
+	void OnPreciseKeyInput(const GameTimer& timer) { }
 
 	XMFLOAT4 GetFrameColor() const { return mFrameColor; }
+	ID3D12RootSignature* GetRootSignature() const { return mRootSignature.Get(); }
 
 private:
 	void BuildRootSignature(ID3D12Device* device);
@@ -50,6 +54,8 @@ private:
 
 	ComPtr<ID3D12RootSignature> mRootSignature;
 	
+	std::unique_ptr<DynamicCubeRenderer> mCubeMapRenderer;
+
 	std::unordered_map<Layer, std::unique_ptr<Pipeline>> mPipelines;
 	std::unordered_map<std::string, std::unique_ptr<Texture>> mTextures;
 	
