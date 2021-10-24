@@ -252,7 +252,6 @@ void Mesh::LoadFromObj(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList,
 		indices.push_back(i);
 	}
 
-
 	Mesh::CreateResourceInfo(device, cmdList, sizeof(Vertex), sizeof(UINT),
 		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
 		vertices.data(), (UINT)vertices.size(), indices.data(), (UINT)indices.size());
@@ -276,40 +275,40 @@ BoxMesh::BoxMesh(
 	std::array<Vertex, 24> vertices =
 	{
 		// Front
-		Vertex(-hx, +hy, -hz, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f),  // 0
-		Vertex(+hx, +hy, -hz, 0.0f, 0.0f, -1.0f, 1.0f, 0.0f),  // 1
-		Vertex(+hx, -hy, -hz, 0.0f, 0.0f, -1.0f, 1.0f, 1.0f),  // 2
-		Vertex(-hx, -hy, -hz, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f),  // 3
+		Vertex(-hx, +hy, -hz, 0.0f, 0.0f, -1.0f, +1.0f, 0.0f, 0.0f, 0.0f, 0.0f),  // 0
+		Vertex(+hx, +hy, -hz, 0.0f, 0.0f, -1.0f, +1.0f, 0.0f, 0.0f, 1.0f, 0.0f),  // 1
+		Vertex(+hx, -hy, -hz, 0.0f, 0.0f, -1.0f, +1.0f, 0.0f, 0.0f, 1.0f, 1.0f),  // 2
+		Vertex(-hx, -hy, -hz, 0.0f, 0.0f, -1.0f, +1.0f, 0.0f, 0.0f, 0.0f, 1.0f),  // 3
 
 		// Back
-		Vertex(+hx, +hy, +hz, 0.0f, 0.0f, +1.0f, 0.0f, 0.0f),  // 4
-		Vertex(-hx, +hy, +hz, 0.0f, 0.0f, +1.0f, 1.0f, 0.0f),  // 5
-		Vertex(-hx, -hy, +hz, 0.0f, 0.0f, +1.0f, 1.0f, 1.0f),  // 6
-		Vertex(+hx, -hy, +hz, 0.0f, 0.0f, +1.0f, 0.0f, 1.0f),  // 7
+		Vertex(+hx, +hy, +hz, 0.0f, 0.0f, +1.0f, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f),  // 4
+		Vertex(-hx, +hy, +hz, 0.0f, 0.0f, +1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f),  // 5
+		Vertex(-hx, -hy, +hz, 0.0f, 0.0f, +1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 1.0f),  // 6
+		Vertex(+hx, -hy, +hz, 0.0f, 0.0f, +1.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f),  // 7
 
 		// Left
-		Vertex(-hx, +hy, +hz, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f),  // 8
-		Vertex(-hx, +hy, -hz, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f),  // 9
-		Vertex(-hx, -hy, -hz, -1.0f, 0.0f, 0.0f, 1.0f, 1.0f),  // 10
-		Vertex(-hx, -hy, +hz, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f),  // 11
+		Vertex(-hx, +hy, +hz, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f),  // 8
+		Vertex(-hx, +hy, -hz, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f, 1.0f, 0.0f),  // 9
+		Vertex(-hx, -hy, -hz, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f, 1.0f, 1.0f),  // 10
+		Vertex(-hx, -hy, +hz, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f),  // 11
 
 		// Right
-		Vertex(+hx, +hy, -hz, +1.0f, 0.0f, 0.0f, 0.0f, 0.0f),  // 12
-		Vertex(+hx, +hy, +hz, +1.0f, 0.0f, 0.0f, 1.0f, 0.0f),  // 13
-		Vertex(+hx, -hy, +hz, +1.0f, 0.0f, 0.0f, 1.0f, 1.0f),  // 14
-		Vertex(+hx, -hy, -hz, +1.0f, 0.0f, 0.0f, 0.0f, 1.0f),  // 15
+		Vertex(+hx, +hy, -hz, +1.0f, 0.0f, 0.0f, 0.0f, 0.0f, +1.0f, 0.0f, 0.0f),  // 12
+		Vertex(+hx, +hy, +hz, +1.0f, 0.0f, 0.0f, 0.0f, 0.0f, +1.0f, 1.0f, 0.0f),  // 13
+		Vertex(+hx, -hy, +hz, +1.0f, 0.0f, 0.0f, 0.0f, 0.0f, +1.0f, 1.0f, 1.0f),  // 14
+		Vertex(+hx, -hy, -hz, +1.0f, 0.0f, 0.0f, 0.0f, 0.0f, +1.0f, 0.0f, 1.0f),  // 15
 
 		// Top
-		Vertex(-hx, +hy, +hz, 0.0f, +1.0f, 0.0f, 0.0f, 0.0f),  // 16
-		Vertex(+hx, +hy, +hz, 0.0f, +1.0f, 0.0f, 1.0f, 0.0f),  // 17
-		Vertex(+hx, +hy, -hz, 0.0f, +1.0f, 0.0f, 1.0f, 1.0f),  // 18
-		Vertex(-hx, +hy, -hz, 0.0f, +1.0f, 0.0f, 0.0f, 1.0f),  // 19
+		Vertex(-hx, +hy, +hz, 0.0f, +1.0f, 0.0f, +1.0f, 0.0f, 0.0f, 0.0f, 0.0f),  // 16
+		Vertex(+hx, +hy, +hz, 0.0f, +1.0f, 0.0f, +1.0f, 0.0f, 0.0f, 1.0f, 0.0f),  // 17
+		Vertex(+hx, +hy, -hz, 0.0f, +1.0f, 0.0f, +1.0f, 0.0f, 0.0f, 1.0f, 1.0f),  // 18
+		Vertex(-hx, +hy, -hz, 0.0f, +1.0f, 0.0f, +1.0f, 0.0f, 0.0f, 0.0f, 1.0f),  // 19
 
 		// Bottom
-		Vertex(-hx, -hy, -hz, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f),  // 20
-		Vertex(+hx, -hy, -hz, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f),  // 21
-		Vertex(+hx, -hy, +hz, 0.0f, -1.0f, 0.0f, 1.0f, 1.0f),  // 22
-		Vertex(-hx, -hy, +hz, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f),  // 23
+		Vertex(-hx, -hy, -hz, 0.0f, -1.0f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f),  // 20
+		Vertex(+hx, -hy, -hz, 0.0f, -1.0f, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f),  // 21
+		Vertex(+hx, -hy, +hz, 0.0f, -1.0f, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f, 1.0f),  // 22
+		Vertex(-hx, -hy, +hz, 0.0f, -1.0f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f),  // 23
 	};
 
 	std::array<UINT, 36> indices =
@@ -345,10 +344,10 @@ GridMesh::GridMesh(
 	float hh = 0.5f * height;
 
 	std::array<Vertex, 4> vertices = {
-		Vertex(-hw, +hh, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f),
-		Vertex(+hw, +hh, 0.0f, 0.0f, 0.0f, -1.0f, 1.0f, 0.0f),
-		Vertex(+hw, -hh, 0.0f, 0.0f, 0.0f, -1.0f, 1.0f, 1.0f),
-		Vertex(-hw, -hh, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f)
+		Vertex(-hw, +hh, 0.0f, 0.0f, 0.0f, -1.0f, +1.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+		Vertex(+hw, +hh, 0.0f, 0.0f, 0.0f, -1.0f, +1.0f, 0.0f, 0.0f, 1.0f, 0.0f),
+		Vertex(+hw, -hh, 0.0f, 0.0f, 0.0f, -1.0f, +1.0f, 0.0f, 0.0f, 1.0f, 1.0f),
+		Vertex(-hw, -hh, 0.0f, 0.0f, 0.0f, -1.0f, +1.0f, 0.0f, 0.0f, 0.0f, 1.0f)
 	};
 
 	std::array<UINT, 6> indices = { 0, 1, 2, 0, 2, 3 };
@@ -358,6 +357,94 @@ GridMesh::GridMesh(
 		vertices.data(), (UINT)vertices.size(), indices.data(), (UINT)indices.size());
 }
 
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+SphereMesh::SphereMesh(
+	ID3D12Device* device, 
+	ID3D12GraphicsCommandList* cmdList, 
+	float radius, int sliceCount, int stackCount)
+{
+	std::vector<Vertex> vertices;
+	std::vector<UINT> indices;
+
+	// Top
+	vertices.push_back(Vertex(0.0f, +radius, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f));
+
+	// Side
+	float phiStep = XM_PI / stackCount;
+	float thetaStep = 2.0f * XM_PI / sliceCount;
+
+	for (int i = 1; i < stackCount; ++i)
+	{
+		float phi = i * phiStep;
+
+		for (int j = 0; j <= sliceCount; ++j)
+		{
+			float theta = j * thetaStep;
+
+			Vertex v;
+
+			v.Position.x = radius * sinf(phi) * cosf(theta);
+			v.Position.y = radius * cosf(phi);
+			v.Position.z = radius * sinf(phi) * sinf(theta);
+			
+			v.Normal = Vector3::Normalize(v.Position);
+
+			v.TangentU.x = -radius * sinf(phi) * sinf(theta);
+			v.TangentU.y = 0.0f;
+			v.TangentU.z = +radius * sinf(phi) * cosf(theta);
+			v.TangentU = Vector3::Normalize(v.TangentU);
+
+			v.TexCoord.x = theta / XM_2PI;
+			v.TexCoord.y = phi / XM_PI;
+
+			vertices.push_back(v);
+		}
+	}
+
+	// Bottom
+	vertices.push_back(Vertex(0.0f, -radius, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f));
+
+	// Top
+	for (int i = 1; i <= sliceCount; ++i)
+	{
+		indices.push_back(0);
+		indices.push_back((UINT)i + 1);
+		indices.push_back((UINT)i);
+	}
+
+	// Side
+	int baseIndex = 1;
+	int ringVertexCount = sliceCount + 1;
+	for (int i = 0; i < stackCount - 2; ++i)
+	{
+		for (int j = 0; j < sliceCount; ++j)
+		{
+			indices.push_back((UINT)(baseIndex + i * ringVertexCount + j));
+			indices.push_back((UINT)(baseIndex + i * ringVertexCount + j + 1));
+			indices.push_back((UINT)(baseIndex + (i + 1) * ringVertexCount + j));
+
+			indices.push_back((UINT)(baseIndex + (i + 1) * ringVertexCount + j));
+			indices.push_back((UINT)(baseIndex + i * ringVertexCount + j + 1));
+			indices.push_back((UINT)(baseIndex + (i + 1) * ringVertexCount + j + 1));
+		}
+	}
+
+	// Bottom
+	int southPoleIndex = (int)vertices.size() - 1;
+	baseIndex = southPoleIndex - ringVertexCount;
+	for (int i = 0; i < sliceCount; ++i)
+	{
+		indices.push_back((UINT)southPoleIndex);
+		indices.push_back((UINT)(baseIndex + i));
+		indices.push_back((UINT)(baseIndex + i + 1));
+	}
+
+	Mesh::CreateResourceInfo(device, cmdList, sizeof(Vertex), sizeof(UINT),
+		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
+		vertices.data(), (UINT)vertices.size(), indices.data(), (UINT)indices.size());
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 //
