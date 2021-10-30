@@ -276,7 +276,7 @@ void Billboard::UpdateLook(Camera* camera)
 ///////////////////////////////////////////////////////////////////////////////
 //
 DynamicCubeMapObject::DynamicCubeMapObject(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList, LONG cubeMapSize)
-	: mCubeMapSize(cubeMapSize)
+	: mCubeMapSize(cubeMapSize), mRtvCPUDescriptorHandles{}, mDsvCPUDescriptorHandle{}
 {
 	mViewPort = { 0.0f, 0.0f, float(cubeMapSize), float(cubeMapSize), 0.0f, 1.0f };
 	mScissorRect = { 0, 0, cubeMapSize, cubeMapSize };
@@ -381,7 +381,7 @@ void DynamicCubeMapObject::PreDraw(ID3D12GraphicsCommandList* cmdList, ID3D12Res
 		cmdList->OMSetRenderTargets(1, &mRtvCPUDescriptorHandles[i], TRUE, &mDsvCPUDescriptorHandle);
 
 		scene->UpdateCameraConstant(i + 1, mCameras[i].get());
-		scene->Draw(cmdList, i + 1, true);
+		scene->Draw(cmdList, i + 1);
 	}
 
 	// resource barrier

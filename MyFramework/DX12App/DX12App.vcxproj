@@ -150,7 +150,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\defaultLit.hlsl">
+    <None Include="Shaders\normalmap.hlsl">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>
@@ -171,6 +171,11 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\common.hlsl">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\default.hlsl">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>

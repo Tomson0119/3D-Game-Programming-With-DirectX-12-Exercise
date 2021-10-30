@@ -142,7 +142,7 @@
     <None Include="Shaders\lighting.hlsl">
       <Filter>리소스 파일</Filter>
     </None>
-    <None Include="Shaders\defaultLit.hlsl">
+    <None Include="Shaders\normalmap.hlsl">
       <Filter>리소스 파일</Filter>
     </None>
     <None Include="Shaders\terrain.hlsl">
@@ -155,6 +155,9 @@
       <Filter>리소스 파일</Filter>
     </None>
     <None Include="Shaders\common.hlsl">
+      <Filter>리소스 파일</Filter>
+    </None>
+    <None Include="Shaders\default.hlsl">
       <Filter>리소스 파일</Filter>
     </None>
   </ItemGroup>
