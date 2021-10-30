@@ -194,7 +194,7 @@ void Mesh::LoadFromObj(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList,
 		UINT normIndex;
 		UINT texIndex;
 	};
-	std::vector<UINT3> temp_indices;
+	std::vector<std::vector<UINT3>> temp_indices;
 
 	std::string info;
 	while (std::getline(file, info))
@@ -214,6 +214,8 @@ void Mesh::LoadFromObj(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList,
 		{
 			XMFLOAT2 tex;
 			ss >> tex.x >> tex.y;
+			tex.x = -0.5f * tex.x + 0.5f;
+			tex.y = 1 - tex.y; // reverse v coordinate..
 			texcoords.push_back(tex);
 		}
 		else if (type == "vn")
@@ -226,32 +228,36 @@ void Mesh::LoadFromObj(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList,
 		{
 			char ignore[2];
 			UINT v, vt, vn;
-
+			
+			temp_indices.push_back({});
 			while (ss >> v >> ignore[0] >> vt >> ignore[1] >> vn)
 			{
-				temp_indices.push_back({ v-1, vn-1, vt-1 });
+				temp_indices.back().push_back({ v-1, vn-1, vt-1 });
 			}
 		}
 	}
 
 	std::vector<Vertex> vertices;
 	std::vector<UINT> indices;
-	for (int i = 0; i < temp_indices.size(); i++)
+	UINT k = 0;
+	for (const std::vector<UINT3>& curr_face : temp_indices)
 	{
-		Vertex v;
-		v.Position = positions[temp_indices[i].vertIndex];
-		v.Normal = normals[temp_indices[i].normIndex];
-		v.TexCoord = texcoords[temp_indices[i].texIndex];
-		vertices.push_back(v);
-
-		if (i > 0 && indices.size() % 6 == 3)
+		for (int i = 0; i < curr_face.size(); i++)
 		{
-			indices.push_back(*(indices.end()-3));
-			indices.push_back(*(indices.end()-2));
-		}
-		indices.push_back(i);
-	}
+			Vertex v;
+			v.Position = positions[curr_face[i].vertIndex];
+			v.Normal = normals[curr_face[i].normIndex];
+			v.TexCoord = texcoords[curr_face[i].texIndex];
+			vertices.push_back(v);
 
+			if (i > 0 && indices.size() % 3 == 0)
+			{
+				indices.push_back(*(indices.end() - 3));
+				indices.push_back(*(indices.end() - 2));
+			}
+			indices.push_back(k++);
+		}
+	}
 	Mesh::CreateResourceInfo(device, cmdList, sizeof(Vertex), sizeof(UINT),
 		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
 		vertices.data(), (UINT)vertices.size(), indices.data(), (UINT)indices.size());
