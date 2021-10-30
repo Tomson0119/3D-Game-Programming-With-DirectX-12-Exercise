@@ -60,7 +60,7 @@ void GameScene::BuildShadersAndPSOs(ID3D12Device* device, ID3D12GraphicsCommandL
 {
 	auto terrainShader = make_unique<TerrainShader>(L"Shaders\\terrain.hlsl");
 	auto billboardShader = make_unique<BillboardShader>(L"Shaders\\billboard.hlsl");
-	auto defaultShader = make_unique<DefaultShader>(L"Shaders\\defaultLit.hlsl");
+	auto defaultShader = make_unique<DefaultShader>(L"Shaders\\default.hlsl");
 	auto dynamicCubeShader = make_unique<DefaultShader>(L"Shaders\\cubemap.hlsl");
 
 	mPipelines[Layer::SkyBox] = make_unique<SkyboxPipeline>(device, cmdList);
@@ -76,19 +76,19 @@ void GameScene::BuildShadersAndPSOs(ID3D12Device* device, ID3D12GraphicsCommandL
 	mPipelines[Layer::Default] = make_unique<Pipeline>();
 	mPipelines[Layer::Default]->BuildPipeline(device, mRootSignature.Get(), defaultShader.get());
 
-	mCubeMapRenderer = make_unique<DynamicCubeRenderer>();
-	mCubeMapRenderer->BuildPipeline(device, mRootSignature.Get(), dynamicCubeShader.get());
+	//mCubeMapRenderer = make_unique<DynamicCubeRenderer>();
+	//mCubeMapRenderer->BuildPipeline(device, mRootSignature.Get(), dynamicCubeShader.get());
 }
 
 void GameScene::BuildConstantBuffers(ID3D12Device* device)
 {
-	mCameraCB = std::make_unique<ConstantBuffer<CameraConstants>>(device, 1+6);
+	mCameraCB = std::make_unique<ConstantBuffer<CameraConstants>>(device, 1+12);
 	mLightCB = std::make_unique<ConstantBuffer<LightConstants>>(device, 1);
 
 	for (const auto& [_, pso] : mPipelines)
 		pso->BuildConstantBuffer(device);
 
-	mCubeMapRenderer->BuildConstantBuffer(device);
+	//mCubeMapRenderer->BuildConstantBuffer(device);
 }
 
 void GameScene::BuildDescriptorHeap(ID3D12Device* device)
@@ -96,7 +96,7 @@ void GameScene::BuildDescriptorHeap(ID3D12Device* device)
 	for (const auto& [_, pso] : mPipelines)
 		pso->BuildDescriptorHeap(device, 2, 3);
 
-	mCubeMapRenderer->BuildDescriptorHeap(device, 2, 3);
+	//mCubeMapRenderer->BuildDescriptorHeap(device, 2, 3);
 }
 
 void GameScene::BuildTextures(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
@@ -139,7 +139,7 @@ void GameScene::BuildTextures(ID3D12Device* device, ID3D12GraphicsCommandList* c
 	mPipelines[Layer::Billboard]->AppendTexture(treeArrayTex);
 
 	// Default
-	auto brickTex = make_shared<Texture>();
+	/*auto brickTex = make_shared<Texture>();
 	brickTex->LoadTextureFromDDS(device, cmdList, L"Resources\\brick.dds");
 	brickTex->SetDimension(D3D12_SRV_DIMENSION_TEXTURE2D);
 	mPipelines[Layer::Default]->AppendTexture(brickTex);
@@ -147,7 +147,12 @@ void GameScene::BuildTextures(ID3D12Device* device, ID3D12GraphicsCommandList* c
 	auto brickNormal = make_shared<Texture>();
 	brickNormal->LoadTextureFromDDS(device, cmdList, L"Resources\\brickNormalmap.dds");
 	brickNormal->SetDimension(D3D12_SRV_DIMENSION_TEXTURE2D);
-	mPipelines[Layer::Default]->AppendTexture(brickNormal);
+	mPipelines[Layer::Default]->AppendTexture(brickNormal);*/
+
+	auto carTex = make_shared<Texture>();
+	carTex->LoadTextureFromDDS(device, cmdList, L"Resources\\CarTexture.dds");
+	carTex->SetDimension(D3D12_SRV_DIMENSION_TEXTURE2D);
+	mPipelines[Layer::Default]->AppendTexture(carTex);
 }
 
 void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
@@ -186,24 +191,27 @@ void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList
 	treeBillboard->BuildMesh(device, cmdList);
 	mPipelines[Layer::Billboard]->AppendObject(treeBillboard);
 
-	auto boxMesh = make_shared<BoxMesh>(device, cmdList, 10.0f, 10.0f, 10.0f);
+	auto boxMesh = make_shared<Mesh>();
+	boxMesh->LoadFromObj(device, cmdList, L"Models\\PoliceCar.obj");
+
 	auto boxObj = make_shared<GameObject>();
 	boxObj->SetMesh(boxMesh);
 	boxObj->SetSRVIndex(0);
 	boxObj->SetPosition(512.0f, 400.0f, 512.0f);
 	mPipelines[Layer::Default]->AppendObject(boxObj);
 
-	auto sphereMesh = std::make_shared<SphereMesh>(device, cmdList, 10.0f, 20, 20);
-	auto cube = std::make_shared<DynamicCubeMapObject>(device, cmdList, 256);
-	cube->SetMesh(sphereMesh);
-	cube->SetPosition(512, 500.0f, 512);
-	cube->SetMaterial(XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f), XMFLOAT3(0.98f, 0.97f, 0.95f), 0.1f);	
-	mCubeMapRenderer->AppendObject(device, cube);
+
+	/*auto sphereMesh = std::make_shared<SphereMesh>(device, cmdList, 10.0f, 20, 20);
+	auto cubeSphere1 = std::make_shared<DynamicCubeMapObject>(device, cmdList, 256);
+	cubeSphere1->SetMesh(sphereMesh);
+	cubeSphere1->SetPosition(550, 500, 550);
+	cubeSphere1->SetMaterial(XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f), XMFLOAT3(0.98f, 0.97f, 0.95f), 0.1f);
+	mCubeMapRenderer->AppendObject(device, cubeSphere1);*/
 }
 
 void GameScene::PrepareCubeMap(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
 {
-	mCubeMapRenderer->PreDraw(device, cmdList, this);
+	//mCubeMapRenderer->PreDraw(device, cmdList, this);
 }
 
 void GameScene::Update(const GameTimer& timer, Camera* camera)
@@ -213,7 +221,7 @@ void GameScene::Update(const GameTimer& timer, Camera* camera)
 	for (const auto& [_, pso] : mPipelines)
 		pso->Update(timer.ElapsedTime(), camera);
 
-	mCubeMapRenderer->Update(timer.ElapsedTime(), camera);
+	//mCubeMapRenderer->Update(timer.ElapsedTime(), camera);
 }
 
 void GameScene::UpdateCameraConstant(int idx, Camera* camera)
@@ -244,10 +252,10 @@ void GameScene::UpdateConstants(Camera* camera)
 	for (const auto& [_, pso] : mPipelines)
 		pso->UpdateConstants();
 
-	mCubeMapRenderer->UpdateConstants();
+	//mCubeMapRenderer->UpdateConstants();
 }
 
-void GameScene::Draw(ID3D12GraphicsCommandList* cmdList, int cameraCBIndex, bool predraw)
+void GameScene::Draw(ID3D12GraphicsCommandList* cmdList, int cameraCBIndex)
 {	
 	cmdList->SetGraphicsRootConstantBufferView(0, mCameraCB->GetGPUVirtualAddress(cameraCBIndex));
 	cmdList->SetGraphicsRootConstantBufferView(1, mLightCB->GetGPUVirtualAddress(0));
@@ -255,8 +263,7 @@ void GameScene::Draw(ID3D12GraphicsCommandList* cmdList, int cameraCBIndex, bool
 	for (const auto& [layer, pso] : mPipelines)
 		if(layer != Layer::Billboard) pso->SetAndDraw(cmdList);
 
-	if(!predraw)
-		mCubeMapRenderer->SetAndDraw(cmdList);
+	//mCubeMapRenderer->SetAndDraw(cmdList);
 }
 
 

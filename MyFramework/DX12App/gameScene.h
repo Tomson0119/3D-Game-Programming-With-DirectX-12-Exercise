@@ -24,7 +24,7 @@ public:
 	void UpdateCameraConstant(int idx, Camera* camera);
 	void UpdateConstants(Camera* camera);
 	void Update(const GameTimer& timer, Camera* camera);
-	void Draw(ID3D12GraphicsCommandList* cmdList, int cameraCBIndex = 0, bool predraw = false);
+	void Draw(ID3D12GraphicsCommandList* cmdList, int cameraCBIndex = 0);
 
 	void PrepareCubeMap(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList);
 
