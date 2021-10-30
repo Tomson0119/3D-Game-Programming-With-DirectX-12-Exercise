@@ -58,7 +58,8 @@ void Pipeline::BuildPipeline(
 
 void Pipeline::BuildConstantBuffer(ID3D12Device* device)
 {
-	mObjectCB = std::make_unique<ConstantBuffer<ObjectConstants>>(device, (UINT)mRenderObjects.size());
+	if(mRenderObjects.size() > 0)
+		mObjectCB = std::make_unique<ConstantBuffer<ObjectConstants>>(device, (UINT)mRenderObjects.size());
 }
 
 void Pipeline::BuildDescriptorHeap(ID3D12Device* device, UINT cbvIndex, UINT srvIndex)
