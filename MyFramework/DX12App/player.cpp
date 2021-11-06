@@ -52,6 +52,9 @@ void Player::RotateY(float angle)
 		switch (mCamera->GetMode())
 		{
 		case CameraMode::FIRST_PERSON_CAMERA:
+			mCamera->RotateY(angle);
+			break;
+
 		case CameraMode::THIRD_PERSON_CAMERA:
 			mCamera->RotateY(angle);
 			break;
@@ -251,13 +254,12 @@ void TerrainPlayer::OnCameraUpdate(float elapsedTime)
 	TerrainObject* terrain = (TerrainObject*)mCameraUpdateContext;
 
 	float height = terrain->GetHeight(cameraPos.x, cameraPos.z) + 5.0f;
-
+	
 	if (cameraPos.y <= height)
 	{
 		cameraPos.y = height;
 		mCamera->SetPosition(cameraPos);
-		
-		if (mCamera->GetMode() == CameraMode::THIRD_PERSON_CAMERA)
-			mCamera->LookAt(GetPosition());
 	}
+	if (mCamera->GetMode() == CameraMode::THIRD_PERSON_CAMERA)
+		mCamera->LookAt(mCamera->GetPosition(), GetPosition(), XMFLOAT3(0.0f, 1.0f, 0.0f));
 }
