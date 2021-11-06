@@ -60,9 +60,6 @@
     <ClCompile Include="d3dFramework.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="stdafx.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="DDSTextureLoader12.cpp">
       <Filter>소스 파일\Helper</Filter>
     </ClCompile>
@@ -70,6 +67,9 @@
       <Filter>소스 파일\Helper</Filter>
     </ClCompile>
     <ClCompile Include="gameTimer.cpp">
+      <Filter>소스 파일\Helper</Filter>
+    </ClCompile>
+    <ClCompile Include="stdafx.cpp">
       <Filter>소스 파일\Helper</Filter>
     </ClCompile>
   </ItemGroup>
