@@ -11,8 +11,6 @@ class GameObject
 {
 public:
 	GameObject();
-	GameObject(const GameObject& rhs) = delete;
-	GameObject& operator=(const GameObject& rhs) = delete;
 	virtual ~GameObject();
 
 	virtual void Update(float elapsedTime, XMFLOAT4X4* parent);
@@ -20,16 +18,20 @@ public:
 	virtual void UpdateTransform(XMFLOAT4X4* parent);
 
 	void UpdateBoudingBox();
+	void Animate(float elapsedTime);
 
 public:
 	virtual void SetChild(GameObject* child);
 	virtual void SetPosition(float x, float y, float z);
-	virtual void SetPosition(XMFLOAT3 pos);
+	virtual void SetPosition(XMFLOAT3& pos);
 	virtual void SetMaterial(XMFLOAT4 color, XMFLOAT3 frenel, float roughness);
 
 	void SetSRVIndex(UINT idx) { mSrvIndex = idx; }
 	void SetLook(XMFLOAT3& look);
 	void SetMesh(const std::shared_ptr<Mesh>& mesh) { mMesh = mesh; }
+
+	void SetRotation(XMFLOAT3& axis, float speed);
+	void SetMovement(XMFLOAT3& dir, float speed);
 
 public:
 	virtual void PreDraw(ID3D12GraphicsCommandList* cmdList, ID3D12Resource* rtvResource, GameScene* scene) { }
@@ -66,8 +68,7 @@ public:
 
 	UINT GetSRVIndex() const { return mSrvIndex; }
 
-	virtual ULONG GetCubeMapSize() const { return 0; }
-	
+	virtual ULONG GetCubeMapSize() const { return 0; }	
 	virtual ObjectConstants GetObjectConstants();
 
 	BoundingOrientedBox GetBoundingBox() const { return mOOBB; }	
@@ -90,6 +91,12 @@ protected:
 	GameObject* mParent = nullptr;
 	GameObject* mChild = nullptr;
 	GameObject* mSibling = nullptr;
+
+	XMFLOAT3 mMoveDirection = {};
+	XMFLOAT3 mRotationAxis = {};
+
+	float mMoveSpeed = 0.0f;
+	float mRotationSpeed = 0.0f;
 };
 
 
@@ -147,7 +154,8 @@ public:
 	void AppendBillboard(const XMFLOAT3& pos);
 	void BuildMesh(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList);
 
-	void UpdateLook(Camera* camera);
+	void SetDurationTime(std::chrono::milliseconds& time);
+	bool IsTimeOver(std::chrono::steady_clock::time_point& currentTime);
 
 private:
 	float mWidth = 0.0f;
@@ -155,6 +163,9 @@ private:
 
 	std::vector<BillboardVertex> mVertices;
 	std::vector<UINT> mIndices;
+	
+	std::chrono::steady_clock::time_point mCreationTime;
+	std::chrono::milliseconds mDurationTime;
 };
 
 

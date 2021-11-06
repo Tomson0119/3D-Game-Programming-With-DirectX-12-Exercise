@@ -17,7 +17,9 @@ void GameObject::Update(float elapsedTime, XMFLOAT4X4* parent)
 	mLook = Vector3::Normalize(mLook);
 	mUp = Vector3::Normalize(Vector3::Cross(mLook, mRight));
 	mRight = Vector3::Cross(mUp, mLook);
-	
+
+	Animate(elapsedTime);
+
 	UpdateTransform(parent);
 	UpdateBoudingBox();
 
@@ -61,6 +63,15 @@ void GameObject::UpdateBoudingBox()
 	}
 }
 
+void GameObject::Animate(float elapsedTime)
+{
+	if (!Vector3::Equal(mMoveDirection, Vector3::Zero()))
+		Move(mMoveDirection, mMoveSpeed * elapsedTime);
+
+	if (!Vector3::Equal(mRotationAxis, Vector3::Zero()))
+		Rotate(mRotationAxis, mRotationSpeed * elapsedTime);
+}
+
 void GameObject::SetChild(GameObject* child)
 {
 	if (child)
@@ -79,7 +90,7 @@ void GameObject::SetPosition(float x, float y, float z)
 	mPosition = { x,y,z };
 }
 
-void GameObject::SetPosition(XMFLOAT3 pos)
+void GameObject::SetPosition(XMFLOAT3& pos)
 {
 	SetPosition(pos.x, pos.y, pos.z);
 }
@@ -95,6 +106,18 @@ void GameObject::SetLook(XMFLOAT3& look)
 {
 	mLook = look;
 	GameObject::Update(1.0f, nullptr);
+}
+
+void GameObject::SetRotation(XMFLOAT3& axis, float speed)
+{
+	mRotationAxis = axis;
+	mRotationSpeed = speed;
+}
+
+void GameObject::SetMovement(XMFLOAT3& dir, float speed)
+{
+	mMoveDirection = dir;
+	mMoveSpeed = speed;
 }
 
 void GameObject::Move(float dx, float dy, float dz)
@@ -263,13 +286,15 @@ void Billboard::BuildMesh(ID3D12Device* device, ID3D12GraphicsCommandList* cmdLi
 		mVertices.data(), (UINT)mVertices.size(), mIndices.data(), (UINT)mIndices.size());
 }
 
-void Billboard::UpdateLook(Camera* camera)
+void Billboard::SetDurationTime(std::chrono::milliseconds& time)
 {
-	XMFLOAT3 pos = GetPosition();
-	XMFLOAT3 cameraPos = camera->GetPosition();
-	XMFLOAT3 newLook = Vector3::Normalize(Vector3::Subtract(pos, cameraPos));
-	mLook = { newLook.x, mLook.y, newLook.z };
-	mRight = Vector3::Cross(mUp, mLook);
+	mCreationTime = std::chrono::steady_clock::now();
+	mDurationTime = time;
+}
+
+bool Billboard::IsTimeOver(std::chrono::steady_clock::time_point& currentTime)
+{
+	return std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - mCreationTime) > mDurationTime;
 }
 
 
