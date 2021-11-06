@@ -44,11 +44,6 @@ VertexIn midPoint(VertexIn a, VertexIn b)
 [maxvertexcount(8)]
 void GS(triangle VertexIn gin[3], inout TriangleStream<GeoOut> triStream)
 {
-    //      v0
-    //     /  \
-    //   m0 -- m1
-    //   / \  / \
-    // v1 - m2 - v2
     VertexIn vertices[3];
     vertices[0] = gin[0];
     vertices[1] = gin[1];
@@ -119,7 +114,7 @@ float4 PS(GeoOut pin) : SV_Target
     float4 directLight = ComputeLighting(gLights, mat, normalW, view);
     
     float4 result = finalDiffuse + directLight;
-    result.a = gMat.Diffuse.a;
+    result.a = finalDiffuse.a;
     
     return result;
 }

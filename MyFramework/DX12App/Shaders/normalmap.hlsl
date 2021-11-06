@@ -56,7 +56,7 @@ float4 PS(VertexOut pin) : SV_Target
     float4 directLight = ComputeLighting(gLights, mat, normalW, view);
     
     float4 result = ambient + directLight;
-    result.a = gMat.Diffuse.a;
+    result.a = diffuse.a;
     
     return result;
 }
