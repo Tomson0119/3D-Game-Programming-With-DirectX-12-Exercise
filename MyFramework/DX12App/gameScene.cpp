@@ -12,8 +12,21 @@ GameScene::~GameScene()
 {
 }
 
-void GameScene::BuildObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
+void GameScene::OnResize(float aspect)
 {
+	if(mMainCamera)
+		mMainCamera->SetLens(aspect);
+	if (mPlayerCamera)
+		mPlayerCamera->SetLens(aspect);
+}
+
+void GameScene::BuildObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList, float aspect)
+{
+	mMainCamera = make_unique<Camera>();
+	mMainCamera->SetLens(0.25f * Math::PI, aspect, 1.0f, 5000.0f);
+	mMainCamera->SetPosition(512.0f, 200.0f, 512.0f);
+	mCurrentCamera = mMainCamera.get();
+
 	BuildRootSignature(device);
 	BuildShadersAndPSOs(device, cmdList);
 	BuildTextures(device, cmdList);
@@ -60,6 +73,7 @@ void GameScene::BuildShadersAndPSOs(ID3D12Device* device, ID3D12GraphicsCommandL
 {
 	auto terrainShader = make_unique<TerrainShader>(L"Shaders\\terrain.hlsl");
 	auto billboardShader = make_unique<BillboardShader>(L"Shaders\\billboard.hlsl");
+	auto normalmapShader = make_unique<DefaultShader>(L"Shaders\\normalmap.hlsl");
 	auto defaultShader = make_unique<DefaultShader>(L"Shaders\\default.hlsl");
 	auto dynamicCubeShader = make_unique<DefaultShader>(L"Shaders\\cubemap.hlsl");
 
@@ -71,13 +85,17 @@ void GameScene::BuildShadersAndPSOs(ID3D12Device* device, ID3D12GraphicsCommandL
 
 	mPipelines[Layer::Billboard] = make_unique<Pipeline>();
 	mPipelines[Layer::Billboard]->SetTopology(D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT);
+	mPipelines[Layer::Billboard]->SetAlphaBlending();
 	mPipelines[Layer::Billboard]->BuildPipeline(device, mRootSignature.Get(), billboardShader.get());
+
+	mPipelines[Layer::NormalMapped] = make_unique<Pipeline>();
+	mPipelines[Layer::NormalMapped]->BuildPipeline(device, mRootSignature.Get(), normalmapShader.get());
 
 	mPipelines[Layer::Default] = make_unique<Pipeline>();
 	mPipelines[Layer::Default]->BuildPipeline(device, mRootSignature.Get(), defaultShader.get());
 
-	//mCubeMapRenderer = make_unique<DynamicCubeRenderer>();
-	//mCubeMapRenderer->BuildPipeline(device, mRootSignature.Get(), dynamicCubeShader.get());
+	/*mCubeMapRenderer = make_unique<DynamicCubeRenderer>();
+	mCubeMapRenderer->BuildPipeline(device, mRootSignature.Get(), dynamicCubeShader.get());*/
 }
 
 void GameScene::BuildConstantBuffers(ID3D12Device* device)
@@ -138,17 +156,23 @@ void GameScene::BuildTextures(ID3D12Device* device, ID3D12GraphicsCommandList* c
 	treeArrayTex->SetDimension(D3D12_SRV_DIMENSION_TEXTURE2DARRAY);
 	mPipelines[Layer::Billboard]->AppendTexture(treeArrayTex);
 
-	// Default
-	/*auto brickTex = make_shared<Texture>();
+	auto flameArrayTex = make_shared<Texture>();
+	flameArrayTex->LoadTextureFromDDS(device, cmdList, L"Resources\\flamearray.dds");
+	flameArrayTex->SetDimension(D3D12_SRV_DIMENSION_TEXTURE2DARRAY);
+	mPipelines[Layer::Billboard]->AppendTexture(flameArrayTex);
+
+	// Normalmapped
+	auto brickTex = make_shared<Texture>();
 	brickTex->LoadTextureFromDDS(device, cmdList, L"Resources\\brick.dds");
 	brickTex->SetDimension(D3D12_SRV_DIMENSION_TEXTURE2D);
-	mPipelines[Layer::Default]->AppendTexture(brickTex);
+	mPipelines[Layer::NormalMapped]->AppendTexture(brickTex);
 
 	auto brickNormal = make_shared<Texture>();
 	brickNormal->LoadTextureFromDDS(device, cmdList, L"Resources\\brickNormalmap.dds");
 	brickNormal->SetDimension(D3D12_SRV_DIMENSION_TEXTURE2D);
-	mPipelines[Layer::Default]->AppendTexture(brickNormal);*/
+	mPipelines[Layer::NormalMapped]->AppendTexture(brickNormal);
 
+	// Default
 	auto carTex = make_shared<Texture>();
 	carTex->LoadTextureFromDDS(device, cmdList, L"Resources\\CarTexture.dds");
 	carTex->SetDimension(D3D12_SRV_DIMENSION_TEXTURE2D);
@@ -157,12 +181,14 @@ void GameScene::BuildTextures(ID3D12Device* device, ID3D12GraphicsCommandList* c
 
 void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
 {
+	// terrain
 	auto terrain = make_shared<TerrainObject>(1024, 1024);
 	terrain->SetSRVIndex(0);
 	terrain->BuildHeightMap(L"Resources\\heightmap.raw");
 	terrain->BuildTerrainMesh(device, cmdList);
 	mPipelines[Layer::Terrain]->AppendObject(terrain);
 
+	// billboards
 	auto grassBillboard = make_shared<Billboard>(2.0f, 2.0f);
 	grassBillboard->SetSRVIndex(0);
 	for (int i = 0; i < 20000; i++)
@@ -191,20 +217,47 @@ void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList
 	treeBillboard->BuildMesh(device, cmdList);
 	mPipelines[Layer::Billboard]->AppendObject(treeBillboard);
 
-	auto boxMesh = make_shared<Mesh>();
-	boxMesh->LoadFromObj(device, cmdList, L"Models\\PoliceCar.obj");
+	mFlameBillboard = make_shared<Billboard>(2.0f, 2.0f);
+	mFlameBillboard->SetSRVIndex(2);
+	mFlameBillboard->AppendBillboard(XMFLOAT3(0.0f,0.0f,0.0f));
+	mFlameBillboard->BuildMesh(device, cmdList);
 
-	auto boxObj = make_shared<GameObject>();
-	boxObj->SetMesh(boxMesh);
-	boxObj->SetSRVIndex(0);
-	boxObj->SetPosition(512.0f, 400.0f, 512.0f);
-	mPipelines[Layer::Default]->AppendObject(boxObj);
+	// boxes
+	auto boxMesh = make_shared<BoxMesh>(device, cmdList, 4.0f, 4.0f, 4.0f);
+	for (int i=0;i<100;i++)
+	{
+		float pos_x = Math::RandFloat(0, terrain->GetWidth());
+		float pos_z = Math::RandFloat(0, terrain->GetDepth());
+		float pos_y = terrain->GetHeight(pos_x, pos_z) + 2.0f;
 
+		auto boxObj = make_shared<GameObject>();
+		boxObj->SetMesh(boxMesh);
+		boxObj->SetPosition(pos_x, pos_y, pos_z);
+		boxObj->SetRotation(XMFLOAT3(0.0f, 1.0f, 0.0f), 100.0f);
+
+		mPipelines[Layer::NormalMapped]->AppendObject(boxObj);
+	}
+
+	// car
+	auto carMesh = make_shared<Mesh>();
+	carMesh->LoadFromObj(device, cmdList, L"Models\\PoliceCar.obj");
+
+	auto carObj = make_shared<TerrainPlayer>(terrain.get());
+	carObj->SetMesh(carMesh);
+	carObj->SetSRVIndex(0);
+	carObj->SetPosition(512.0f, 100.0f, 512.0f);	
+	mPlayer = carObj.get();
+	mPipelines[Layer::Default]->AppendObject(carObj);
+
+	float aspect = mMainCamera->GetAspect();
+	mPlayerCamera.reset(mPlayer->ChangeCameraMode((int)CameraMode::THIRD_PERSON_CAMERA));
+	mPlayerCamera->SetLens(0.25f * Math::PI, aspect, 1.0f, 5000.0f);
+	mCurrentCamera = mPlayerCamera.get();
 
 	/*auto sphereMesh = std::make_shared<SphereMesh>(device, cmdList, 10.0f, 20, 20);
 	auto cubeSphere1 = std::make_shared<DynamicCubeMapObject>(device, cmdList, 256);
 	cubeSphere1->SetMesh(sphereMesh);
-	cubeSphere1->SetPosition(550, 500, 550);
+	cubeSphere1->SetPosition(512.0f, 500.0f, 512.0f);
 	cubeSphere1->SetMaterial(XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f), XMFLOAT3(0.98f, 0.97f, 0.95f), 0.1f);
 	mCubeMapRenderer->AppendObject(device, cubeSphere1);*/
 }
@@ -214,14 +267,125 @@ void GameScene::PrepareCubeMap(ID3D12Device* device, ID3D12GraphicsCommandList* 
 	//mCubeMapRenderer->PreDraw(device, cmdList, this);
 }
 
-void GameScene::Update(const GameTimer& timer, Camera* camera)
+void GameScene::OnProcessMouseDown(HWND hwnd, WPARAM buttonState, int x, int y)
 {
-	OnPreciseKeyInput(timer);
+	if ((buttonState & MK_LBUTTON) && !GetCapture())
+	{
+		SetCapture(hwnd);
+		mLastMousePos.x = x;
+		mLastMousePos.y = y;
+	}
+}
+
+void GameScene::OnProcessMouseUp(WPARAM buttonState, int x, int y)
+{
+	ReleaseCapture();
+}
+
+void GameScene::OnProcessMouseMove(WPARAM buttonState, int x, int y)
+{
+	if ((buttonState & MK_LBUTTON) && GetCapture())
+	{
+		float dx = static_cast<float>(x - mLastMousePos.x);
+		float dy = static_cast<float>(y - mLastMousePos.y);
+
+		mLastMousePos.x = x;
+		mLastMousePos.y = y;
+
+		if (mCurrentCamera == mMainCamera.get())
+		{
+			mCurrentCamera->RotateY(0.25f * dx);
+			mCurrentCamera->Pitch(0.25f * dy);
+		}
+		else
+		{
+			mPlayer->RotateY(0.25f * dx);
+		}
+	}
+}
+
+void GameScene::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	switch (uMsg)
+	{
+	case WM_KEYDOWN:
+		if (wParam == 'E')
+		{
+			if (mCurrentCamera == mPlayerCamera.get())
+			{
+				mMainCamera->SetPosition(mPlayerCamera->GetPosition());
+				mMainCamera->LookAt(mMainCamera->GetPosition(),
+					mPlayer->GetPosition(), XMFLOAT3(0.0f,1.0f,0.0f));
+				mCurrentCamera = mMainCamera.get();
+			}
+			else
+			{
+				mCurrentCamera = mPlayerCamera.get();
+			}
+		}
+		break;
+	}
+}
+
+void GameScene::OnPreciseKeyInput(float elapsed)
+{
+	bool player_active = (mCurrentCamera == mPlayerCamera.get());
+
+	if (GetAsyncKeyState('W') & 0x8000)
+	{
+		if (player_active)
+			mPlayer->Walk(500.0f * elapsed);
+		else
+			mCurrentCamera->Walk(100.0f * elapsed);
+	}
+	if (GetAsyncKeyState('A') & 0x8000)
+	{
+		if (player_active)
+			mPlayer->Strafe(-500.0f * elapsed);
+		else
+			mCurrentCamera->Strafe(-100.0f * elapsed);
+	}
+	if (GetAsyncKeyState('S') & 0x8000)
+	{
+		if (player_active)
+			mPlayer->Walk(-500.0f * elapsed);
+		else
+			mCurrentCamera->Walk(-100.0f * elapsed);
+	}
+	if (GetAsyncKeyState('D') & 0x8000)
+	{
+		if (player_active)
+			mPlayer->Strafe(500.0f * elapsed);
+		else
+			mCurrentCamera->Strafe(100.0f * elapsed);
+	}
+	if (GetAsyncKeyState(VK_SPACE) & 0x8000)
+	{
+		if (!player_active)
+			mCurrentCamera->Upward(100.0f * elapsed);
+	}
+	if (GetAsyncKeyState(VK_LSHIFT) & 0x8000)
+	{
+		if (!player_active)
+			mCurrentCamera->Upward(-100.0f * elapsed);
+	}
+}
+
+void GameScene::Update(ID3D12Device* device, const GameTimer& timer)
+{
+	float elapsed = timer.ElapsedTime();
+
+	OnPreciseKeyInput(elapsed);
+
+	mCurrentCamera->Update(elapsed);
 
 	for (const auto& [_, pso] : mPipelines)
-		pso->Update(timer.ElapsedTime(), camera);
+		pso->Update(elapsed, mCurrentCamera);
 
-	//mCubeMapRenderer->Update(timer.ElapsedTime(), camera);
+	CollisionProcess(device);
+	DeleteTimeOverBillboards(device);
+
+	//mCubeMapRenderer->Update(timer.ElapsedTime(), mCurrentCamera);
 }
 
 void GameScene::UpdateCameraConstant(int idx, Camera* camera)
@@ -230,9 +394,9 @@ void GameScene::UpdateCameraConstant(int idx, Camera* camera)
 	mCameraCB->CopyData(idx, camera->GetConstants());
 }
 
-void GameScene::UpdateConstants(Camera* camera)
+void GameScene::UpdateConstants()
 {
-	UpdateCameraConstant(0, camera);
+	UpdateCameraConstant(0, mCurrentCamera);
 
 	// 광원과 관련된 상수버퍼를 초기화 및 업데이트한다.
 	LightConstants lightCnst;
@@ -261,9 +425,78 @@ void GameScene::Draw(ID3D12GraphicsCommandList* cmdList, int cameraCBIndex)
 	cmdList->SetGraphicsRootConstantBufferView(1, mLightCB->GetGPUVirtualAddress(0));
 	
 	for (const auto& [layer, pso] : mPipelines)
-		if(layer != Layer::Billboard) pso->SetAndDraw(cmdList);
+		pso->SetAndDraw(cmdList);
 
 	//mCubeMapRenderer->SetAndDraw(cmdList);
+}
+
+void GameScene::CollisionProcess(ID3D12Device* device)
+{
+	const vector<shared_ptr<GameObject>>& boxes = mPipelines[Layer::NormalMapped]->GetRenderObjects();
+	
+	const float big_radius = 20.0f;
+	for (int i = (int)boxes.size() - 1; i >= 0; i--)
+	{
+		float dist = Vector3::Length(Vector3::Subtract(boxes[i]->GetPosition(), mPlayer->GetPosition()));
+		if (dist < big_radius)
+		{
+			const BoundingOrientedBox& box_bound = boxes[i]->GetBoundingBox();
+			const BoundingOrientedBox& player_bound = mPlayer->GetBoundingBox();
+
+			if (box_bound.Intersects(player_bound))
+			{
+				CreateAndAppendFlameBillboard(device, boxes[i].get());
+				mPipelines[Layer::NormalMapped]->DeleteObject(i);
+			}
+		}
+	}
+	mPipelines[Layer::NormalMapped]->ResetPipeline(device);
+}
+
+void GameScene::CreateAndAppendFlameBillboard(ID3D12Device* device, GameObject* box)
+{
+	static XMFLOAT3 Direction[9] = {
+		XMFLOAT3( 1.0f, 0.0f,  0.0f),
+		XMFLOAT3(-1.0f, 0.0f,  0.0f),
+		XMFLOAT3( 0.0f, 1.0f,  0.0f),
+		XMFLOAT3( 0.0f, 0.0f,  1.0f),
+		XMFLOAT3( 0.0f, 0.0f, -1.0f),
+		XMFLOAT3( 1.0f, 1.0f,  1.0f),
+		XMFLOAT3( 1.0f, 1.0f, -1.0f),
+		XMFLOAT3(-1.0f, 1.0f,  1.0f),
+		XMFLOAT3(-1.0f, 1.0f, -1.0f)
+	};
+
+	int offset = (int)mPipelines[Layer::Billboard]->GetRenderObjects().size();
+	for (int i = 0; i < 9; i++)
+	{
+		shared_ptr<Billboard> newFlame = make_shared<Billboard>(*mFlameBillboard);
+		newFlame->SetPosition(box->GetPosition());
+		newFlame->SetMovement(Direction[i], 1.0f);
+		newFlame->SetDurationTime(2500ms);
+		mPipelines[Layer::Billboard]->AppendObject(newFlame);
+		
+		mAllFlameBillboards.push_back({ offset + i, newFlame.get() });
+	}
+	mPipelines[Layer::Billboard]->ResetPipeline(device);
+}
+
+void GameScene::DeleteTimeOverBillboards(ID3D12Device* device)
+{
+	bool flag = false;
+	for (int i = (int)mAllFlameBillboards.size()-1; i >= 0; i--)
+	{
+		if (mAllFlameBillboards[i].second->IsTimeOver(std::chrono::steady_clock::now()))
+		{
+			flag = true;
+			mPipelines[Layer::Billboard]->DeleteObject(mAllFlameBillboards[i].first);
+			mAllFlameBillboards.erase(mAllFlameBillboards.begin() + i);
+		}
+	}
+	if (flag) 
+	{
+		mPipelines[Layer::Billboard]->ResetPipeline(device);
+	}
 }
 
 

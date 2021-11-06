@@ -20,20 +20,22 @@ public:
 	GameScene& operator=(const GameScene& rhs) = delete;
 	virtual ~GameScene();
 
-	void BuildObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList);
+	void OnResize(float aspect);
+
+	void BuildObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList, float aspect);
 	void UpdateCameraConstant(int idx, Camera* camera);
-	void UpdateConstants(Camera* camera);
-	void Update(const GameTimer& timer, Camera* camera);
+	void UpdateConstants();
+	void Update(ID3D12Device* device, const GameTimer& timer);
 	void Draw(ID3D12GraphicsCommandList* cmdList, int cameraCBIndex = 0);
 
 	void PrepareCubeMap(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList);
 
-	void OnProcessMouseDown(WPARAM buttonState, int x, int y) {}
-	void OnProcessMouseUp(WPARAM buttonState, int x, int y) {}
-	void OnProcessMouseMove(WPARAM buttonState) {}
-	void OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam) { }
+	void OnProcessMouseDown(HWND hwnd, WPARAM buttonState, int x, int y);
+	void OnProcessMouseUp(WPARAM buttonState, int x, int y);
+	void OnProcessMouseMove(WPARAM buttonState, int x, int y);
+	void OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
-	void OnPreciseKeyInput(const GameTimer& timer) { }
+	void OnPreciseKeyInput(float elapsed);
 
 	XMFLOAT4 GetFrameColor() const { return mFrameColor; }
 	ID3D12RootSignature* GetRootSignature() const { return mRootSignature.Get(); }
@@ -46,8 +48,17 @@ private:
 	void BuildShadersAndPSOs(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList);
 	void BuildDescriptorHeap(ID3D12Device* device);
 
+	void CollisionProcess(ID3D12Device* device);
+	void CreateAndAppendFlameBillboard(ID3D12Device* device, GameObject* box);
+	void DeleteTimeOverBillboards(ID3D12Device* device);
+
 private:
 	XMFLOAT4 mFrameColor = (XMFLOAT4)Colors::LightSkyBlue;
+
+	Camera* mCurrentCamera = nullptr;
+	std::unique_ptr<Camera> mMainCamera;
+	std::unique_ptr<Camera> mPlayerCamera;
+	POINT mLastMousePos{};
 
 	std::unique_ptr<ConstantBuffer<CameraConstants>> mCameraCB;
 	std::unique_ptr<ConstantBuffer<LightConstants>> mLightCB;
@@ -56,10 +67,11 @@ private:
 	
 	std::unique_ptr<DynamicCubeRenderer> mCubeMapRenderer;
 
-	std::unordered_map<Layer, std::unique_ptr<Pipeline>> mPipelines;
+	std::map<Layer, std::unique_ptr<Pipeline>> mPipelines;
 	std::unordered_map<std::string, std::unique_ptr<Texture>> mTextures;
 	
-	GameObject* mPlayer = nullptr;
-
-	std::vector<Billboard*> mBillboards;
+	Player* mPlayer = nullptr;
+	
+	std::shared_ptr<Billboard> mFlameBillboard;
+	std::vector<std::pair<int, Billboard*>> mAllFlameBillboards;
 };
