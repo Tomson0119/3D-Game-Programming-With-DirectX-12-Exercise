@@ -39,6 +39,7 @@
 #include <array>
 #include <vector>
 #include <stack>
+#include <map>
 #include <unordered_map>
 #include <string>
 #include <sstream>
@@ -46,6 +47,7 @@
 #include <fstream>
 #include <iostream>
 #include <cmath>
+#include <chrono>
 
 
 #include "d3dExtension.h"
@@ -55,6 +57,8 @@ using namespace DirectX;
 using namespace DirectX::PackedVector;
 
 using Microsoft::WRL::ComPtr;
+
+using namespace std::chrono_literals;
 
 extern UINT gRtvDescriptorSize;
 extern UINT gDsvDescriptorSize;
