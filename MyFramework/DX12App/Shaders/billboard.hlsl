@@ -4,8 +4,8 @@ Texture2DArray gTexture : register(t0);
 
 struct VertexIn
 {
-	float3 PosW  : POSITION;
-    float2 Size : SIZE;
+	float3 PosL  : POSITION;
+    float2 Size  : SIZE;
 };
 
 struct GeoIn
@@ -26,7 +26,7 @@ struct VertexOut
 GeoIn VS(VertexIn vin)
 {
     GeoIn gout;
-    gout.PosW = vin.PosW;
+    gout.PosW = mul(float4(vin.PosL, 1.0f), gWorld).xyz;
     gout.Size = vin.Size;
     return gout;
 }
@@ -79,7 +79,7 @@ float4 PS(VertexOut pin) : SV_Target
     float3 uvw = float3(pin.TexCoord, pin.PrimID % 4);
     float4 diffuse = gTexture.Sample(gAnisotropicWrap, uvw) * gMat.Diffuse;
     
-    clip(diffuse.a - 0.5f);
+    clip(diffuse.a - 0.1f);
     
     pin.NormalW = normalize(pin.NormalW);
     
@@ -90,7 +90,7 @@ float4 PS(VertexOut pin) : SV_Target
     float4 directLight = ComputeLighting(gLights, mat, pin.NormalW, view);
     
     float4 result = ambient + directLight;
-    result.a = gMat.Diffuse.a;
+    result.a = diffuse.a;
     
     return result;
 }
