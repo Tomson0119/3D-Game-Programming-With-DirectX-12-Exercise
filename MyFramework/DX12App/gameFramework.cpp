@@ -23,14 +23,8 @@ bool GameFramework::InitFramework()
 	// 초기화하는 명령어를 넣기 위해 커맨드 리스트를 개방한다.
 	ThrowIfFailed(mCommandList->Reset(mCommandAllocator.Get(), nullptr));
 
-	mCamera = make_unique<Camera>();
-	mCamera->SetPosition(512, 512, 512);
-	mCamera->SetLens(0.25f * Math::PI, GetAspect(), 1.0f, 1000.0f);
-	mCamera->Pitch(30.0f);
-	mCamera->Walk(-mCameraRadius);
-
 	mScenes.push(make_unique<GameScene>());
-	mScenes.top()->BuildObjects(mD3dDevice.Get(), mCommandList.Get());
+	mScenes.top()->BuildObjects(mD3dDevice.Get(), mCommandList.Get(), GetAspect());
 
 	// Command List를 닫고 Queue에 명령어를 싣는다.
 	ThrowIfFailed(mCommandList->Close());
@@ -46,40 +40,22 @@ bool GameFramework::InitFramework()
 void GameFramework::OnResize()
 {
 	D3DFramework::OnResize();
-	if(mCamera) mCamera->SetLens(GetAspect());
+	if (!mScenes.empty()) mScenes.top()->OnResize(GetAspect());
 }
 
 void GameFramework::OnProcessMouseDown(WPARAM buttonState, int x, int y)
 {
-	if (buttonState & MK_LBUTTON)
-	{
-		SetCapture(m_hwnd);
-		mLastMousePos.x = x;
-		mLastMousePos.y = y;
-	}
-	mScenes.top()->OnProcessMouseDown(buttonState, x, y);
+	mScenes.top()->OnProcessMouseDown(m_hwnd, buttonState, x, y);
 }
 
 void GameFramework::OnProcessMouseUp(WPARAM buttonState, int x, int y)
 {
-	ReleaseCapture();
 	mScenes.top()->OnProcessMouseUp(buttonState, x, y);
 }
 
 void GameFramework::OnProcessMouseMove(WPARAM buttonState, int x, int y)
 {
-	if ((buttonState & MK_LBUTTON) && GetCapture())
-	{
-		float dx = static_cast<float>(x - mLastMousePos.x);
-		float dy = static_cast<float>(y - mLastMousePos.y);
-
-		mLastMousePos.x = x;
-		mLastMousePos.y = y;
-
-		mCamera->RotateY(0.25f * dx);
-		mCamera->Pitch(0.25f * dy);
-	}
-	mScenes.top()->OnProcessMouseMove(buttonState);
+	mScenes.top()->OnProcessMouseMove(buttonState, x, y);
 }
 
 void GameFramework::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -110,31 +86,6 @@ void GameFramework::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 void GameFramework::OnPreciseKeyInput()
 {
-	const float elapsed = mTimer.ElapsedTime();
-
-	if (GetAsyncKeyState('W') & 0x8000) {
-		mCamera->Walk(50.0f * elapsed);
-	}
-
-	if (GetAsyncKeyState('A') & 0x8000) {
-		mCamera->Strafe(-50.0f * elapsed);
-	}
-
-	if (GetAsyncKeyState('S') & 0x8000) {
-		mCamera->Walk(-50.0f * elapsed);
-	}
-
-	if (GetAsyncKeyState('D') & 0x8000) {
-		mCamera->Strafe(50.0f * elapsed);
-	}
-
-	if (GetAsyncKeyState(VK_SPACE) & 0x8000) {
-		mCamera->Upward(50.0f * elapsed);
-	}
-
-	if (GetAsyncKeyState(VK_LSHIFT) & 0x8000) {
-		mCamera->Upward(-50.0f * elapsed);
-	}
 }
 
 void GameFramework::Update()
@@ -143,9 +94,9 @@ void GameFramework::Update()
 	
 	OnPreciseKeyInput();
 
-	mCamera->Update(mTimer.ElapsedTime());
-	mScenes.top()->Update(mTimer,mCamera.get());
-	mScenes.top()->UpdateConstants(mCamera.get());
+	//mCamera->Update(mTimer.ElapsedTime());
+	mScenes.top()->Update(mD3dDevice.Get(), mTimer);
+	mScenes.top()->UpdateConstants();
 }
 
 void GameFramework::Draw()
@@ -191,8 +142,7 @@ void GameFramework::Draw()
 	WaitUntilGPUComplete();
 
 	ThrowIfFailed(mD3dDevice->GetDeviceRemovedReason());
-	ThrowIfFailed(mSwapChain->Present(0, 0));  // 화면버퍼를 Swap한다.
-	
+	ThrowIfFailed(mSwapChain->Present(0, 0));  // 화면버퍼를 Swap한다.	
 
 	// 다음 후면버퍼 위치로 이동한 후 다시 기다린다.
 	mCurrBackBufferIndex = mSwapChain->GetCurrentBackBufferIndex();
