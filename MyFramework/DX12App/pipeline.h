@@ -7,8 +7,9 @@ enum class Layer : int
 {
 	SkyBox,
 	Terrain,
-	Billboard,
+	NormalMapped,
 	Default,
+	Billboard,
 	DynamicCubeMap
 };
 
@@ -35,11 +36,18 @@ public:
 	void SetTopology(D3D12_PRIMITIVE_TOPOLOGY_TYPE topology) { mPrimitive = topology; }
 	void SetAndDraw(ID3D12GraphicsCommandList* cmdList);
 
+	void SetAlphaBlending();
+
 	void AppendObject(const std::shared_ptr<GameObject>& obj);
 	void AppendTexture(const std::shared_ptr<Texture>& tex);
 
+	void DeleteObject(int idx);
+	void ResetPipeline(ID3D12Device* device);
+
 	virtual void Update(const float elapsed, Camera* camera=nullptr);
 	void UpdateConstants();
+
+	const std::vector<std::shared_ptr<GameObject>>& GetRenderObjects() const { return mRenderObjects; }
 
 protected:
 	ComPtr<ID3D12PipelineState> mPSO;

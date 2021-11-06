@@ -117,6 +117,17 @@ void Pipeline::AppendTexture(const std::shared_ptr<Texture>& tex)
 	mTextures.push_back(tex);
 }
 
+void Pipeline::DeleteObject(int idx)
+{
+	mRenderObjects.erase(mRenderObjects.begin() + idx);
+}
+
+void Pipeline::ResetPipeline(ID3D12Device* device)
+{
+	BuildConstantBuffer(device);
+	BuildDescriptorHeap(device, 2, 3);
+}
+
 void Pipeline::SetAndDraw(ID3D12GraphicsCommandList* cmdList)
 {
 	ID3D12DescriptorHeap* descHeaps[] = { mCbvSrvDescriptorHeap.Get() };
@@ -138,6 +149,23 @@ void Pipeline::SetAndDraw(ID3D12GraphicsCommandList* cmdList)
 
 		mRenderObjects[i]->Draw(cmdList);
 	}
+}
+
+void Pipeline::SetAlphaBlending()
+{
+	D3D12_RENDER_TARGET_BLEND_DESC rtBlend{};
+	rtBlend.BlendEnable = TRUE;
+	rtBlend.LogicOpEnable = FALSE;
+	rtBlend.SrcBlend = D3D12_BLEND_SRC_ALPHA;
+	rtBlend.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+	rtBlend.BlendOp = D3D12_BLEND_OP_ADD;
+	rtBlend.SrcBlendAlpha = D3D12_BLEND_ONE;
+	rtBlend.DestBlendAlpha = D3D12_BLEND_ZERO;
+	rtBlend.BlendOpAlpha = D3D12_BLEND_OP_ADD;
+	rtBlend.LogicOp = D3D12_LOGIC_OP_NOOP;
+	rtBlend.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+
+	mBlendDesc.RenderTarget[0] = rtBlend;
 }
 
 void Pipeline::Update(const float elapsed, Camera* camera)
@@ -204,7 +232,7 @@ void SkyboxPipeline::BuildPipeline(ID3D12Device* device, ID3D12RootSignature* ro
 	psoDesc.SampleDesc.Count = 1;
 
 	psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_FRONT;
-
+	
 	psoDesc.DepthStencilState.DepthEnable = FALSE;
 	psoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
 	psoDesc.DepthStencilState.StencilEnable = FALSE;
