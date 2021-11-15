@@ -108,6 +108,7 @@ public:
 	HeightMapGridMesh(
 		ID3D12Device* device,
 		ID3D12GraphicsCommandList* cmdList,
+		int xStart, int zStart,
 		int width, int depth,
 		const XMFLOAT3& scale,
 		HeightMapImage* context);

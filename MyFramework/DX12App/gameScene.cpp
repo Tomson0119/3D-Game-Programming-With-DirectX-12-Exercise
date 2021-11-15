@@ -121,12 +121,12 @@ void GameScene::BuildTextures(ID3D12Device* device, ID3D12GraphicsCommandList* c
 {
 	// Terrain
 	auto grassTex = make_shared<Texture>();
-	grassTex->LoadTextureFromDDS(device, cmdList, L"Resources\\terrainTexture.dds");
+	grassTex->LoadTextureFromDDS(device, cmdList, L"Resources\\basetexture.dds");
 	grassTex->SetDimension(D3D12_SRV_DIMENSION_TEXTURE2D);
 	mPipelines[Layer::Terrain]->AppendTexture(grassTex);
 
 	auto gravelTex = make_shared<Texture>();
-	gravelTex->LoadTextureFromDDS(device, cmdList, L"Resources\\rocky.dds");
+	gravelTex->LoadTextureFromDDS(device, cmdList, L"Resources\\detailtexture.dds");
 	gravelTex->SetDimension(D3D12_SRV_DIMENSION_TEXTURE2D);
 	mPipelines[Layer::Terrain]->AppendTexture(gravelTex);
 
@@ -185,7 +185,7 @@ void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList
 	auto terrain = make_shared<TerrainObject>(257, 257, XMFLOAT3(5.0f,1.0f,5.0f));
 	terrain->SetSRVIndex(0);
 	terrain->BuildHeightMap(L"Resources\\heightmap2.raw");
-	terrain->BuildTerrainMesh(device, cmdList);
+	terrain->BuildTerrainMesh(device, cmdList, 17, 17);
 	mPipelines[Layer::Terrain]->AppendObject(terrain);
 
 	// billboards

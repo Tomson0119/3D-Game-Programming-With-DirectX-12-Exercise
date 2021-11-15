@@ -457,6 +457,7 @@ SphereMesh::SphereMesh(
 HeightMapGridMesh::HeightMapGridMesh(
 	ID3D12Device* device,
 	ID3D12GraphicsCommandList* cmdList,
+	int xStart, int zStart,
 	int width, int depth,
 	const XMFLOAT3& scale,
 	HeightMapImage* context)
@@ -468,15 +469,18 @@ HeightMapGridMesh::HeightMapGridMesh(
 	std::vector<TerrainVertex> vertices(verticesCount);
 	std::vector<UINT> indices(indicesCount);
 
+	int heightmapWidth = context->GetWidth();
+	int heightmapDepth = context->GetDepth();
+
 	size_t k = 0;
-	for (int z = 0; z < depth; z++)
+	for (int z = zStart; z < (zStart+depth); z++)
 	{
-		for (int x = 0; x < width; x++)
+		for (int x = xStart; x < (xStart+width); x++)
 		{
 			vertices[k].Position = XMFLOAT3((x * mScale.x), GetHeight(x,z,context), (z * mScale.z));
 			vertices[k].Normal = context->GetNormal(x, z);
-			vertices[k].TexCoord0 = XMFLOAT2((float)x / width, (float)-z / depth);
-			vertices[k++].TexCoord1 = XMFLOAT2((float)x, (float)-z);
+			vertices[k].TexCoord0 = XMFLOAT2((float)x / float(heightmapWidth-1), float(heightmapDepth-1-z) / float(heightmapDepth-1));
+			vertices[k++].TexCoord1 = XMFLOAT2((float)x / float(mScale.x*0.5f), (float)z/float(mScale.z*0.5f));
 		}
 	}		
 	
@@ -513,7 +517,8 @@ HeightMapGridMesh::HeightMapGridMesh(
 float HeightMapGridMesh::GetHeight(int x, int z, HeightMapImage* context) const
 {
 	XMFLOAT3 scale = context->GetScale();
-	float height = context->GetPixelValue(x + (z * mWidth));
+	int heightmapWidth = context->GetWidth();
+	float height = context->GetPixelValue(x + (z * heightmapWidth));
 	return height * scale.y;
 }
 

@@ -28,7 +28,7 @@ public:
 
 	void SetSRVIndex(UINT idx) { mSrvIndex = idx; }
 	void SetLook(XMFLOAT3& look);
-	void SetMesh(const std::shared_ptr<Mesh>& mesh) { mMesh = mesh; }
+	void SetMesh(const std::shared_ptr<Mesh>& mesh) { mMeshes.push_back(mesh); }
 
 	void SetRotation(XMFLOAT3& axis, float speed);
 	void SetMovement(XMFLOAT3& dir, float speed);
@@ -84,7 +84,7 @@ protected:
 
 	UINT mSrvIndex = 0;
 	Material mMaterial = {};
-	std::shared_ptr<Mesh> mMesh;
+	std::vector<std::shared_ptr<Mesh>> mMeshes;
 
 	BoundingOrientedBox mOOBB = { };
 
@@ -111,7 +111,7 @@ public:
 	virtual ~TerrainObject();
 
 	void BuildHeightMap(const std::wstring& path);
-	void BuildTerrainMesh(ID3D12Device* device,	ID3D12GraphicsCommandList* cmdList);
+	void BuildTerrainMesh(ID3D12Device* device,	ID3D12GraphicsCommandList* cmdList, int blockWidth, int blockDepth);
 
 public:
 	float GetHeight(float x, float z) const;

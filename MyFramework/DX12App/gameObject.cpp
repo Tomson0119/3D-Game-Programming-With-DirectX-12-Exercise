@@ -29,8 +29,8 @@ void GameObject::Update(float elapsedTime, XMFLOAT4X4* parent)
 
 void GameObject::Draw(ID3D12GraphicsCommandList* cmdList)
 {
-	if(mMesh)
-		mMesh->Draw(cmdList);
+	for (const auto& mesh : mMeshes)
+		mesh->Draw(cmdList);
 }
 
 void GameObject::UpdateTransform(XMFLOAT4X4* parent)
@@ -56,9 +56,9 @@ void GameObject::UpdateTransform(XMFLOAT4X4* parent)
 
 void GameObject::UpdateBoudingBox()
 {
-	if (mMesh)
+	for(const auto& mesh :mMeshes)
 	{
-		mMesh->mOOBB.Transform(mOOBB, XMLoadFloat4x4(&mWorld));
+		mesh->mOOBB.Transform(mOOBB, XMLoadFloat4x4(&mWorld));
 		XMStoreFloat4(&mOOBB.Orientation, XMQuaternionNormalize(XMLoadFloat4(&mOOBB.Orientation)));
 	}
 }
@@ -238,11 +238,22 @@ void TerrainObject::BuildHeightMap(const std::wstring& path)
 	mHeightMapImage = std::make_unique<HeightMapImage>(path, mWidth, mDepth, mTerrainScale);
 }
 
-void TerrainObject::BuildTerrainMesh(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
+void TerrainObject::BuildTerrainMesh(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList, int blockWidth, int blockDepth)
 {	
-	auto gridMesh = std::make_shared<HeightMapGridMesh>(
-		device, cmdList, mWidth, mDepth, mTerrainScale, mHeightMapImage.get());
-	SetMesh(gridMesh);
+	int xBlocks = (mWidth - 1) / (blockWidth - 1);
+	int zBlocks = (mDepth - 1) / (blockDepth - 1);
+
+	for (int z = 0, zStart = 0; z < zBlocks; z++)
+	{
+		for (int x = 0, xStart = 0; x < xBlocks; x++)
+		{
+			xStart = x * (blockWidth - 1);
+			zStart = z * (blockDepth - 1);
+			auto gridMesh = std::make_shared<HeightMapGridMesh>(
+				device, cmdList, xStart, zStart, blockWidth, blockDepth, mTerrainScale, mHeightMapImage.get());
+			SetMesh(gridMesh);
+		}
+	}	
 }
 
 float TerrainObject::GetHeight(float x, float z) const
@@ -280,10 +291,11 @@ void Billboard::AppendBillboard(const XMFLOAT3& pos)
 
 void Billboard::BuildMesh(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
 {
-	mMesh = std::make_unique<Mesh>();
-	mMesh->CreateResourceInfo(device, cmdList,
+	auto mesh = std::make_shared<Mesh>();
+	mesh->CreateResourceInfo(device, cmdList,
 		sizeof(BillboardVertex), sizeof(UINT), D3D_PRIMITIVE_TOPOLOGY_POINTLIST,
 		mVertices.data(), (UINT)mVertices.size(), mIndices.data(), (UINT)mIndices.size());
+	SetMesh(mesh);
 }
 
 void Billboard::SetDurationTime(std::chrono::milliseconds& time)
