@@ -182,9 +182,9 @@ void GameScene::BuildTextures(ID3D12Device* device, ID3D12GraphicsCommandList* c
 void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
 {
 	// terrain
-	auto terrain = make_shared<TerrainObject>(1024, 1024);
+	auto terrain = make_shared<TerrainObject>(257, 257, XMFLOAT3(5.0f,1.0f,5.0f));
 	terrain->SetSRVIndex(0);
-	terrain->BuildHeightMap(L"Resources\\heightmap.raw");
+	terrain->BuildHeightMap(L"Resources\\heightmap2.raw");
 	terrain->BuildTerrainMesh(device, cmdList);
 	mPipelines[Layer::Terrain]->AppendObject(terrain);
 
@@ -245,7 +245,7 @@ void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList
 	auto carObj = make_shared<TerrainPlayer>(terrain.get());
 	carObj->SetMesh(carMesh);
 	carObj->SetSRVIndex(0);
-	carObj->SetPosition(512.0f, 100.0f, 512.0f);	
+	carObj->SetPosition(257, 100.0f, 257);	
 	mPlayer = carObj.get();
 	mPipelines[Layer::Default]->AppendObject(carObj);
 
@@ -425,7 +425,7 @@ void GameScene::Draw(ID3D12GraphicsCommandList* cmdList, int cameraCBIndex)
 	cmdList->SetGraphicsRootConstantBufferView(1, mLightCB->GetGPUVirtualAddress(0));
 	
 	for (const auto& [layer, pso] : mPipelines)
-		pso->SetAndDraw(cmdList);
+		if(layer != Layer::Billboard) pso->SetAndDraw(cmdList);
 
 	//mCubeMapRenderer->SetAndDraw(cmdList);
 }
