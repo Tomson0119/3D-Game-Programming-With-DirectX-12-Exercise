@@ -24,16 +24,6 @@ public:
 
 	void Draw(ID3D12GraphicsCommandList* cmdList);
 
-	void LoadFromText(
-		ID3D12Device* device,
-		ID3D12GraphicsCommandList* cmdList,
-		const std::wstring& path);
-
-	void LoadFromBinary(
-		ID3D12Device* device,
-		ID3D12GraphicsCommandList* cmdList,
-		const std::wstring& path);
-
 	void LoadFromObj(
 		ID3D12Device* device,
 		ID3D12GraphicsCommandList* cmdList,
@@ -49,6 +39,7 @@ protected:
 	D3D12_PRIMITIVE_TOPOLOGY mPrimitiveTopology = {};
 
 	UINT mSlot = 0;
+	UINT mVerticesCount = 0;
 	UINT mIndexCount = 0;
 	UINT mStartIndex = 0;
 	UINT mBaseVertex = 0;
@@ -123,4 +114,29 @@ private:
 
 	int mWidth = 0;
 	int mDepth = 0;	
+};
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+class HeightMapPatchListMesh : public Mesh
+{
+public:
+	HeightMapPatchListMesh(
+		ID3D12Device* device,
+		ID3D12GraphicsCommandList* cmdList,
+		int xStart, int zStart,
+		int width, int depth,
+		const XMFLOAT3& scale,
+		HeightMapImage* context);
+
+	virtual ~HeightMapPatchListMesh() { }
+
+	float GetHeight(int x, int z, HeightMapImage* context) const;
+
+private:
+	XMFLOAT3 mScale = {};
+
+	int mWidth = 0;
+	int mDepth = 0;
 };

@@ -9,7 +9,7 @@ Mesh::Mesh()
 
 Mesh::Mesh(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList, const std::wstring& path)
 {
-	LoadFromBinary(device, cmdList, path);
+	LoadFromObj(device, cmdList, path);
 }
 
 void Mesh::CreateResourceInfo(
@@ -20,162 +20,51 @@ void Mesh::CreateResourceInfo(
 	const void* vbData, UINT vbCount, 
 	const void* ibData, UINT ibCount)
 {
-	const UINT vbByteSize = vbCount * vbStride;
-	const UINT ibByteSize = ibCount * ibStride;
+	mPrimitiveTopology = topology;
 
+	const UINT vbByteSize = vbCount * vbStride;
+	
 	mVertexBufferGPU = CreateBufferResource(device, cmdList,
 		vbData, vbByteSize, mVertexUploadBuffer);
-
-	mIndexBufferGPU = CreateBufferResource(device, cmdList,
-		ibData, ibByteSize, mIndexUploadBuffer);
-
-	mIndexCount = ibCount;
-	mStartIndex = 0;
-	mBaseVertex = 0;
-	mSlot = 0;
-
-	mPrimitiveTopology = topology;
 
 	mVertexBufferView.BufferLocation = mVertexBufferGPU->GetGPUVirtualAddress();
 	mVertexBufferView.SizeInBytes = vbByteSize;
 	mVertexBufferView.StrideInBytes = vbStride;
 
-	mIndexBufferView.BufferLocation = mIndexBufferGPU->GetGPUVirtualAddress();
-	mIndexBufferView.SizeInBytes = ibByteSize;
-	mIndexBufferView.Format = DXGI_FORMAT_R32_UINT;
+	mVerticesCount = vbCount;
+	
+	if (ibCount > 0)
+	{
+		mIndexCount = ibCount;
+		mStartIndex = 0;
+		mBaseVertex = 0;
+		mSlot = 0;
+
+		const UINT ibByteSize = ibCount * ibStride;
+
+		mIndexBufferGPU = CreateBufferResource(device, cmdList,
+			ibData, ibByteSize, mIndexUploadBuffer);
+
+		mIndexBufferView.BufferLocation = mIndexBufferGPU->GetGPUVirtualAddress();
+		mIndexBufferView.SizeInBytes = ibByteSize;
+		mIndexBufferView.Format = DXGI_FORMAT_R32_UINT;
+	}
 }
 
 void Mesh::Draw(ID3D12GraphicsCommandList* cmdList)
 {
-	cmdList->IASetVertexBuffers(mSlot, 1, &mVertexBufferView);
-	cmdList->IASetIndexBuffer(&mIndexBufferView);
+	cmdList->IASetVertexBuffers(mSlot, 1, &mVertexBufferView);	
 	cmdList->IASetPrimitiveTopology(mPrimitiveTopology);
 
-	cmdList->DrawIndexedInstanced(mIndexCount, 1, mStartIndex, mBaseVertex, 0);
-}
-
-void Mesh::LoadFromText(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList, const std::wstring& path)
-{
-	std::ifstream file(path);
-
-	assert(file.is_open() && L"Could not find file");
-
-	std::vector<Vertex> vertices;
-	std::vector<int> indices;
-
-	std::vector<XMFLOAT3> positions;
-	std::vector<XMFLOAT3> normals;
-	std::vector<XMFLOAT2> texCoords;
-
-	char ignore[64] = {};
-	UINT verticesCount = 0;
-	UINT indicesCount = 0;
-
-	file >> ignore >> verticesCount;
-	positions.resize(verticesCount);
-	for (size_t i = 0; i < verticesCount; ++i)
-		file >> positions[i].x >> positions[i].y >> positions[i].z;
-
-	file >> ignore >> verticesCount;
-	normals.resize(verticesCount);
-	for (size_t i = 0; i < verticesCount; ++i)
-		file >> normals[i].x >> normals[i].y >> normals[i].z;
-
-	file >> ignore >> verticesCount;
-	texCoords.resize(verticesCount);
-	for (size_t i = 0; i < verticesCount; ++i)
-		file >> texCoords[i].x >> texCoords[i].y;
-
-	file >> ignore >> indicesCount;
-	indices.resize(indicesCount);
-	for (size_t i = 0; i < indicesCount; ++i)
-		file >> indices[i];
-
-	vertices.resize(verticesCount);
-	for (size_t i = 0; i < vertices.size(); ++i)
+	if (mIndexCount > 0) 
 	{
-		vertices[i].Position = positions[i];
-		vertices[i].Normal = normals[i];
-		vertices[i].TexCoord = texCoords[i];
+		cmdList->IASetIndexBuffer(&mIndexBufferView);
+		cmdList->DrawIndexedInstanced(mIndexCount, 1, mStartIndex, mBaseVertex, 0);
 	}
-
-	Mesh::CreateResourceInfo(device, cmdList, sizeof(Vertex), sizeof(UINT),
-		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
-		vertices.data(), (UINT)vertices.size(),	indices.data(), (UINT)indices.size());
-}
-
-void Mesh::LoadFromBinary(
-	ID3D12Device* device, 
-	ID3D12GraphicsCommandList* cmdList,
-	const std::wstring& path)
-{
-	std::ifstream file(path, std::ios::binary);
-
-	assert(file.is_open() && L"Could not find file");
-
-	char ignore[64] = {};
-	UINT verticesCount = 0;
-	UINT indicesCount = 0;
-
-	std::vector<Vertex> vertices;
-	std::vector<UINT> indices;
-
-	std::vector<XMFLOAT3> positions;
-	std::vector<XMFLOAT3> normals;
-	std::vector<XMFLOAT2> texCoords;
-
-	// =============== BoundingBox =============== //
-	file.read(&ignore[0], sizeof(BYTE));
-	file.read(&ignore[0], sizeof(char) * 14);  // '<BoundingBox>:'
-	file.read(reinterpret_cast<char*>(&mOOBB.Center), sizeof(XMFLOAT3));
-	file.read(reinterpret_cast<char*>(&mOOBB.Extents), sizeof(XMFLOAT3));
-
-	// =============== Position =============== //
-	file.read(&ignore[0], sizeof(BYTE));
-	file.read(&ignore[0], sizeof(char) * 11);  // '<Vertices>:'
-	file.read(reinterpret_cast<char*>(&verticesCount), sizeof(UINT));
-	
-	positions.resize(verticesCount);
-	file.read(reinterpret_cast<char*>(&positions[0]), sizeof(XMFLOAT3) * verticesCount);
-
-	// =============== Normal =============== //
-	file.read(&ignore[0], sizeof(BYTE));
-	file.read(&ignore[0], sizeof(char) * 10);  // '<Normals>:'
-	file.read(reinterpret_cast<char*>(&verticesCount), sizeof(UINT));
-
-	normals.resize(verticesCount);
-	file.read(reinterpret_cast<char*>(&normals[0]), sizeof(XMFLOAT3) * verticesCount);
-
-	// =============== TextureCoord =============== //
-	file.read(&ignore[0], sizeof(BYTE));
-	file.read(&ignore[0], sizeof(char) * 16);  // '<TextureCoords>:'
-	file.read(reinterpret_cast<char*>(&verticesCount), sizeof(UINT));
-
-	texCoords.resize(verticesCount);
-	file.read(reinterpret_cast<char*>(&texCoords[0]), sizeof(XMFLOAT2) * verticesCount);
-
-	// =============== Indices =============== //
-	file.read(&ignore[0], sizeof(BYTE));
-	file.read(&ignore[0], sizeof(char) * 10);  // '<Indices>:'
-	file.read(reinterpret_cast<char*>(&indicesCount), sizeof(UINT));
-
-	indices.resize(indicesCount);
-	file.read(reinterpret_cast<char*>(&indices[0]), sizeof(UINT) * indicesCount);
-
-	file.close();
-
-	// =============== Vertices ============== //
-	vertices.resize(verticesCount);
-	for (size_t i = 0; i < verticesCount; ++i)
+	else
 	{
-		vertices[i].Position = positions[i];
-		vertices[i].Normal = normals[i];
-		vertices[i].TexCoord = texCoords[i];
+		cmdList->DrawInstanced(mVerticesCount, 1, mBaseVertex, 0);
 	}
-
-	Mesh::CreateResourceInfo(device, cmdList, sizeof(Vertex), sizeof(UINT),
-		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
-		vertices.data(), (UINT)vertices.size(), indices.data(), (UINT)indices.size());
 }
 
 void Mesh::LoadFromObj(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList, const std::wstring& path)
@@ -537,4 +426,46 @@ XMFLOAT4 HeightMapGridMesh::GetColor(int x, int z, HeightMapImage* context) cons
 	reflect = Math::ClampFloat(reflect, 0.25f, 1.0f);
 	
 	return Vector4::Multiply(reflect, incidentLitColor);
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+HeightMapPatchListMesh::HeightMapPatchListMesh(
+	ID3D12Device* device, 
+	ID3D12GraphicsCommandList* cmdList,
+	int xStart, int zStart, 
+	int width, int depth, 
+	const XMFLOAT3& scale, 
+	HeightMapImage* context)
+	: Mesh(), mWidth(width), mDepth(depth), mScale(scale)
+{
+	const UINT verticesCount = 25;
+
+	std::vector<TerrainVertex> vertices(verticesCount);
+	int increasement = 11;
+
+	int heightmapWidth = context->GetWidth();
+	int heightmapDepth = context->GetDepth();
+
+	size_t k = 0;
+	for (int z = (zStart+depth-1); z >= zStart; z-= increasement)
+	{
+		for (int x = xStart; x < (xStart + width); x+=increasement)
+		{
+			vertices[k].Position = XMFLOAT3((x * mScale.x), GetHeight(x, z, context), (z * mScale.z));
+			vertices[k].Normal = context->GetNormal(x, z);
+			vertices[k].TexCoord0 = XMFLOAT2((float)x / float(heightmapWidth - 1), float(heightmapDepth - 1 - z) / float(heightmapDepth - 1));
+			vertices[k++].TexCoord1 = XMFLOAT2((float)x / float(mScale.x * 0.5f), (float)z / float(mScale.z * 0.5f));
+		}
+	}
+
+	Mesh::CreateResourceInfo(device, cmdList, sizeof(TerrainVertex), 0,
+		D3D_PRIMITIVE_TOPOLOGY_25_CONTROL_POINT_PATCHLIST, vertices.data(), (UINT)vertices.size(), nullptr, 0);
+}
+
+float HeightMapPatchListMesh::GetHeight(int x, int z, HeightMapImage* context) const
+{
+	float height = context->GetHeight(x * mScale.x, z * mScale.z, mScale);
+	return height;
 }
