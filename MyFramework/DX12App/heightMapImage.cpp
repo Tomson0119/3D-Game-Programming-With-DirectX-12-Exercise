@@ -26,10 +26,10 @@ HeightMapImage::~HeightMapImage()
 {
 }
 
-float HeightMapImage::GetHeight(float fx, float fz) const
+float HeightMapImage::GetHeight(float fx, float fz, const XMFLOAT3& scale) const
 {
-	fx /= mScale.x;
-	fz /= mScale.z;
+	fx /= scale.x;
+	fz /= scale.z;
 
 	if (fx < 0.0f || fz < 0.0f || fx >= (mWidth-1) || fz >= (mDepth-1))
 		return 0.0f;
@@ -61,7 +61,7 @@ float HeightMapImage::GetHeight(float fx, float fz) const
 	const float bottomHeight = std::lerp(bl, br, xPercent);
 	const float height = std::lerp(bottomHeight, topHeight, zPercent);
 
-	return height;
+	return height * scale.y;
 }
 
 XMFLOAT3 HeightMapImage::GetNormal(int x, int z) const

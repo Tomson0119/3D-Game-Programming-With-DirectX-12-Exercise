@@ -10,7 +10,7 @@ public:
 		const XMFLOAT3& scale);
 	virtual ~HeightMapImage();
 
-	float GetHeight(float fx, float fz) const;
+	float GetHeight(float fx, float fz, const XMFLOAT3& scale) const;
 	XMFLOAT3 GetNormal(int x, int z) const;
 
 	std::vector<BYTE> GetPixels() const { return mPixels; }
