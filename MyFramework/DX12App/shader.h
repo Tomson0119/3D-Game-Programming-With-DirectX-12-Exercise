@@ -14,6 +14,8 @@ public:
 	ID3DBlob* GetVS() const { return VS.Get(); }
 	ID3DBlob* GetGS() const { return GS.Get(); }
 	ID3DBlob* GetPS() const { return PS.Get(); }
+	ID3DBlob* GetDS() const { return DS.Get(); }
+	ID3DBlob* GetHS() const { return HS.Get(); }
 
 public:
 	static ComPtr<ID3DBlob> CompileShader(
@@ -28,6 +30,8 @@ protected:
 	ComPtr<ID3DBlob> VS = nullptr;
 	ComPtr<ID3DBlob> GS = nullptr;
 	ComPtr<ID3DBlob> PS = nullptr;
+	ComPtr<ID3DBlob> DS = nullptr;
+	ComPtr<ID3DBlob> HS = nullptr;
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////
