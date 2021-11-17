@@ -20,7 +20,12 @@ cbuffer LightCB : register(b1)
     Light gLights[NUM_LIGHTS] : packoffset(c1);
 }
 
-cbuffer ObjectCB : register(b2)
+cbuffer GameInfoCB : register(b2)
+{
+    uint gKeyInput : packoffset(c0);
+}
+
+cbuffer ObjectCB : register(b3)
 {
     matrix gWorld : packoffset(c0);
     Material gMat : packoffset(c4);
