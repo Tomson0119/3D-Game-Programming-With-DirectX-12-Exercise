@@ -249,7 +249,7 @@ void TerrainObject::BuildTerrainMesh(ID3D12Device* device, ID3D12GraphicsCommand
 		{
 			xStart = x * (blockWidth - 1);
 			zStart = z * (blockDepth - 1);
-			auto gridMesh = std::make_shared<HeightMapGridMesh>(
+			auto gridMesh = std::make_shared<HeightMapPatchListMesh>(
 				device, cmdList, xStart, zStart, blockWidth, blockDepth, mTerrainScale, mHeightMapImage.get());
 			SetMesh(gridMesh);
 		}
@@ -259,7 +259,7 @@ void TerrainObject::BuildTerrainMesh(ID3D12Device* device, ID3D12GraphicsCommand
 float TerrainObject::GetHeight(float x, float z) const
 {
 	assert(mHeightMapImage && "HeightMapImage doesn't exist");
-	return mHeightMapImage->GetHeight(x, z) * mTerrainScale.y;
+	return mHeightMapImage->GetHeight(x, z, mTerrainScale);
 }
 
 XMFLOAT3 TerrainObject::GetNormal(float x, float z) const
