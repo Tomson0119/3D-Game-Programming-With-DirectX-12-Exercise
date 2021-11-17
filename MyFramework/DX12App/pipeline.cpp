@@ -34,6 +34,20 @@ void Pipeline::BuildPipeline(
 			shader->GetGS()->GetBufferSize()
 		};
 	}
+	if (shader->GetDS() != nullptr)
+	{
+		psoDesc.DS = {
+			reinterpret_cast<BYTE*>(shader->GetDS()->GetBufferPointer()),
+			shader->GetDS()->GetBufferSize()
+		};
+	}
+	if (shader->GetHS() != nullptr)
+	{
+		psoDesc.HS = {
+			reinterpret_cast<BYTE*>(shader->GetHS()->GetBufferPointer()),
+			shader->GetHS()->GetBufferSize()
+		};
+	}
 	psoDesc.PS = {
 		reinterpret_cast<BYTE*>(shader->GetPS()->GetBufferPointer()),
 		shader->GetPS()->GetBufferSize()
@@ -49,11 +63,14 @@ void Pipeline::BuildPipeline(
 	psoDesc.SampleDesc.Count = 1;
 	//psoDesc.SampleDesc.Quality = gMsaaStateDesc.Quality;
 
-	if (mIsWiredFrame)
-		psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_WIREFRAME;
-
 	ThrowIfFailed(device->CreateGraphicsPipelineState(
-		&psoDesc, IID_PPV_ARGS(&mPSO)));
+		&psoDesc, IID_PPV_ARGS(&mPSO[0])));
+
+	if (mIsWiredFrame) {
+		psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_WIREFRAME;
+		ThrowIfFailed(device->CreateGraphicsPipelineState(
+			&psoDesc, IID_PPV_ARGS(&mPSO[1])));
+	}
 }
 
 void Pipeline::BuildConstantBuffer(ID3D12Device* device)
@@ -128,11 +145,15 @@ void Pipeline::ResetPipeline(ID3D12Device* device)
 	BuildDescriptorHeap(device, 2, 3);
 }
 
-void Pipeline::SetAndDraw(ID3D12GraphicsCommandList* cmdList)
+void Pipeline::SetAndDraw(ID3D12GraphicsCommandList* cmdList, bool drawWiredFrame)
 {
 	ID3D12DescriptorHeap* descHeaps[] = { mCbvSrvDescriptorHeap.Get() };
 	cmdList->SetDescriptorHeaps(_countof(descHeaps), descHeaps);
-	cmdList->SetPipelineState(mPSO.Get());
+
+	if(mIsWiredFrame && drawWiredFrame)
+		cmdList->SetPipelineState(mPSO[1].Get());
+	else
+		cmdList->SetPipelineState(mPSO[0].Get());
 
 	for (int i = 0; i < mRenderObjects.size(); i++)
 	{
@@ -238,13 +259,5 @@ void SkyboxPipeline::BuildPipeline(ID3D12Device* device, ID3D12RootSignature* ro
 	psoDesc.DepthStencilState.StencilEnable = FALSE;
 
 	ThrowIfFailed(device->CreateGraphicsPipelineState(
-		&psoDesc, IID_PPV_ARGS(&mPSO)));
-}
-
-void SkyboxPipeline::Update(const float elapsed, Camera* camera)
-{
-	/*for(const auto& obj : mRenderObjects)
-		obj->SetPosition(camera->GetPosition());*/
-
-	Pipeline::Update(elapsed);
+		&psoDesc, IID_PPV_ARGS(&mPSO[0])));
 }

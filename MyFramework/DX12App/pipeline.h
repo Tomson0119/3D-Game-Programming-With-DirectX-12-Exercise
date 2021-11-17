@@ -34,7 +34,7 @@ public:
 
 	void SetWiredFrame(bool wired) { mIsWiredFrame = wired; }
 	void SetTopology(D3D12_PRIMITIVE_TOPOLOGY_TYPE topology) { mPrimitive = topology; }
-	void SetAndDraw(ID3D12GraphicsCommandList* cmdList);
+	void SetAndDraw(ID3D12GraphicsCommandList* cmdList, bool drawWiredFrame=false);
 
 	void SetAlphaBlending();
 
@@ -50,7 +50,7 @@ public:
 	const std::vector<std::shared_ptr<GameObject>>& GetRenderObjects() const { return mRenderObjects; }
 
 protected:
-	ComPtr<ID3D12PipelineState> mPSO;
+	ComPtr<ID3D12PipelineState> mPSO[2];
 	ComPtr<ID3D12DescriptorHeap> mCbvSrvDescriptorHeap;
 
 	D3D12_RASTERIZER_DESC	  mRasterizerDesc   = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
@@ -85,6 +85,4 @@ public:
 		ID3D12Device* device,
 		ID3D12RootSignature* rootSig,
 		Shader* shader = nullptr) override;
-
-	virtual void Update(const float elapsed, Camera* camera);
 };
