@@ -62,6 +62,7 @@ private:
 
 	std::unique_ptr<ConstantBuffer<CameraConstants>> mCameraCB;
 	std::unique_ptr<ConstantBuffer<LightConstants>> mLightCB;
+	std::unique_ptr<ConstantBuffer<GameInfoConstants>> mGameInfoCB;
 
 	ComPtr<ID3D12RootSignature> mRootSignature;
 	
@@ -74,4 +75,6 @@ private:
 	
 	std::shared_ptr<Billboard> mFlameBillboard;
 	std::vector<std::pair<int, Billboard*>> mAllFlameBillboards;
+
+	bool mLODSet = false;
 };

@@ -138,6 +138,11 @@ struct ObjectConstants
 	Material Mat;
 };
 
+struct GameInfoConstants
+{
+	UINT KeyInput;
+};
+
 
 ////////////////////////////////////////////////////////////////////////////
 //

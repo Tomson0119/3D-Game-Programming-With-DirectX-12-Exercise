@@ -24,7 +24,7 @@ void GameScene::BuildObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cm
 {
 	mMainCamera = make_unique<Camera>();
 	mMainCamera->SetLens(0.25f * Math::PI, aspect, 1.0f, 5000.0f);
-	mMainCamera->SetPosition(512.0f, 200.0f, 512.0f);
+	mMainCamera->SetPosition(257, 200.0f, 257);
 	mCurrentCamera = mMainCamera.get();
 
 	BuildRootSignature(device);
@@ -38,14 +38,15 @@ void GameScene::BuildObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cm
 void GameScene::BuildRootSignature(ID3D12Device* device)
 {
 	D3D12_DESCRIPTOR_RANGE descRanges[2];
-	descRanges[0] = Extension::DescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 2);
+	descRanges[0] = Extension::DescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 3);
 	descRanges[1] = Extension::DescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 5, 0);
 
-	D3D12_ROOT_PARAMETER parameters[4];
+	D3D12_ROOT_PARAMETER parameters[5];
 	parameters[0] = Extension::Descriptor(D3D12_ROOT_PARAMETER_TYPE_CBV, 0, D3D12_SHADER_VISIBILITY_ALL);  // CameraCB
 	parameters[1] = Extension::Descriptor(D3D12_ROOT_PARAMETER_TYPE_CBV, 1, D3D12_SHADER_VISIBILITY_ALL);  // LightCB
-	parameters[2] = Extension::DescriptorTable(1, &descRanges[0], D3D12_SHADER_VISIBILITY_ALL);			   // Object,  CBV
-	parameters[3] = Extension::DescriptorTable(1, &descRanges[1], D3D12_SHADER_VISIBILITY_ALL);		   // Texture, SRV
+	parameters[2] = Extension::Descriptor(D3D12_ROOT_PARAMETER_TYPE_CBV, 2, D3D12_SHADER_VISIBILITY_ALL);  // GameInfoCB
+	parameters[3] = Extension::DescriptorTable(1, &descRanges[0], D3D12_SHADER_VISIBILITY_ALL);			   // Object,  CBV
+	parameters[4] = Extension::DescriptorTable(1, &descRanges[1], D3D12_SHADER_VISIBILITY_ALL);		       // Texture, SRV
 
 	D3D12_STATIC_SAMPLER_DESC samplerDesc[4];
 	samplerDesc[0] = Extension::SamplerDesc(0, D3D12_FILTER_ANISOTROPIC, D3D12_TEXTURE_ADDRESS_MODE_WRAP);
@@ -81,6 +82,8 @@ void GameScene::BuildShadersAndPSOs(ID3D12Device* device, ID3D12GraphicsCommandL
 	mPipelines[Layer::SkyBox]->BuildPipeline(device, mRootSignature.Get());
 
 	mPipelines[Layer::Terrain] = make_unique<Pipeline>();
+	mPipelines[Layer::Terrain]->SetWiredFrame(true);
+	mPipelines[Layer::Terrain]->SetTopology(D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH);
 	mPipelines[Layer::Terrain]->BuildPipeline(device, mRootSignature.Get(), terrainShader.get());
 
 	mPipelines[Layer::Billboard] = make_unique<Pipeline>();
@@ -102,6 +105,7 @@ void GameScene::BuildConstantBuffers(ID3D12Device* device)
 {
 	mCameraCB = std::make_unique<ConstantBuffer<CameraConstants>>(device, 1+12);
 	mLightCB = std::make_unique<ConstantBuffer<LightConstants>>(device, 1);
+	mGameInfoCB = std::make_unique<ConstantBuffer<GameInfoConstants>>(device, 1);
 
 	for (const auto& [_, pso] : mPipelines)
 		pso->BuildConstantBuffer(device);
@@ -112,7 +116,7 @@ void GameScene::BuildConstantBuffers(ID3D12Device* device)
 void GameScene::BuildDescriptorHeap(ID3D12Device* device)
 {
 	for (const auto& [_, pso] : mPipelines)
-		pso->BuildDescriptorHeap(device, 2, 3);
+		pso->BuildDescriptorHeap(device, 3, 4);
 
 	//mCubeMapRenderer->BuildDescriptorHeap(device, 2, 3);
 }
@@ -121,12 +125,12 @@ void GameScene::BuildTextures(ID3D12Device* device, ID3D12GraphicsCommandList* c
 {
 	// Terrain
 	auto grassTex = make_shared<Texture>();
-	grassTex->LoadTextureFromDDS(device, cmdList, L"Resources\\basetexture.dds");
+	grassTex->LoadTextureFromDDS(device, cmdList, L"Resources\\terrainTexture.dds");
 	grassTex->SetDimension(D3D12_SRV_DIMENSION_TEXTURE2D);
 	mPipelines[Layer::Terrain]->AppendTexture(grassTex);
 
 	auto gravelTex = make_shared<Texture>();
-	gravelTex->LoadTextureFromDDS(device, cmdList, L"Resources\\detailtexture.dds");
+	gravelTex->LoadTextureFromDDS(device, cmdList, L"Resources\\rocky.dds");
 	gravelTex->SetDimension(D3D12_SRV_DIMENSION_TEXTURE2D);
 	mPipelines[Layer::Terrain]->AppendTexture(gravelTex);
 
@@ -182,10 +186,10 @@ void GameScene::BuildTextures(ID3D12Device* device, ID3D12GraphicsCommandList* c
 void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
 {
 	// terrain
-	auto terrain = make_shared<TerrainObject>(257, 257, XMFLOAT3(5.0f,1.0f,5.0f));
+	auto terrain = make_shared<TerrainObject>(1024, 1024, XMFLOAT3(1.0f, 1.0f, 1.0f));
 	terrain->SetSRVIndex(0);
-	terrain->BuildHeightMap(L"Resources\\heightmap2.raw");
-	terrain->BuildTerrainMesh(device, cmdList, 17, 17);
+	terrain->BuildHeightMap(L"Resources\\heightmap.raw");
+	terrain->BuildTerrainMesh(device, cmdList, 45, 45);
 	mPipelines[Layer::Terrain]->AppendObject(terrain);
 
 	// billboards
@@ -207,8 +211,8 @@ void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList
 	treeBillboard->SetSRVIndex(1);
 	for (int i = 0; i < 10000; i++)
 	{
-		float pos_x = Math::RandFloat(0, terrain->GetWidth());
-		float pos_z = Math::RandFloat(0, terrain->GetDepth());
+		float pos_x = Math::RandFloat(0, terrain->GetWidth()-1);
+		float pos_z = Math::RandFloat(0, terrain->GetDepth()-1);
 		float pos_y = terrain->GetHeight(pos_x, pos_z) + 4.0f;
 		if (pos_y < 0.0f) pos_y = 0.0f;
 
@@ -226,8 +230,8 @@ void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList
 	auto boxMesh = make_shared<BoxMesh>(device, cmdList, 4.0f, 4.0f, 4.0f);
 	for (int i=0;i<100;i++)
 	{
-		float pos_x = Math::RandFloat(0, terrain->GetWidth());
-		float pos_z = Math::RandFloat(0, terrain->GetDepth());
+		float pos_x = Math::RandFloat(0, terrain->GetWidth()-1);
+		float pos_z = Math::RandFloat(0, terrain->GetDepth()-1);
 		float pos_y = terrain->GetHeight(pos_x, pos_z) + 2.0f;
 
 		auto boxObj = make_shared<GameObject>();
@@ -323,6 +327,10 @@ void GameScene::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
 				mCurrentCamera = mPlayerCamera.get();
 			}
 		}
+		if (wParam == 'Q')
+		{
+			mLODSet = !mLODSet;
+		}
 		break;
 	}
 }
@@ -382,8 +390,8 @@ void GameScene::Update(ID3D12Device* device, const GameTimer& timer)
 	for (const auto& [_, pso] : mPipelines)
 		pso->Update(elapsed, mCurrentCamera);
 
-	CollisionProcess(device);
-	DeleteTimeOverBillboards(device);
+	//CollisionProcess(device);
+	//DeleteTimeOverBillboards(device);
 
 	//mCubeMapRenderer->Update(timer.ElapsedTime(), mCurrentCamera);
 }
@@ -412,6 +420,7 @@ void GameScene::UpdateConstants()
 	lightCnst.Lights[2].Direction = { 1.0f, 1.0f, -1.0f };
 
 	mLightCB->CopyData(0, lightCnst);
+	mGameInfoCB->CopyData(0, { mLODSet });
 
 	for (const auto& [_, pso] : mPipelines)
 		pso->UpdateConstants();
@@ -423,9 +432,10 @@ void GameScene::Draw(ID3D12GraphicsCommandList* cmdList, int cameraCBIndex)
 {	
 	cmdList->SetGraphicsRootConstantBufferView(0, mCameraCB->GetGPUVirtualAddress(cameraCBIndex));
 	cmdList->SetGraphicsRootConstantBufferView(1, mLightCB->GetGPUVirtualAddress(0));
-	
+	cmdList->SetGraphicsRootConstantBufferView(2, mGameInfoCB->GetGPUVirtualAddress(0));
+
 	for (const auto& [layer, pso] : mPipelines)
-		if(layer != Layer::Billboard) pso->SetAndDraw(cmdList);
+		if(layer != Layer::Billboard) pso->SetAndDraw(cmdList, (bool)mLODSet);
 
 	//mCubeMapRenderer->SetAndDraw(cmdList);
 }
