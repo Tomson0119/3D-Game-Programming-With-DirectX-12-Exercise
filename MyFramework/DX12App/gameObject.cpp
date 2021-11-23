@@ -282,6 +282,7 @@ XMFLOAT3 TerrainObject::GetNormal(float x, float z) const
 ///////////////////////////////////////////////////////////////////////////////
 //
 Billboard::Billboard(float width, float height)
+	: mDurationTime(0)
 {
 	mWidth = width;
 	mHeight = height;
@@ -316,6 +317,7 @@ void Billboard::SetDurationTime(std::chrono::milliseconds& time)
 
 bool Billboard::IsTimeOver(std::chrono::steady_clock::time_point& currentTime)
 {
+	if (mDurationTime == std::chrono::milliseconds(0)) return false;
 	return std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - mCreationTime) > mDurationTime;
 }
 

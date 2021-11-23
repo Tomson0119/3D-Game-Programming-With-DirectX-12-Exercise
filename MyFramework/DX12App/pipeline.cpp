@@ -142,7 +142,7 @@ void Pipeline::DeleteObject(int idx)
 void Pipeline::ResetPipeline(ID3D12Device* device)
 {
 	BuildConstantBuffer(device);
-	BuildDescriptorHeap(device, 2, 3);
+	BuildDescriptorHeap(device, mRootParamCBVIndex, mRootParamSRVIndex);
 }
 
 void Pipeline::SetAndDraw(ID3D12GraphicsCommandList* cmdList, bool drawWiredFrame)

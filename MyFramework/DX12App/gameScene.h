@@ -77,7 +77,6 @@ private:
 	GameObject* mReflectedPlayer = nullptr;
 
 	std::shared_ptr<Billboard> mFlameBillboard;
-	std::vector<std::pair<int, Billboard*>> mAllFlameBillboards;
 
 	bool mLODSet = false;
 };

@@ -202,8 +202,7 @@ void GameScene::BuildTextures(ID3D12Device* device, ID3D12GraphicsCommandList* c
 	auto carTex = make_shared<Texture>();
 	carTex->LoadTextureFromDDS(device, cmdList, L"Resources\\CarTexture.dds");
 	carTex->SetDimension(D3D12_SRV_DIMENSION_TEXTURE2D);
-	mPipelines[Layer::Default]->AppendTexture(carTex);
-	
+	mPipelines[Layer::Default]->AppendTexture(carTex);	
 
 	auto tileTex = make_shared<Texture>();
 	tileTex->LoadTextureFromDDS(device, cmdList, L"Resources\\tile.dds");
@@ -216,9 +215,12 @@ void GameScene::BuildTextures(ID3D12Device* device, ID3D12GraphicsCommandList* c
 	iceTex->SetDimension(D3D12_SRV_DIMENSION_TEXTURE2D);
 	mPipelines[Layer::Transparent]->AppendTexture(iceTex);
 
-	mPipelines[Layer::Reflected]->AppendTexture(brick2Tex);
-	mPipelines[Layer::Reflected]->AppendTexture(tileTex);
-	mPipelines[Layer::Reflected]->AppendTexture(carTex);
+	auto copyBrick2Tex = make_shared<Texture>(*brick2Tex);
+	mPipelines[Layer::Reflected]->AppendTexture(copyBrick2Tex);
+	auto copyTileTex = make_shared<Texture>(*tileTex);
+	mPipelines[Layer::Reflected]->AppendTexture(copyTileTex);
+	auto copyCarTex = make_shared<Texture>(*carTex);
+	mPipelines[Layer::Reflected]->AppendTexture(copyCarTex);
 }
 
 void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
@@ -534,8 +536,9 @@ void GameScene::Update(ID3D12Device* device, const GameTimer& timer)
 		pso->Update(elapsed, mCurrentCamera);
 
 	mReflectedPlayer->SetWorld(mPlayer->GetWorld());
-	//CollisionProcess(device);
-	//DeleteTimeOverBillboards(device);
+	
+	CollisionProcess(device);
+	DeleteTimeOverBillboards(device);
 }
 
 void GameScene::UpdateCameraConstant(int idx, Camera* camera)
@@ -574,14 +577,16 @@ void GameScene::Draw(ID3D12GraphicsCommandList* cmdList, int cameraCBIndex)
 	cmdList->SetGraphicsRootConstantBufferView(1, mLightCB->GetGPUVirtualAddress(0));
 	cmdList->SetGraphicsRootConstantBufferView(2, mGameInfoCB->GetGPUVirtualAddress(0));
 
-	for (const auto& [layer, pso] : mPipelines)
+	for (const auto& [layer, pso] : mPipelines) {
 		pso->SetAndDraw(cmdList, (bool)mLODSet);
+	}
 }
 
 void GameScene::CollisionProcess(ID3D12Device* device)
 {
 	const vector<shared_ptr<GameObject>>& boxes = mPipelines[Layer::NormalMapped]->GetRenderObjects();
 	
+	bool flag = false;
 	const float big_radius = 20.0f;
 	for (int i = (int)boxes.size() - 1; i >= 0; i--)
 	{
@@ -595,10 +600,11 @@ void GameScene::CollisionProcess(ID3D12Device* device)
 			{
 				CreateAndAppendFlameBillboard(device, boxes[i].get());
 				mPipelines[Layer::NormalMapped]->DeleteObject(i);
+				flag = true;
 			}
 		}
 	}
-	mPipelines[Layer::NormalMapped]->ResetPipeline(device);
+	if(flag) mPipelines[Layer::NormalMapped]->ResetPipeline(device);
 }
 
 void GameScene::CreateAndAppendFlameBillboard(ID3D12Device* device, GameObject* box)
@@ -623,8 +629,6 @@ void GameScene::CreateAndAppendFlameBillboard(ID3D12Device* device, GameObject* 
 		newFlame->SetMovement(Direction[i], 1.0f);
 		newFlame->SetDurationTime(2500ms);
 		mPipelines[Layer::Billboard]->AppendObject(newFlame);
-		
-		mAllFlameBillboards.push_back({ offset + i, newFlame.get() });
 	}
 	mPipelines[Layer::Billboard]->ResetPipeline(device);
 }
@@ -632,19 +636,17 @@ void GameScene::CreateAndAppendFlameBillboard(ID3D12Device* device, GameObject* 
 void GameScene::DeleteTimeOverBillboards(ID3D12Device* device)
 {
 	bool flag = false;
-	for (int i = (int)mAllFlameBillboards.size()-1; i >= 0; i--)
+	auto current_time = std::chrono::steady_clock::now();
+	auto& allBillboards = mPipelines[Layer::Billboard]->GetRenderObjects();
+	for (int i = (int)allBillboards.size()-1; i >= 0; i--)
 	{
-		if (mAllFlameBillboards[i].second->IsTimeOver(std::chrono::steady_clock::now()))
+		if (dynamic_cast<Billboard*>(allBillboards[i].get())->IsTimeOver(current_time))
 		{
 			flag = true;
-			mPipelines[Layer::Billboard]->DeleteObject(mAllFlameBillboards[i].first);
-			mAllFlameBillboards.erase(mAllFlameBillboards.begin() + i);
+			mPipelines[Layer::Billboard]->DeleteObject(i);
 		}
 	}
-	if (flag) 
-	{
-		mPipelines[Layer::Billboard]->ResetPipeline(device);
-	}
+	if (flag) mPipelines[Layer::Billboard]->ResetPipeline(device);
 }
 
 
