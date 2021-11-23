@@ -76,7 +76,6 @@ void GameScene::BuildShadersAndPSOs(ID3D12Device* device, ID3D12GraphicsCommandL
 	auto billboardShader = make_unique<BillboardShader>(L"Shaders\\billboard.hlsl");
 	auto normalmapShader = make_unique<DefaultShader>(L"Shaders\\normalmap.hlsl");
 	auto defaultShader = make_unique<DefaultShader>(L"Shaders\\default.hlsl");
-	auto dynamicCubeShader = make_unique<DefaultShader>(L"Shaders\\cubemap.hlsl");
 
 	mPipelines[Layer::SkyBox] = make_unique<SkyboxPipeline>(device, cmdList);
 	mPipelines[Layer::SkyBox]->BuildPipeline(device, mRootSignature.Get());
@@ -97,8 +96,25 @@ void GameScene::BuildShadersAndPSOs(ID3D12Device* device, ID3D12GraphicsCommandL
 	mPipelines[Layer::Default] = make_unique<Pipeline>();
 	mPipelines[Layer::Default]->BuildPipeline(device, mRootSignature.Get(), defaultShader.get());
 
-	/*mCubeMapRenderer = make_unique<DynamicCubeRenderer>();
-	mCubeMapRenderer->BuildPipeline(device, mRootSignature.Get(), dynamicCubeShader.get());*/
+	mPipelines[Layer::Mirror] = make_unique<Pipeline>();
+	mPipelines[Layer::Mirror]->SetStencilOp(
+		1, D3D12_DEPTH_WRITE_MASK_ZERO,
+		D3D12_STENCIL_OP_KEEP, D3D12_STENCIL_OP_KEEP,
+		D3D12_STENCIL_OP_REPLACE, D3D12_COMPARISON_FUNC_ALWAYS, 0);
+	mPipelines[Layer::Mirror]->BuildPipeline(device, mRootSignature.Get(), defaultShader.get());
+
+	mPipelines[Layer::Reflected] = make_unique<Pipeline>();
+	mPipelines[Layer::Reflected]->SetCullModeBack();
+	mPipelines[Layer::Reflected]->SetStencilOp(
+		1, D3D12_DEPTH_WRITE_MASK_ALL,
+		D3D12_STENCIL_OP_KEEP, D3D12_STENCIL_OP_KEEP,
+		D3D12_STENCIL_OP_KEEP, D3D12_COMPARISON_FUNC_EQUAL,
+		D3D12_COLOR_WRITE_ENABLE_ALL);
+	mPipelines[Layer::Reflected]->BuildPipeline(device, mRootSignature.Get(), defaultShader.get());
+
+	mPipelines[Layer::Transparent] = make_unique<Pipeline>();
+	mPipelines[Layer::Transparent]->SetAlphaBlending();
+	mPipelines[Layer::Transparent]->BuildPipeline(device, mRootSignature.Get(), defaultShader.get());
 }
 
 void GameScene::BuildConstantBuffers(ID3D12Device* device)
@@ -109,16 +125,12 @@ void GameScene::BuildConstantBuffers(ID3D12Device* device)
 
 	for (const auto& [_, pso] : mPipelines)
 		pso->BuildConstantBuffer(device);
-
-	//mCubeMapRenderer->BuildConstantBuffer(device);
 }
 
 void GameScene::BuildDescriptorHeap(ID3D12Device* device)
 {
 	for (const auto& [_, pso] : mPipelines)
 		pso->BuildDescriptorHeap(device, 3, 4);
-
-	//mCubeMapRenderer->BuildDescriptorHeap(device, 2, 3);
 }
 
 void GameScene::BuildTextures(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
@@ -176,11 +188,37 @@ void GameScene::BuildTextures(ID3D12Device* device, ID3D12GraphicsCommandList* c
 	brickNormal->SetDimension(D3D12_SRV_DIMENSION_TEXTURE2D);
 	mPipelines[Layer::NormalMapped]->AppendTexture(brickNormal);
 
+	auto brick2Tex = make_shared<Texture>();
+	brick2Tex->LoadTextureFromDDS(device, cmdList, L"Resources\\brick2.dds");
+	brick2Tex->SetDimension(D3D12_SRV_DIMENSION_TEXTURE2D);
+	mPipelines[Layer::NormalMapped]->AppendTexture(brick2Tex);
+
+	auto brick2Normal = make_shared<Texture>();
+	brick2Normal->LoadTextureFromDDS(device, cmdList, L"Resources\\brick2normalmap.dds");
+	brick2Normal->SetDimension(D3D12_SRV_DIMENSION_TEXTURE2D);
+	mPipelines[Layer::NormalMapped]->AppendTexture(brick2Normal);
+
 	// Default
 	auto carTex = make_shared<Texture>();
 	carTex->LoadTextureFromDDS(device, cmdList, L"Resources\\CarTexture.dds");
 	carTex->SetDimension(D3D12_SRV_DIMENSION_TEXTURE2D);
 	mPipelines[Layer::Default]->AppendTexture(carTex);
+	
+
+	auto tileTex = make_shared<Texture>();
+	tileTex->LoadTextureFromDDS(device, cmdList, L"Resources\\tile.dds");
+	tileTex->SetDimension(D3D12_SRV_DIMENSION_TEXTURE2D);
+	mPipelines[Layer::Default]->AppendTexture(tileTex);	
+
+	// Transparent
+	auto iceTex = make_shared<Texture>();
+	iceTex->LoadTextureFromDDS(device, cmdList, L"Resources\\ice.dds");
+	iceTex->SetDimension(D3D12_SRV_DIMENSION_TEXTURE2D);
+	mPipelines[Layer::Transparent]->AppendTexture(iceTex);
+
+	mPipelines[Layer::Reflected]->AppendTexture(brick2Tex);
+	mPipelines[Layer::Reflected]->AppendTexture(tileTex);
+	mPipelines[Layer::Reflected]->AppendTexture(carTex);
 }
 
 void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
@@ -253,22 +291,117 @@ void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList
 	mPlayer = carObj.get();
 	mPipelines[Layer::Default]->AppendObject(carObj);
 
+	auto reflectedCarObj = make_shared<GameObject>();
+	reflectedCarObj->SetReflected(XMFLOAT4(0.0f, 0.0f, 1.0f, 80.0f));
+	reflectedCarObj->SetMesh(carMesh);
+	reflectedCarObj->SetSRVIndex(2);
+	mReflectedPlayer = reflectedCarObj.get();
+	mPipelines[Layer::Reflected]->AppendObject(reflectedCarObj);
+
 	float aspect = mMainCamera->GetAspect();
 	mPlayerCamera.reset(mPlayer->ChangeCameraMode((int)CameraMode::THIRD_PERSON_CAMERA));
 	mPlayerCamera->SetLens(0.25f * Math::PI, aspect, 1.0f, 5000.0f);
 	mCurrentCamera = mPlayerCamera.get();
+	
+	BuildRoomObject(device, cmdList);
+}
 
-	/*auto sphereMesh = std::make_shared<SphereMesh>(device, cmdList, 10.0f, 20, 20);
-	auto cubeSphere1 = std::make_shared<DynamicCubeMapObject>(device, cmdList, 256);
-	cubeSphere1->SetMesh(sphereMesh);
-	cubeSphere1->SetPosition(512.0f, 500.0f, 512.0f);
-	cubeSphere1->SetMaterial(XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f), XMFLOAT3(0.98f, 0.97f, 0.95f), 0.1f);
-	mCubeMapRenderer->AppendObject(device, cubeSphere1);*/
+void GameScene::BuildRoomObject(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
+{
+	const float centerX = -500.0f, centerY = 1.0f, centerZ = -80.0f;
+	const float uvMax = 10.0f;
+
+	auto planeMesh1 = make_shared<GridMesh>(device, cmdList, 4.0f, 14.0f, uvMax, uvMax);
+	auto planeMesh2 = make_shared<GridMesh>(device, cmdList, 34.0f, 4.0f, uvMax, uvMax);
+	auto planeMesh3 = make_shared<GridMesh>(device, cmdList, 44.0f, 18.0f, uvMax, uvMax);
+	auto planeMesh4 = make_shared<GridMesh>(device, cmdList, 34.0f, 44.0f, 11.0f, 11.0f);
+
+	auto mirrorMesh = make_shared<GridMesh>(device, cmdList, 26.0f, 14.0f, 26.0f, 26.0f);
+
+	auto mirrorObj = make_shared<GameObject>();
+	mirrorObj->SetSRVIndex(0);
+	mirrorObj->SetMesh(mirrorMesh);
+	mirrorObj->SetPosition(centerX, centerY+7.0f, centerZ);
+	mirrorObj->SetMaterial(XMFLOAT4(1.0f, 1.0f, 1.0f, 0.3f), XMFLOAT3(0.01f, 0.01f, 0.01f), 0.25f);
+	mPipelines[Layer::Transparent]->AppendObject(mirrorObj);
+	mPipelines[Layer::Mirror]->AppendObject(mirrorObj);
+
+	auto gridObj = make_shared<GameObject>();
+	gridObj->SetSRVIndex(2);
+	gridObj->SetMesh(planeMesh1);
+	gridObj->SetPosition(centerX - 15.0f, centerY+7.0f, centerZ);
+	mPipelines[Layer::NormalMapped]->AppendObject(gridObj);
+
+	gridObj = make_shared<GameObject>();
+	gridObj->SetSRVIndex(2);
+	gridObj->SetMesh(planeMesh1);
+	gridObj->SetPosition(centerX + 15.0f, centerY+7.0f, centerZ);
+	mPipelines[Layer::NormalMapped]->AppendObject(gridObj);
+
+	gridObj = make_shared<GameObject>();
+	gridObj->SetSRVIndex(2);
+	gridObj->SetMesh(planeMesh2);
+	gridObj->SetPosition(centerX, centerY+16.0f, centerZ);
+	mPipelines[Layer::NormalMapped]->AppendObject(gridObj);
+
+	gridObj = make_shared<GameObject>();
+	gridObj->SetSRVIndex(2);
+	gridObj->SetMesh(planeMesh3);
+	gridObj->SetPosition(centerX - 17.0f, centerY+9.0f, centerZ - 22.0f);
+	gridObj->Rotate(0.0f, -90.0f, 0.0f);
+	mPipelines[Layer::NormalMapped]->AppendObject(gridObj);
+	auto copyGridObj = make_shared<GameObject>(*gridObj);
+	copyGridObj->SetSRVIndex(0); 
+	copyGridObj->SetReflected(XMFLOAT4(0.0f, 0.0f, 1.0f, -centerZ));
+	mPipelines[Layer::Reflected]->AppendObject(copyGridObj);
+
+	gridObj = make_shared<GameObject>();
+	gridObj->SetSRVIndex(2);
+	gridObj->SetMesh(planeMesh3);
+	gridObj->SetPosition(centerX + 17.0f, centerY+9.0f, centerZ - 22.0f);
+	gridObj->Rotate(0.0f, +90.0f, 0.0f);
+	mPipelines[Layer::NormalMapped]->AppendObject(gridObj);
+	copyGridObj = make_shared<GameObject>(*gridObj);
+	copyGridObj->SetSRVIndex(0);
+	copyGridObj->SetReflected(XMFLOAT4(0.0f, 0.0f, 1.0f, -centerZ));
+	mPipelines[Layer::Reflected]->AppendObject(copyGridObj);
+
+	gridObj = make_shared<GameObject>();
+	gridObj->SetSRVIndex(2);
+	gridObj->SetMesh(planeMesh3);
+	gridObj->SetPosition(centerX, centerY+9.0f, centerZ - 44.0f);
+	gridObj->Rotate(0.0f, 180.0f, 0.0f);
+	mPipelines[Layer::NormalMapped]->AppendObject(gridObj);
+	copyGridObj = make_shared<GameObject>(*gridObj);
+	copyGridObj->SetSRVIndex(0);
+	copyGridObj->SetReflected(XMFLOAT4(0.0f, 0.0f, 1.0f, -centerZ));
+	mPipelines[Layer::Reflected]->AppendObject(copyGridObj);
+
+	gridObj = make_shared<GameObject>();
+	gridObj->SetSRVIndex(1);
+	gridObj->SetMesh(planeMesh4);
+	gridObj->SetPosition(centerX, centerY, centerZ - 22.0f);
+	gridObj->Rotate(90.0f, 0.0f, 0.0f);
+	mPipelines[Layer::Default]->AppendObject(gridObj);
+	copyGridObj = make_shared<GameObject>(*gridObj);
+	copyGridObj->SetSRVIndex(1);
+	copyGridObj->SetReflected(XMFLOAT4(0.0f, 0.0f, 1.0f, -centerZ));
+	mPipelines[Layer::Reflected]->AppendObject(copyGridObj);
+
+	gridObj = make_shared<GameObject>();
+	gridObj->SetSRVIndex(2);
+	gridObj->SetMesh(planeMesh4);
+	gridObj->SetPosition(centerX, centerY+18.0f, centerZ - 22.0f);
+	gridObj->Rotate(-90.0f, 0.0f, 0.0f);
+	mPipelines[Layer::NormalMapped]->AppendObject(gridObj);
+	copyGridObj = make_shared<GameObject>(*gridObj);
+	copyGridObj->SetSRVIndex(0);
+	copyGridObj->SetReflected(XMFLOAT4(0.0f, 0.0f, 1.0f, -centerZ));
+	mPipelines[Layer::Reflected]->AppendObject(copyGridObj);
 }
 
 void GameScene::PrepareCubeMap(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
 {
-	//mCubeMapRenderer->PreDraw(device, cmdList, this);
 }
 
 void GameScene::OnProcessMouseDown(HWND hwnd, WPARAM buttonState, int x, int y)
@@ -331,6 +464,12 @@ void GameScene::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
 		{
 			mLODSet = !mLODSet;
 		}
+		if (wParam == 'I')
+		{
+			mPlayer->SetPosition(-500.0f, 0.0f, -100.0f);
+			mReflectedPlayer->SetPosition(-500.0f, 0.0f, -100.0f);
+			mCurrentCamera->SetPosition(-500.0f, 10.0f, -100.0f);
+		}
 		break;
 	}
 }
@@ -341,29 +480,33 @@ void GameScene::OnPreciseKeyInput(float elapsed)
 
 	if (GetAsyncKeyState('W') & 0x8000)
 	{
-		if (player_active)
+		if (player_active) {
 			mPlayer->Walk(500.0f * elapsed);
+		}
 		else
 			mCurrentCamera->Walk(100.0f * elapsed);
 	}
 	if (GetAsyncKeyState('A') & 0x8000)
 	{
-		if (player_active)
+		if (player_active) {
 			mPlayer->Strafe(-500.0f * elapsed);
+		}
 		else
 			mCurrentCamera->Strafe(-100.0f * elapsed);
 	}
 	if (GetAsyncKeyState('S') & 0x8000)
 	{
-		if (player_active)
+		if (player_active) {
 			mPlayer->Walk(-500.0f * elapsed);
+		}
 		else
 			mCurrentCamera->Walk(-100.0f * elapsed);
 	}
 	if (GetAsyncKeyState('D') & 0x8000)
 	{
-		if (player_active)
+		if (player_active) {
 			mPlayer->Strafe(500.0f * elapsed);
+		}
 		else
 			mCurrentCamera->Strafe(100.0f * elapsed);
 	}
@@ -390,10 +533,9 @@ void GameScene::Update(ID3D12Device* device, const GameTimer& timer)
 	for (const auto& [_, pso] : mPipelines)
 		pso->Update(elapsed, mCurrentCamera);
 
+	mReflectedPlayer->SetWorld(mPlayer->GetWorld());
 	//CollisionProcess(device);
 	//DeleteTimeOverBillboards(device);
-
-	//mCubeMapRenderer->Update(timer.ElapsedTime(), mCurrentCamera);
 }
 
 void GameScene::UpdateCameraConstant(int idx, Camera* camera)
@@ -424,8 +566,6 @@ void GameScene::UpdateConstants()
 
 	for (const auto& [_, pso] : mPipelines)
 		pso->UpdateConstants();
-
-	//mCubeMapRenderer->UpdateConstants();
 }
 
 void GameScene::Draw(ID3D12GraphicsCommandList* cmdList, int cameraCBIndex)
@@ -435,9 +575,7 @@ void GameScene::Draw(ID3D12GraphicsCommandList* cmdList, int cameraCBIndex)
 	cmdList->SetGraphicsRootConstantBufferView(2, mGameInfoCB->GetGPUVirtualAddress(0));
 
 	for (const auto& [layer, pso] : mPipelines)
-		if(layer != Layer::Billboard) pso->SetAndDraw(cmdList, (bool)mLODSet);
-
-	//mCubeMapRenderer->SetAndDraw(cmdList);
+		pso->SetAndDraw(cmdList, (bool)mLODSet);
 }
 
 void GameScene::CollisionProcess(ID3D12Device* device)

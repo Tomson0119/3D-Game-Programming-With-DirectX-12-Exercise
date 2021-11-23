@@ -336,4 +336,11 @@ namespace Matrix4x4
 		XMStoreFloat4x4(&ret, mat1 * XMLoadFloat4x4(&mat2));
 		return ret;
 	}
+
+	inline XMFLOAT4X4 Reflect(XMFLOAT4& plane)
+	{
+		XMFLOAT4X4 ret;
+		XMStoreFloat4x4(&ret, XMMatrixReflect(XMLoadFloat4(&plane)));
+		return ret;
+	}
 }

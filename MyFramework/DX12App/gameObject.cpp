@@ -120,6 +120,12 @@ void GameObject::SetMovement(XMFLOAT3& dir, float speed)
 	mMoveSpeed = speed;
 }
 
+void GameObject::SetReflected(XMFLOAT4& plane)
+{
+	mReflected = true;
+	mReflectMatrix = Matrix4x4::Reflect(plane);
+}
+
 void GameObject::Move(float dx, float dy, float dz)
 {
 	mPosition.x += dx;
@@ -215,7 +221,11 @@ void GameObject::Scale(float scale)
 ObjectConstants GameObject::GetObjectConstants()
 {
 	ObjectConstants objCnst = {};
-	objCnst.World = Matrix4x4::Transpose(mWorld);
+	if (mReflected)
+		objCnst.World = Matrix4x4::Transpose(Matrix4x4::Multiply(mWorld, mReflectMatrix));
+	else
+		objCnst.World = Matrix4x4::Transpose(mWorld);
+
 	objCnst.Mat = mMaterial;
 	return objCnst;
 }

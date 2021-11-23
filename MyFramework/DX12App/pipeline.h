@@ -9,8 +9,11 @@ enum class Layer : int
 	Terrain,
 	NormalMapped,
 	Default,
+	Mirror,
+	Reflected,
 	Billboard,
-	DynamicCubeMap
+	Transparent
+	//DynamicCubeMap
 };
 
 class Pipeline
@@ -34,9 +37,14 @@ public:
 
 	void SetWiredFrame(bool wired) { mIsWiredFrame = wired; }
 	void SetTopology(D3D12_PRIMITIVE_TOPOLOGY_TYPE topology) { mPrimitive = topology; }
-	void SetAndDraw(ID3D12GraphicsCommandList* cmdList, bool drawWiredFrame=false);
+	void SetCullModeBack();
 
 	void SetAlphaBlending();
+	void SetStencilOp(
+		UINT stencilRef, D3D12_DEPTH_WRITE_MASK depthWriteMask,
+		D3D12_STENCIL_OP stencilFail, D3D12_STENCIL_OP stencilDepthFail,
+		D3D12_STENCIL_OP stencilPass, D3D12_COMPARISON_FUNC stencilFunc,
+		UINT8 rtWriteMask);
 
 	void AppendObject(const std::shared_ptr<GameObject>& obj);
 	void AppendTexture(const std::shared_ptr<Texture>& tex);
@@ -45,6 +53,8 @@ public:
 	void ResetPipeline(ID3D12Device* device);
 
 	virtual void Update(const float elapsed, Camera* camera=nullptr);
+	virtual void SetAndDraw(ID3D12GraphicsCommandList* cmdList, bool drawWiredFrame = false);
+
 	void UpdateConstants();
 
 	const std::vector<std::shared_ptr<GameObject>>& GetRenderObjects() const { return mRenderObjects; }
@@ -69,6 +79,7 @@ protected:
 	UINT mRootParamCBVIndex = 0;
 	UINT mRootParamSRVIndex = 0;
 
+	UINT mStencilRef = 0;
 	bool mIsWiredFrame = false;
 };
 

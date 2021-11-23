@@ -48,6 +48,8 @@ private:
 	void BuildShadersAndPSOs(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList);
 	void BuildDescriptorHeap(ID3D12Device* device);
 
+	void BuildRoomObject(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList);
+
 	void CollisionProcess(ID3D12Device* device);
 	void CreateAndAppendFlameBillboard(ID3D12Device* device, GameObject* box);
 	void DeleteTimeOverBillboards(ID3D12Device* device);
@@ -72,7 +74,8 @@ private:
 	std::unordered_map<std::string, std::unique_ptr<Texture>> mTextures;
 	
 	Player* mPlayer = nullptr;
-	
+	GameObject* mReflectedPlayer = nullptr;
+
 	std::shared_ptr<Billboard> mFlameBillboard;
 	std::vector<std::pair<int, Billboard*>> mAllFlameBillboards;
 

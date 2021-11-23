@@ -149,6 +149,7 @@ void Pipeline::SetAndDraw(ID3D12GraphicsCommandList* cmdList, bool drawWiredFram
 {
 	ID3D12DescriptorHeap* descHeaps[] = { mCbvSrvDescriptorHeap.Get() };
 	cmdList->SetDescriptorHeaps(_countof(descHeaps), descHeaps);
+	cmdList->OMSetStencilRef(mStencilRef);
 
 	if(mIsWiredFrame && drawWiredFrame)
 		cmdList->SetPipelineState(mPSO[1].Get());
@@ -172,6 +173,12 @@ void Pipeline::SetAndDraw(ID3D12GraphicsCommandList* cmdList, bool drawWiredFram
 	}
 }
 
+void Pipeline::SetCullModeBack()
+{
+	mRasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
+	mRasterizerDesc.FrontCounterClockwise = true;
+}
+
 void Pipeline::SetAlphaBlending()
 {
 	D3D12_RENDER_TARGET_BLEND_DESC rtBlend{};
@@ -187,6 +194,26 @@ void Pipeline::SetAlphaBlending()
 	rtBlend.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 
 	mBlendDesc.RenderTarget[0] = rtBlend;
+}
+
+void Pipeline::SetStencilOp(
+	UINT stencilRef, D3D12_DEPTH_WRITE_MASK depthWriteMask,
+	D3D12_STENCIL_OP stencilFail, D3D12_STENCIL_OP stencilDepthFail, 
+	D3D12_STENCIL_OP stencilPass, D3D12_COMPARISON_FUNC stencilFunc, UINT8 rtWriteMask)
+{
+	D3D12_DEPTH_STENCILOP_DESC depthStencilDesc{};
+	depthStencilDesc.StencilFailOp = stencilFail;
+	depthStencilDesc.StencilDepthFailOp = stencilDepthFail;
+	depthStencilDesc.StencilPassOp = stencilPass;
+	depthStencilDesc.StencilFunc = stencilFunc;
+	
+	mDepthStencilDesc.StencilEnable = TRUE;
+	mDepthStencilDesc.DepthWriteMask = depthWriteMask;
+	mDepthStencilDesc.FrontFace = depthStencilDesc;
+	mDepthStencilDesc.BackFace = depthStencilDesc;
+	mBlendDesc.RenderTarget[0].RenderTargetWriteMask = rtWriteMask;
+
+	mStencilRef = stencilRef;
 }
 
 void Pipeline::Update(const float elapsed, Camera* camera)

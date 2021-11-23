@@ -33,6 +33,9 @@ public:
 	void SetRotation(XMFLOAT3& axis, float speed);
 	void SetMovement(XMFLOAT3& dir, float speed);
 
+	void SetReflected(XMFLOAT4& plane);
+	void SetWorld(XMFLOAT4X4 world) { mWorld = world; }
+
 public:
 	virtual void PreDraw(ID3D12GraphicsCommandList* cmdList, ID3D12Resource* rtvResource, GameScene* scene) { }
 	
@@ -66,6 +69,8 @@ public:
 	XMFLOAT3 GetLook() const { return mLook; }
 	XMFLOAT3 GetUp() const { return mUp; }
 
+	XMFLOAT4X4 GetWorld() const { return mWorld; }
+
 	UINT GetSRVIndex() const { return mSrvIndex; }
 
 	virtual ULONG GetCubeMapSize() const { return 0; }	
@@ -97,6 +102,9 @@ protected:
 
 	float mMoveSpeed = 0.0f;
 	float mRotationSpeed = 0.0f;
+
+	bool mReflected = false;
+	XMFLOAT4X4 mReflectMatrix = Matrix4x4::Identity4x4();
 };
 
 
