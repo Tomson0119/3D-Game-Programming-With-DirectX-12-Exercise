@@ -6,6 +6,7 @@ using namespace std;
 
 GameScene::GameScene()
 {
+	mPrevTime = std::chrono::high_resolution_clock::now();
 }
 
 GameScene::~GameScene()
@@ -104,7 +105,7 @@ void GameScene::BuildShadersAndPSOs(ID3D12Device* device, ID3D12GraphicsCommandL
 	mPipelines[Layer::Mirror]->BuildPipeline(device, mRootSignature.Get(), defaultShader.get());
 
 	mPipelines[Layer::Reflected] = make_unique<Pipeline>();
-	mPipelines[Layer::Reflected]->SetCullModeBack();
+	mPipelines[Layer::Reflected]->SetCullClockwise();
 	mPipelines[Layer::Reflected]->SetStencilOp(
 		1, D3D12_DEPTH_WRITE_MASK_ALL,
 		D3D12_STENCIL_OP_KEEP, D3D12_STENCIL_OP_KEEP,
@@ -119,8 +120,8 @@ void GameScene::BuildShadersAndPSOs(ID3D12Device* device, ID3D12GraphicsCommandL
 
 void GameScene::BuildConstantBuffers(ID3D12Device* device)
 {
-	mCameraCB = std::make_unique<ConstantBuffer<CameraConstants>>(device, 1+12);
-	mLightCB = std::make_unique<ConstantBuffer<LightConstants>>(device, 1);
+	mCameraCB = std::make_unique<ConstantBuffer<CameraConstants>>(device, 1);
+	mLightCB = std::make_unique<ConstantBuffer<LightConstants>>(device, 2);
 	mGameInfoCB = std::make_unique<ConstantBuffer<GameInfoConstants>>(device, 1);
 
 	for (const auto& [_, pso] : mPipelines)
@@ -176,6 +177,11 @@ void GameScene::BuildTextures(ID3D12Device* device, ID3D12GraphicsCommandList* c
 	flameArrayTex->LoadTextureFromDDS(device, cmdList, L"Resources\\flamearray.dds");
 	flameArrayTex->SetDimension(D3D12_SRV_DIMENSION_TEXTURE2DARRAY);
 	mPipelines[Layer::Billboard]->AppendTexture(flameArrayTex);
+
+	auto dustTex = make_shared<Texture>();
+	dustTex->LoadTextureFromDDS(device, cmdList, L"Resources\\magicarray.dds");
+	dustTex->SetDimension(D3D12_SRV_DIMENSION_TEXTURE2DARRAY);
+	mPipelines[Layer::Billboard]->AppendTexture(dustTex);
 
 	// Normalmapped
 	auto brickTex = make_shared<Texture>();
@@ -265,6 +271,11 @@ void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList
 	mFlameBillboard->SetSRVIndex(2);
 	mFlameBillboard->AppendBillboard(XMFLOAT3(0.0f,0.0f,0.0f));
 	mFlameBillboard->BuildMesh(device, cmdList);
+
+	mDustBillboard = make_shared<Billboard>(1.0f, 1.0f);
+	mDustBillboard->SetSRVIndex(3);
+	mDustBillboard->AppendBillboard(XMFLOAT3(0.0f, 0.0f, 0.0f));
+	mDustBillboard->BuildMesh(device, cmdList);
 
 	// boxes
 	auto boxMesh = make_shared<BoxMesh>(device, cmdList, 4.0f, 4.0f, 4.0f);
@@ -468,9 +479,18 @@ void GameScene::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
 		}
 		if (wParam == 'I')
 		{
-			mPlayer->SetPosition(-500.0f, 0.0f, -100.0f);
-			mReflectedPlayer->SetPosition(-500.0f, 0.0f, -100.0f);
-			mCurrentCamera->SetPosition(-500.0f, 10.0f, -100.0f);
+			if (mOutside) {
+				mPlayer->SetPosition(-500.0f, 0.0f, -100.0f);
+				mMainCamera->SetPosition(-500.0f, 20.0f, -100.0f);
+				mPlayerCamera->SetPosition(-500.0f, 20.0f, -100.0f);
+			}
+			else
+			{
+				mPlayer->SetPosition(257, 100.0f, 257);
+				mMainCamera->SetPosition(257, 120.0f, 257);
+				mPlayerCamera->SetPosition(257, 120.0f, 257);
+			}
+			mOutside = !mOutside;
 		}
 		break;
 	}
@@ -537,6 +557,7 @@ void GameScene::Update(ID3D12Device* device, const GameTimer& timer)
 
 	mReflectedPlayer->SetWorld(mPlayer->GetWorld());
 	
+	CreateAndAppendDustBillboard(device);
 	CollisionProcess(device);
 	DeleteTimeOverBillboards(device);
 }
@@ -564,7 +585,16 @@ void GameScene::UpdateConstants()
 	lightCnst.Lights[2].Diffuse = { 0.35f, 0.35f, 0.35f };
 	lightCnst.Lights[2].Direction = { 1.0f, 1.0f, -1.0f };
 
+	XMVECTOR mirrorPlane = XMVectorSet(0.0f, 0.0f, 1.0f, 80.0f);
+	XMMATRIX reflect = XMMatrixReflect(mirrorPlane);
+	LightConstants reflectedLightCnst = lightCnst;
+	for (int i = 0; i < 3; i++) {
+		XMVECTOR reflectedDirection = XMVector3TransformNormal(XMLoadFloat3(&reflectedLightCnst.Lights[i].Direction), reflect);
+		XMStoreFloat3A(&reflectedLightCnst.Lights[i].Direction, reflectedDirection);
+	}
 	mLightCB->CopyData(0, lightCnst);
+	mLightCB->CopyData(1, reflectedLightCnst);
+
 	mGameInfoCB->CopyData(0, { mLODSet });
 
 	for (const auto& [_, pso] : mPipelines)
@@ -578,7 +608,13 @@ void GameScene::Draw(ID3D12GraphicsCommandList* cmdList, int cameraCBIndex)
 	cmdList->SetGraphicsRootConstantBufferView(2, mGameInfoCB->GetGPUVirtualAddress(0));
 
 	for (const auto& [layer, pso] : mPipelines) {
+		if (layer == Layer::Reflected)
+			cmdList->SetGraphicsRootConstantBufferView(1, mLightCB->GetGPUVirtualAddress(1));
+
 		pso->SetAndDraw(cmdList, (bool)mLODSet);
+
+		if (layer == Layer::Reflected)
+			cmdList->SetGraphicsRootConstantBufferView(1, mLightCB->GetGPUVirtualAddress(0));		
 	}
 }
 
@@ -607,9 +643,33 @@ void GameScene::CollisionProcess(ID3D12Device* device)
 	if(flag) mPipelines[Layer::NormalMapped]->ResetPipeline(device);
 }
 
+void GameScene::CreateAndAppendDustBillboard(ID3D12Device* device)
+{	
+	int randnum = Math::RandInt(100, 1500);
+	auto randMillisec = std::chrono::milliseconds(randnum);
+
+	auto currentTime = std::chrono::high_resolution_clock::now();
+	if (currentTime - mPrevTime > randMillisec) {
+		
+		shared_ptr<Billboard> dust = make_shared<Billboard>(*mDustBillboard);
+		XMFLOAT3 pos = mPlayer->GetPosition();
+
+		float randX = Math::RandFloat(-1.0f, 1.0f);
+		float randY = Math::RandFloat(0.0f, 1.0f);
+		float randZ = Math::RandFloat(-1.0f, 1.0f);
+
+		dust->SetPosition(pos);
+		dust->SetMovement(XMFLOAT3( randX, randY, randZ ), 3.0f);
+		dust->SetDurationTime(1500ms);
+		mPipelines[Layer::Billboard]->AppendObject(dust);
+		mPipelines[Layer::Billboard]->ResetPipeline(device);
+		mPrevTime = std::chrono::high_resolution_clock::now();
+	}
+}
+
 void GameScene::CreateAndAppendFlameBillboard(ID3D12Device* device, GameObject* box)
 {
-	static XMFLOAT3 Direction[9] = {
+	static XMFLOAT3 FlameDirections[9] = {
 		XMFLOAT3( 1.0f, 0.0f,  0.0f),
 		XMFLOAT3(-1.0f, 0.0f,  0.0f),
 		XMFLOAT3( 0.0f, 1.0f,  0.0f),
@@ -620,13 +680,12 @@ void GameScene::CreateAndAppendFlameBillboard(ID3D12Device* device, GameObject* 
 		XMFLOAT3(-1.0f, 1.0f,  1.0f),
 		XMFLOAT3(-1.0f, 1.0f, -1.0f)
 	};
-
-	int offset = (int)mPipelines[Layer::Billboard]->GetRenderObjects().size();
+	
 	for (int i = 0; i < 9; i++)
 	{
 		shared_ptr<Billboard> newFlame = make_shared<Billboard>(*mFlameBillboard);
 		newFlame->SetPosition(box->GetPosition());
-		newFlame->SetMovement(Direction[i], 1.0f);
+		newFlame->SetMovement(FlameDirections[i], 1.0f);
 		newFlame->SetDurationTime(2500ms);
 		mPipelines[Layer::Billboard]->AppendObject(newFlame);
 	}

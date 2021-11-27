@@ -51,6 +51,7 @@ private:
 	void BuildRoomObject(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList);
 
 	void CollisionProcess(ID3D12Device* device);
+	void CreateAndAppendDustBillboard(ID3D12Device* device);
 	void CreateAndAppendFlameBillboard(ID3D12Device* device, GameObject* box);
 	void DeleteTimeOverBillboards(ID3D12Device* device);
 
@@ -77,6 +78,9 @@ private:
 	GameObject* mReflectedPlayer = nullptr;
 
 	std::shared_ptr<Billboard> mFlameBillboard;
+	std::shared_ptr<Billboard> mDustBillboard;
+	std::chrono::high_resolution_clock::time_point mPrevTime;
 
 	bool mLODSet = false;
+	bool mOutside = true;
 };
