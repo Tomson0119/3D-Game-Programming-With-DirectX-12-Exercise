@@ -173,9 +173,8 @@ void Pipeline::SetAndDraw(ID3D12GraphicsCommandList* cmdList, bool drawWiredFram
 	}
 }
 
-void Pipeline::SetCullModeBack()
+void Pipeline::SetCullClockwise()
 {
-	mRasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
 	mRasterizerDesc.FrontCounterClockwise = true;
 }
 

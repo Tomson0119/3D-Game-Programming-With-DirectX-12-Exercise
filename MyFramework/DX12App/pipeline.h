@@ -37,7 +37,7 @@ public:
 
 	void SetWiredFrame(bool wired) { mIsWiredFrame = wired; }
 	void SetTopology(D3D12_PRIMITIVE_TOPOLOGY_TYPE topology) { mPrimitive = topology; }
-	void SetCullModeBack();
+	void SetCullClockwise();
 
 	void SetAlphaBlending();
 	void SetStencilOp(
