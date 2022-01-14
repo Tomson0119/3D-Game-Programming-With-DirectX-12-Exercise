@@ -13,6 +13,7 @@ public:
 
 	float TotalTime() const;
 	float ElapsedTime() const;
+	float CurrentTime() const;
 
 private:
 	double mSecondsPerCount;

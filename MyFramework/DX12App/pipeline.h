@@ -12,7 +12,10 @@ enum class Layer : int
 	Mirror,
 	Reflected,
 	Billboard,
-	Transparent
+	Particle,
+	Transparent,
+	ShadowDebug,
+	//ShadowMap,
 	//DynamicCubeMap
 };
 
@@ -53,7 +56,7 @@ public:
 	void ResetPipeline(ID3D12Device* device);
 
 	virtual void Update(const float elapsed, Camera* camera=nullptr);
-	virtual void SetAndDraw(ID3D12GraphicsCommandList* cmdList, bool drawWiredFrame = false);
+	virtual void SetAndDraw(ID3D12GraphicsCommandList* cmdList, bool drawWiredFrame=false, bool setPipeline=true);
 
 	void UpdateConstants();
 
@@ -83,7 +86,6 @@ protected:
 	bool mIsWiredFrame = false;
 };
 
-
 //////////////////////////////////////////////////////////////////////////////////
 //
 class SkyboxPipeline : public Pipeline
@@ -96,4 +98,85 @@ public:
 		ID3D12Device* device,
 		ID3D12RootSignature* rootSig,
 		Shader* shader = nullptr) override;
+};
+
+
+//////////////////////////////////////////////////////////////////////////////////
+//
+class StreamOutputPipeline : public Pipeline
+{
+public:
+	StreamOutputPipeline();
+	virtual ~StreamOutputPipeline();
+
+	virtual void BuildPipeline(
+		ID3D12Device* device,
+		ID3D12RootSignature* rootSig,
+		Shader* shader = nullptr) override;
+
+	virtual void SetAndDraw(
+		ID3D12GraphicsCommandList* cmdList,
+		bool drawWiredFrame = false,
+		bool setPipeline = true) override;
+
+private:
+	void BuildSOPipeline(
+		ID3D12Device* device,
+		ID3D12RootSignature* rootSig,
+		Shader* shader = nullptr);
+
+	void CreateStreamOutputDesc();
+
+private:
+	D3D12_STREAM_OUTPUT_DESC mStreamOutputDesc;
+	std::vector<D3D12_SO_DECLARATION_ENTRY> mSODeclarations;
+	std::vector<UINT> mStrides;
+};
+
+
+//////////////////////////////////////////////////////////////////////////////////
+//
+class ComputePipeline
+{
+public:
+	ComputePipeline(ID3D12Device* device);
+	virtual ~ComputePipeline();
+
+	void BuildPipeline(
+		ID3D12Device* device,
+		ID3D12RootSignature* rootSig,
+		ComputeShader* shader = nullptr);
+
+	void SetPrevBackBuffer(ID3D12GraphicsCommandList* cmdList, ID3D12Resource* buffer);
+	void SetCurrBackBuffer(ID3D12GraphicsCommandList* cmdList, ID3D12Resource* buffer);
+
+	void CreateTextures(ID3D12Device* device);
+	void BuildDescriptorHeap(ID3D12Device* device);
+	void BuildSRVAndUAV(ID3D12Device* device);
+	void Dispatch(ID3D12GraphicsCommandList* cmdList);
+
+	void CopyRTToMap(
+		ID3D12GraphicsCommandList* cmdList,
+		ID3D12Resource* source, 
+		ID3D12Resource* dest);
+
+	void CopyMapToRT(ID3D12GraphicsCommandList* cmdList, ID3D12Resource* rtBuffer);
+
+	void CopyCurrentToPreviousBuffer(ID3D12GraphicsCommandList* cmdList);
+
+private:
+	static const int BlurMapInputCount = 2;
+
+	std::vector<ComPtr<ID3D12PipelineState>> mPSOs;
+	ComPtr<ID3D12DescriptorHeap> mSrvUavDescriptorHeap;
+
+	std::unique_ptr<Texture> mBlurMapInput[BlurMapInputCount];
+	std::unique_ptr<Texture> mBlurMapOutput;
+
+	ID3D12RootSignature* mComputeRootSig;
+
+	D3D12_GPU_VIRTUAL_ADDRESS mGPUAddresses[BlurMapInputCount + 1];
+
+	std::chrono::system_clock::time_point mSetTime;
+	const std::chrono::milliseconds mDuration = 60ms;
 };

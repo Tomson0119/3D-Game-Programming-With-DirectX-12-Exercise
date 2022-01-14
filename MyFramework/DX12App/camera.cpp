@@ -23,6 +23,18 @@ void Camera::SetPosition(const XMFLOAT3& pos)
 	mViewDirty = true;
 }
 
+void Camera::SetLook(const XMFLOAT3& look)
+{
+	mLook = look;
+	mViewDirty = true;
+}
+
+void Camera::SetUp(const XMFLOAT3& up)
+{
+	mUp = up;
+	mViewDirty = true;
+}
+
 void Camera::SetLens(float aspect)
 {
 	SetLens(mFov.y, aspect, mNearZ, mFarZ);
@@ -44,6 +56,19 @@ void Camera::SetLens(float fovY, float aspect, float zn, float zf)
 	mFarZ = zf;
 
 	XMMATRIX P = XMMatrixPerspectiveFovLH(mFov.y, mAspect, mNearZ, mFarZ);
+	XMStoreFloat4x4(&mProj, P);
+	BoundingFrustum::CreateFromMatrix(mFrustumView, P);
+}
+
+void Camera::SetOrthographicLens(XMFLOAT3& center, float range)
+{
+	UpdateViewMatrix();
+
+	XMFLOAT3 C = Vector3::TransformCoord(center, mView);
+	XMMATRIX P = XMMatrixOrthographicOffCenterLH(
+		C.x - range, C.x + range,
+		C.y - range, C.y + range,
+		C.z - range, C.z + range);
 	XMStoreFloat4x4(&mProj, P);
 	BoundingFrustum::CreateFromMatrix(mFrustumView, P);
 }

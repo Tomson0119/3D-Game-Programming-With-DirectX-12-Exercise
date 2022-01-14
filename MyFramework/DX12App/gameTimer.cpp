@@ -76,4 +76,9 @@ float GameTimer::ElapsedTime() const
 	return static_cast<float>(mElapsedTime);
 }
 
+float GameTimer::CurrentTime() const
+{
+	return static_cast<float>(mCurrTime);
+}
+
 

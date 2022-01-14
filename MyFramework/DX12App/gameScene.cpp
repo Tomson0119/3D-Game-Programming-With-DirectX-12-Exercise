@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "gameScene.h"
 #include "dynamicCubeRenderer.h"
+#include "shadowMapRenderer.h"
 
 using namespace std;
 
@@ -28,7 +29,25 @@ void GameScene::BuildObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cm
 	mMainCamera->SetPosition(257, 200.0f, 257);
 	mCurrentCamera = mMainCamera.get();
 
+	mMainLight.Ambient = XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f);
+	mMainLight.Lights[0].SetInfo(
+		XMFLOAT3(0.5f, 0.5f, 0.5f),
+		XMFLOAT3(0.0f, 0.0f, 0.0f),
+		XMFLOAT3(-1.0f, 1.0f, -1.0f),
+		3000.0f, DIRECTIONAL_LIGHT);
+	mMainLight.Lights[1].SetInfo(
+		XMFLOAT3(0.15f, 0.15f, 0.15f),
+		XMFLOAT3(0.0f, 0.0f, 0.0f),
+		XMFLOAT3(0.0f, 1.0f, 1.0f),
+		3000.0f, DIRECTIONAL_LIGHT);
+	mMainLight.Lights[2].SetInfo(
+		XMFLOAT3(0.35f, 0.35f, 0.35f),
+		XMFLOAT3(0.0f, 0.0f, 0.0f),
+		XMFLOAT3(1.0f, 1.0f, -1.0f),
+		3000.0f, DIRECTIONAL_LIGHT);
+
 	BuildRootSignature(device);
+	BuildComputeRootSignature(device);
 	BuildShadersAndPSOs(device, cmdList);
 	BuildTextures(device, cmdList);
 	BuildGameObjects(device, cmdList);
@@ -38,25 +57,34 @@ void GameScene::BuildObjects(ID3D12Device* device, ID3D12GraphicsCommandList* cm
 
 void GameScene::BuildRootSignature(ID3D12Device* device)
 {
-	D3D12_DESCRIPTOR_RANGE descRanges[2];
+	D3D12_DESCRIPTOR_RANGE descRanges[3];
 	descRanges[0] = Extension::DescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 3);
 	descRanges[1] = Extension::DescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 5, 0);
+	descRanges[2] = Extension::DescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 1);
 
-	D3D12_ROOT_PARAMETER parameters[5];
-	parameters[0] = Extension::Descriptor(D3D12_ROOT_PARAMETER_TYPE_CBV, 0, D3D12_SHADER_VISIBILITY_ALL);  // CameraCB
-	parameters[1] = Extension::Descriptor(D3D12_ROOT_PARAMETER_TYPE_CBV, 1, D3D12_SHADER_VISIBILITY_ALL);  // LightCB
-	parameters[2] = Extension::Descriptor(D3D12_ROOT_PARAMETER_TYPE_CBV, 2, D3D12_SHADER_VISIBILITY_ALL);  // GameInfoCB
-	parameters[3] = Extension::DescriptorTable(1, &descRanges[0], D3D12_SHADER_VISIBILITY_ALL);			   // Object,  CBV
-	parameters[4] = Extension::DescriptorTable(1, &descRanges[1], D3D12_SHADER_VISIBILITY_ALL);		       // Texture, SRV
-
-	D3D12_STATIC_SAMPLER_DESC samplerDesc[4];
+	D3D12_ROOT_PARAMETER parameters[6];
+	parameters[0] = Extension::Descriptor(D3D12_ROOT_PARAMETER_TYPE_CBV, 0, D3D12_SHADER_VISIBILITY_ALL);    // CameraCB
+	parameters[1] = Extension::Descriptor(D3D12_ROOT_PARAMETER_TYPE_CBV, 1, D3D12_SHADER_VISIBILITY_ALL);    // LightCB
+	parameters[2] = Extension::Descriptor(D3D12_ROOT_PARAMETER_TYPE_CBV, 2, D3D12_SHADER_VISIBILITY_ALL);    // GameInfoCB
+	parameters[3] = Extension::DescriptorTable(1, &descRanges[0], D3D12_SHADER_VISIBILITY_ALL);			     // Object,  CBV
+	parameters[4] = Extension::DescriptorTable(1, &descRanges[1], D3D12_SHADER_VISIBILITY_ALL);				 // Texture, SRV
+	parameters[5] = Extension::DescriptorTable(1, &descRanges[2], D3D12_SHADER_VISIBILITY_ALL);				 // ShadowMap 																	   
+    
+	D3D12_STATIC_SAMPLER_DESC samplerDesc[5];
 	samplerDesc[0] = Extension::SamplerDesc(0, D3D12_FILTER_ANISOTROPIC, D3D12_TEXTURE_ADDRESS_MODE_WRAP);
 	samplerDesc[1] = Extension::SamplerDesc(1, D3D12_FILTER_ANISOTROPIC, D3D12_TEXTURE_ADDRESS_MODE_CLAMP);
 	samplerDesc[2] = Extension::SamplerDesc(2, D3D12_FILTER_MIN_MAG_MIP_LINEAR, D3D12_TEXTURE_ADDRESS_MODE_WRAP);
 	samplerDesc[3] = Extension::SamplerDesc(3, D3D12_FILTER_MIN_MAG_MIP_LINEAR, D3D12_TEXTURE_ADDRESS_MODE_CLAMP);
+	samplerDesc[4] = Extension::SamplerDesc(4,
+		D3D12_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT,
+		D3D12_TEXTURE_ADDRESS_MODE_BORDER,
+		D3D12_COMPARISON_FUNC_LESS_EQUAL,
+		D3D12_STATIC_BORDER_COLOR_OPAQUE_BLACK);
 
 	D3D12_ROOT_SIGNATURE_DESC rootSigDesc = Extension::RootSignatureDesc(_countof(parameters), parameters,
-		_countof(samplerDesc), samplerDesc, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+		_countof(samplerDesc), samplerDesc, 
+		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
+		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_STREAM_OUTPUT);
 
 	ComPtr<ID3DBlob> rootSigBlob = nullptr;
 	ComPtr<ID3DBlob> errorBlob = nullptr;
@@ -71,12 +99,39 @@ void GameScene::BuildRootSignature(ID3D12Device* device)
 		IID_PPV_ARGS(&mRootSignature)));
 }
 
+void GameScene::BuildComputeRootSignature(ID3D12Device* device)
+{
+	D3D12_DESCRIPTOR_RANGE descRanges[2];
+	descRanges[0] = Extension::DescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 2, 0);
+	descRanges[1] = Extension::DescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0);
+
+	D3D12_ROOT_PARAMETER parameters[2];
+	parameters[0] = Extension::DescriptorTable(1, &descRanges[0], D3D12_SHADER_VISIBILITY_ALL);    // Inputs
+	parameters[1] = Extension::DescriptorTable(1, &descRanges[1], D3D12_SHADER_VISIBILITY_ALL);    // Output																   
+
+	D3D12_ROOT_SIGNATURE_DESC rootSigDesc = Extension::RootSignatureDesc(_countof(parameters), parameters,
+		0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
+	ComPtr<ID3DBlob> rootSigBlob = nullptr;
+	ComPtr<ID3DBlob> errorBlob = nullptr;
+
+	ThrowIfFailed(D3D12SerializeRootSignature(
+		&rootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1,
+		rootSigBlob.GetAddressOf(), errorBlob.GetAddressOf()));
+
+	ThrowIfFailed(device->CreateRootSignature(
+		0, rootSigBlob->GetBufferPointer(),
+		rootSigBlob->GetBufferSize(),
+		IID_PPV_ARGS(&mComputeRootSignature)));
+}
+
 void GameScene::BuildShadersAndPSOs(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
 {
 	auto terrainShader = make_unique<TerrainShader>(L"Shaders\\terrain.hlsl");
 	auto billboardShader = make_unique<BillboardShader>(L"Shaders\\billboard.hlsl");
 	auto normalmapShader = make_unique<DefaultShader>(L"Shaders\\normalmap.hlsl");
 	auto defaultShader = make_unique<DefaultShader>(L"Shaders\\default.hlsl");
+	auto shadowDebugShader = make_unique<DefaultShader>(L"Shaders\\shadowDebug.hlsl");
 
 	mPipelines[Layer::SkyBox] = make_unique<SkyboxPipeline>(device, cmdList);
 	mPipelines[Layer::SkyBox]->BuildPipeline(device, mRootSignature.Get());
@@ -116,12 +171,29 @@ void GameScene::BuildShadersAndPSOs(ID3D12Device* device, ID3D12GraphicsCommandL
 	mPipelines[Layer::Transparent] = make_unique<Pipeline>();
 	mPipelines[Layer::Transparent]->SetAlphaBlending();
 	mPipelines[Layer::Transparent]->BuildPipeline(device, mRootSignature.Get(), defaultShader.get());
+
+	mPipelines[Layer::ShadowDebug] = make_unique<Pipeline>();
+	mPipelines[Layer::ShadowDebug]->BuildPipeline(device, mRootSignature.Get(), shadowDebugShader.get());
+	
+	mPipelines[Layer::Particle] = make_unique<StreamOutputPipeline>();
+	mPipelines[Layer::Particle]->BuildPipeline(device, mRootSignature.Get());
+
+	mShadowMapRenderer = make_unique<ShadowMapRenderer>(device, 4096, 4096, 1);
+	mShadowMapRenderer->SetSunRange(80.0f);
+	mShadowMapRenderer->SetCenter(mRoomCenter);
+	mShadowMapRenderer->AppendTargetPipeline(mPipelines[Layer::NormalMapped].get());
+	mShadowMapRenderer->AppendTargetPipeline(mPipelines[Layer::Default].get());
+	mShadowMapRenderer->BuildPipeline(device, mRootSignature.Get());
+
+	auto computeShader = make_unique<ComputeShader>(L"Shaders\\blur.hlsl");
+	mComputePipeline = make_unique<ComputePipeline>(device);
+	mComputePipeline->BuildPipeline(device, mComputeRootSignature.Get(), computeShader.get());
 }
 
 void GameScene::BuildConstantBuffers(ID3D12Device* device)
 {
-	mCameraCB = std::make_unique<ConstantBuffer<CameraConstants>>(device, 1);
 	mLightCB = std::make_unique<ConstantBuffer<LightConstants>>(device, 2);
+	mCameraCB = std::make_unique<ConstantBuffer<CameraConstants>>(device, 1 + 2);
 	mGameInfoCB = std::make_unique<ConstantBuffer<GameInfoConstants>>(device, 1);
 
 	for (const auto& [_, pso] : mPipelines)
@@ -130,6 +202,8 @@ void GameScene::BuildConstantBuffers(ID3D12Device* device)
 
 void GameScene::BuildDescriptorHeap(ID3D12Device* device)
 {
+	mShadowMapRenderer->BuildDescriptorHeap(device, 3, 4);
+	mComputePipeline->BuildDescriptorHeap(device);
 	for (const auto& [_, pso] : mPipelines)
 		pso->BuildDescriptorHeap(device, 3, 4);
 }
@@ -181,7 +255,7 @@ void GameScene::BuildTextures(ID3D12Device* device, ID3D12GraphicsCommandList* c
 	auto dustTex = make_shared<Texture>();
 	dustTex->LoadTextureFromDDS(device, cmdList, L"Resources\\magicarray.dds");
 	dustTex->SetDimension(D3D12_SRV_DIMENSION_TEXTURE2DARRAY);
-	mPipelines[Layer::Billboard]->AppendTexture(dustTex);
+	mPipelines[Layer::Particle]->AppendTexture(dustTex);
 
 	// Normalmapped
 	auto brickTex = make_shared<Texture>();
@@ -267,15 +341,19 @@ void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList
 	treeBillboard->BuildMesh(device, cmdList);
 	mPipelines[Layer::Billboard]->AppendObject(treeBillboard);
 
-	mFlameBillboard = make_shared<Billboard>(2.0f, 2.0f);
+	/*mFlameBillboard = make_shared<Billboard>(2.0f, 2.0f);
 	mFlameBillboard->SetSRVIndex(2);
 	mFlameBillboard->AppendBillboard(XMFLOAT3(0.0f,0.0f,0.0f));
-	mFlameBillboard->BuildMesh(device, cmdList);
+	mFlameBillboard->BuildMesh(device, cmdList);*/
 
-	mDustBillboard = make_shared<Billboard>(1.0f, 1.0f);
-	mDustBillboard->SetSRVIndex(3);
-	mDustBillboard->AppendBillboard(XMFLOAT3(0.0f, 0.0f, 0.0f));
-	mDustBillboard->BuildMesh(device, cmdList);
+	auto particle = make_shared<ParticleMesh>(
+		device, cmdList, mRoomCenter,
+		XMFLOAT2(1.0f, 1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f),
+		3000, 3.0f, 80);
+	auto particleObj = make_shared<GameObject>();
+	particleObj->SetSRVIndex(0);
+	particleObj->SetMesh(particle);
+	mPipelines[Layer::Particle]->AppendObject(particleObj);
 
 	// boxes
 	auto boxMesh = make_shared<BoxMesh>(device, cmdList, 4.0f, 4.0f, 4.0f);
@@ -283,13 +361,24 @@ void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList
 	{
 		float pos_x = Math::RandFloat(0, terrain->GetWidth()-1);
 		float pos_z = Math::RandFloat(0, terrain->GetDepth()-1);
-		float pos_y = terrain->GetHeight(pos_x, pos_z) + 2.0f;
+		float pos_y = terrain->GetHeight(pos_x, pos_z) + 10.0f;
 
 		auto boxObj = make_shared<GameObject>();
 		boxObj->SetMesh(boxMesh);
 		boxObj->SetPosition(pos_x, pos_y, pos_z);
 		boxObj->SetRotation(XMFLOAT3(0.0f, 1.0f, 0.0f), 100.0f);
 
+		mPipelines[Layer::NormalMapped]->AppendObject(boxObj);
+	}
+	auto boxMesh2 = make_shared<BoxMesh>(device, cmdList, 2.0f, 2.0f, 2.0f);
+	for (int i = 0; i < 10; i++)
+	{
+		float pos_x = Math::RandFloat(mRoomCenter.x - 40.0f, mRoomCenter.x + 40.0f);
+		float pos_z = Math::RandFloat(mRoomCenter.z - 40.0f, mRoomCenter.z + 40.0f);
+		auto box = make_shared<GameObject>();
+		auto boxObj = make_shared<GameObject>();
+		boxObj->SetMesh(boxMesh);
+		boxObj->SetPosition(pos_x, 2.0f, pos_z);
 		mPipelines[Layer::NormalMapped]->AppendObject(boxObj);
 	}
 
@@ -300,12 +389,21 @@ void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList
 	auto carObj = make_shared<TerrainPlayer>(terrain.get());
 	carObj->SetMesh(carMesh);
 	carObj->SetSRVIndex(0);
-	carObj->SetPosition(257, 100.0f, 257);	
+	carObj->SetPosition(mRoomCenter);	
 	mPlayer = carObj.get();
 	mPipelines[Layer::Default]->AppendObject(carObj);
 
+	// plane : test
+	auto shadowMapPlane = make_shared<GridMesh>(device, cmdList, 10.0f, 10.0f, 10.0f, 10.0f);
+	auto planeObj = make_shared<GameObject>();
+	planeObj->SetMesh(shadowMapPlane);
+	planeObj->SetSRVIndex(0);
+	planeObj->SetPosition({ mRoomCenter.x + 50.0f, mRoomCenter.y+7.0f, mRoomCenter.z +40.0f });
+	planeObj->Rotate(0.0f, 90.0f, 0.0f);
+	mPipelines[Layer::ShadowDebug]->AppendObject(planeObj);
+
 	auto reflectedCarObj = make_shared<GameObject>();
-	reflectedCarObj->SetReflected(XMFLOAT4(0.0f, 0.0f, 1.0f, 80.0f));
+	reflectedCarObj->SetReflected(XMFLOAT4(0.0f, 0.0f, 1.0f, -mRoomCenter.z -50.0f));
 	reflectedCarObj->SetMesh(carMesh);
 	reflectedCarObj->SetSRVIndex(2);
 	mReflectedPlayer = reflectedCarObj.get();
@@ -321,100 +419,95 @@ void GameScene::BuildGameObjects(ID3D12Device* device, ID3D12GraphicsCommandList
 
 void GameScene::BuildRoomObject(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
 {
-	const float centerX = -500.0f, centerY = 1.0f, centerZ = -80.0f;
 	const float uvMax = 10.0f;
 
-	auto planeMesh1 = make_shared<GridMesh>(device, cmdList, 4.0f, 14.0f, uvMax, uvMax);
-	auto planeMesh2 = make_shared<GridMesh>(device, cmdList, 34.0f, 4.0f, uvMax, uvMax);
-	auto planeMesh3 = make_shared<GridMesh>(device, cmdList, 44.0f, 18.0f, uvMax, uvMax);
-	auto planeMesh4 = make_shared<GridMesh>(device, cmdList, 34.0f, 44.0f, 11.0f, 11.0f);
+	auto planeMesh1 = make_shared<GridMesh>(device, cmdList,   4.0f,  20.0f, uvMax, uvMax);
+	auto planeMesh2 = make_shared<GridMesh>(device, cmdList, 108.0f,   4.0f, uvMax, uvMax);
+	auto planeMesh3 = make_shared<GridMesh>(device, cmdList, 108.0f,  24.0f, uvMax, uvMax);
+	auto planeMesh4 = make_shared<GridMesh>(device, cmdList, 108.0f, 108.0f, uvMax, uvMax);
+	auto mirrorMesh = make_shared<GridMesh>(device, cmdList, 100.0f,  20.0f, 20.0f, 20.0f);
 
-	auto mirrorMesh = make_shared<GridMesh>(device, cmdList, 26.0f, 14.0f, 26.0f, 26.0f);
-
+	// Mirror
 	auto mirrorObj = make_shared<GameObject>();
 	mirrorObj->SetSRVIndex(0);
 	mirrorObj->SetMesh(mirrorMesh);
-	mirrorObj->SetPosition(centerX, centerY+7.0f, centerZ);
+	mirrorObj->SetPosition(mRoomCenter.x, mRoomCenter.y + 10.0f, mRoomCenter.z +50.0f);
 	mirrorObj->SetMaterial(XMFLOAT4(1.0f, 1.0f, 1.0f, 0.3f), XMFLOAT3(0.01f, 0.01f, 0.01f), 0.25f);
 	mPipelines[Layer::Transparent]->AppendObject(mirrorObj);
 	mPipelines[Layer::Mirror]->AppendObject(mirrorObj);
 
+	// Front
 	auto gridObj = make_shared<GameObject>();
 	gridObj->SetSRVIndex(2);
 	gridObj->SetMesh(planeMesh1);
-	gridObj->SetPosition(centerX - 15.0f, centerY+7.0f, centerZ);
+	gridObj->SetPosition(mRoomCenter.x - 52.0f, mRoomCenter.y + 10.0f, mRoomCenter.z +50.0f);
 	mPipelines[Layer::NormalMapped]->AppendObject(gridObj);
 
 	gridObj = make_shared<GameObject>();
 	gridObj->SetSRVIndex(2);
 	gridObj->SetMesh(planeMesh1);
-	gridObj->SetPosition(centerX + 15.0f, centerY+7.0f, centerZ);
+	gridObj->SetPosition(mRoomCenter.x + 52.0f, mRoomCenter.y+ 10.0f, mRoomCenter.z +50.0f);
 	mPipelines[Layer::NormalMapped]->AppendObject(gridObj);
 
 	gridObj = make_shared<GameObject>();
 	gridObj->SetSRVIndex(2);
 	gridObj->SetMesh(planeMesh2);
-	gridObj->SetPosition(centerX, centerY+16.0f, centerZ);
+	gridObj->SetPosition(mRoomCenter.x, mRoomCenter.y+22.0f, mRoomCenter.z +50.0f);
 	mPipelines[Layer::NormalMapped]->AppendObject(gridObj);
 
+	// Left
 	gridObj = make_shared<GameObject>();
 	gridObj->SetSRVIndex(2);
 	gridObj->SetMesh(planeMesh3);
-	gridObj->SetPosition(centerX - 17.0f, centerY+9.0f, centerZ - 22.0f);
+	gridObj->SetPosition(mRoomCenter.x - 54.0f, mRoomCenter.y+12.0f, mRoomCenter.z- 4.0f);
 	gridObj->Rotate(0.0f, -90.0f, 0.0f);
 	mPipelines[Layer::NormalMapped]->AppendObject(gridObj);
 	auto copyGridObj = make_shared<GameObject>(*gridObj);
 	copyGridObj->SetSRVIndex(0); 
-	copyGridObj->SetReflected(XMFLOAT4(0.0f, 0.0f, 1.0f, -centerZ));
+	copyGridObj->SetReflected(XMFLOAT4(0.0f, 0.0f, 1.0f, -mRoomCenter.z -50.0f));
 	mPipelines[Layer::Reflected]->AppendObject(copyGridObj);
 
+	// Right
 	gridObj = make_shared<GameObject>();
 	gridObj->SetSRVIndex(2);
 	gridObj->SetMesh(planeMesh3);
-	gridObj->SetPosition(centerX + 17.0f, centerY+9.0f, centerZ - 22.0f);
+	gridObj->SetPosition(mRoomCenter.x + 54.0f, mRoomCenter.y+12.0f, mRoomCenter.z- 4.0f);
 	gridObj->Rotate(0.0f, +90.0f, 0.0f);
 	mPipelines[Layer::NormalMapped]->AppendObject(gridObj);
 	copyGridObj = make_shared<GameObject>(*gridObj);
 	copyGridObj->SetSRVIndex(0);
-	copyGridObj->SetReflected(XMFLOAT4(0.0f, 0.0f, 1.0f, -centerZ));
+	copyGridObj->SetReflected(XMFLOAT4(0.0f, 0.0f, 1.0f, -mRoomCenter.z-50.0f));
 	mPipelines[Layer::Reflected]->AppendObject(copyGridObj);
 
+	// Back
 	gridObj = make_shared<GameObject>();
 	gridObj->SetSRVIndex(2);
 	gridObj->SetMesh(planeMesh3);
-	gridObj->SetPosition(centerX, centerY+9.0f, centerZ - 44.0f);
+	gridObj->SetPosition(mRoomCenter.x, mRoomCenter.y+12.0f, mRoomCenter.z- 58.0f);
 	gridObj->Rotate(0.0f, 180.0f, 0.0f);
 	mPipelines[Layer::NormalMapped]->AppendObject(gridObj);
 	copyGridObj = make_shared<GameObject>(*gridObj);
 	copyGridObj->SetSRVIndex(0);
-	copyGridObj->SetReflected(XMFLOAT4(0.0f, 0.0f, 1.0f, -centerZ));
+	copyGridObj->SetReflected(XMFLOAT4(0.0f, 0.0f, 1.0f, -mRoomCenter.z-50.0f));
 	mPipelines[Layer::Reflected]->AppendObject(copyGridObj);
 
+	// Bottom
 	gridObj = make_shared<GameObject>();
 	gridObj->SetSRVIndex(1);
 	gridObj->SetMesh(planeMesh4);
-	gridObj->SetPosition(centerX, centerY, centerZ - 22.0f);
+	gridObj->SetPosition(mRoomCenter.x, mRoomCenter.y, mRoomCenter.z - 4.0f);
 	gridObj->Rotate(90.0f, 0.0f, 0.0f);
 	mPipelines[Layer::Default]->AppendObject(gridObj);
 	copyGridObj = make_shared<GameObject>(*gridObj);
 	copyGridObj->SetSRVIndex(1);
-	copyGridObj->SetReflected(XMFLOAT4(0.0f, 0.0f, 1.0f, -centerZ));
-	mPipelines[Layer::Reflected]->AppendObject(copyGridObj);
-
-	gridObj = make_shared<GameObject>();
-	gridObj->SetSRVIndex(2);
-	gridObj->SetMesh(planeMesh4);
-	gridObj->SetPosition(centerX, centerY+18.0f, centerZ - 22.0f);
-	gridObj->Rotate(-90.0f, 0.0f, 0.0f);
-	mPipelines[Layer::NormalMapped]->AppendObject(gridObj);
-	copyGridObj = make_shared<GameObject>(*gridObj);
-	copyGridObj->SetSRVIndex(0);
-	copyGridObj->SetReflected(XMFLOAT4(0.0f, 0.0f, 1.0f, -centerZ));
+	copyGridObj->SetReflected(XMFLOAT4(0.0f, 0.0f, 1.0f, -mRoomCenter.z-50.0f));
 	mPipelines[Layer::Reflected]->AppendObject(copyGridObj);
 }
 
-void GameScene::PrepareCubeMap(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
+void GameScene::PreRender(ID3D12GraphicsCommandList* cmdList)
 {
+	if (mShadowMapRenderer)
+		mShadowMapRenderer->PreRender(cmdList, this);
 }
 
 void GameScene::OnProcessMouseDown(HWND hwnd, WPARAM buttonState, int x, int y)
@@ -480,9 +573,9 @@ void GameScene::OnProcessKeyInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
 		if (wParam == 'I')
 		{
 			if (mOutside) {
-				mPlayer->SetPosition(-500.0f, 0.0f, -100.0f);
-				mMainCamera->SetPosition(-500.0f, 20.0f, -100.0f);
-				mPlayerCamera->SetPosition(-500.0f, 20.0f, -100.0f);
+				mPlayer->SetPosition(mRoomCenter);
+				mMainCamera->SetPosition(mRoomCenter);
+				mPlayerCamera->SetPosition(mRoomCenter);
 			}
 			else
 			{
@@ -550,16 +643,47 @@ void GameScene::Update(ID3D12Device* device, const GameTimer& timer)
 
 	OnPreciseKeyInput(elapsed);
 
+	UpdateLight(elapsed);
 	mCurrentCamera->Update(elapsed);
 
+	mShadowMapRenderer->UpdateDepthCamera(mMainLight);
 	for (const auto& [_, pso] : mPipelines)
 		pso->Update(elapsed, mCurrentCamera);
 
 	mReflectedPlayer->SetWorld(mPlayer->GetWorld());
 	
-	CreateAndAppendDustBillboard(device);
-	CollisionProcess(device);
-	DeleteTimeOverBillboards(device);
+	//CreateAndAppendDustBillboard(device);
+	//CollisionProcess(device);
+	//DeleteTimeOverBillboards(device);
+
+	UpdateConstants(timer);
+}
+
+void GameScene::UpdateLight(float elapsed)
+{
+	XMMATRIX R = XMMatrixRotationY(0.1f * elapsed);
+	for (int i = 0; i < NUM_LIGHTS; i++)
+	{
+		// rotate each direction..
+		mMainLight.Lights[i].Direction = Vector3::TransformNormal(mMainLight.Lights[i].Direction,R);
+		mMainLight.Lights[i].Position = Vector3::Multiply(2.0f, mMainLight.Lights[i].Direction);
+	}
+}
+
+void GameScene::UpdateLightConstants()
+{
+	mMainLight.ShadowTransform = Matrix4x4::Transpose(mShadowMapRenderer->GetShadowTransform(0));
+
+	XMVECTOR mirrorPlane = XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
+	XMMATRIX reflect = XMMatrixReflect(mirrorPlane);
+	LightConstants reflectedLightCnst = mMainLight;
+	for (int i = 0; i < 3; i++) {
+		XMVECTOR reflectedDirection = XMVector3TransformNormal(XMLoadFloat3(&reflectedLightCnst.Lights[i].Direction), reflect);
+		XMStoreFloat3(&reflectedLightCnst.Lights[i].Direction, reflectedDirection);
+	}
+
+	mLightCB->CopyData(0, mMainLight);
+	mLightCB->CopyData(1, reflectedLightCnst);
 }
 
 void GameScene::UpdateCameraConstant(int idx, Camera* camera)
@@ -568,44 +692,50 @@ void GameScene::UpdateCameraConstant(int idx, Camera* camera)
 	mCameraCB->CopyData(idx, camera->GetConstants());
 }
 
-void GameScene::UpdateConstants()
+void GameScene::UpdateConstants(const GameTimer& timer)
 {
 	UpdateCameraConstant(0, mCurrentCamera);
+	UpdateLightConstants();	
 
-	// 광원과 관련된 상수버퍼를 초기화 및 업데이트한다.
-	LightConstants lightCnst;
-	lightCnst.Ambient = XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f);
+	GameInfoConstants gameInfo{};
+	gameInfo.RandFloat4 = XMFLOAT4(
+		Math::RandFloat(-1.0f, 1.0f),
+		Math::RandFloat(0.0f, 1.0f),
+		Math::RandFloat(-1.0f, 1.0f),
+		Math::RandFloat(1.0f, 5.0f));
+	gameInfo.PlayerPosition = mPlayer->GetPosition();
+	gameInfo.KeyInput = mLODSet;
+	gameInfo.CurrentTime = timer.CurrentTime();
+	gameInfo.ElapsedTime = timer.ElapsedTime();
 
-	lightCnst.Lights[0].Diffuse = { 0.5f, 0.5f, 0.5f };
-	lightCnst.Lights[0].Direction = { -1.0f, 1.0f, -1.0f };
-
-	lightCnst.Lights[1].Diffuse = { 0.15f, 0.15f, 0.15f };
-	lightCnst.Lights[1].Direction = { 0.0f, 1.0f, 1.0f };
-
-	lightCnst.Lights[2].Diffuse = { 0.35f, 0.35f, 0.35f };
-	lightCnst.Lights[2].Direction = { 1.0f, 1.0f, -1.0f };
-
-	XMVECTOR mirrorPlane = XMVectorSet(0.0f, 0.0f, 1.0f, 80.0f);
-	XMMATRIX reflect = XMMatrixReflect(mirrorPlane);
-	LightConstants reflectedLightCnst = lightCnst;
-	for (int i = 0; i < 3; i++) {
-		XMVECTOR reflectedDirection = XMVector3TransformNormal(XMLoadFloat3(&reflectedLightCnst.Lights[i].Direction), reflect);
-		XMStoreFloat3A(&reflectedLightCnst.Lights[i].Direction, reflectedDirection);
-	}
-	mLightCB->CopyData(0, lightCnst);
-	mLightCB->CopyData(1, reflectedLightCnst);
-
-	mGameInfoCB->CopyData(0, { mLODSet });
-
+	mGameInfoCB->CopyData(0, gameInfo);
+	
+	//mShadowMapRenderer->UpdateDepthCamera(lightCnst);
 	for (const auto& [_, pso] : mPipelines)
 		pso->UpdateConstants();
 }
 
-void GameScene::Draw(ID3D12GraphicsCommandList* cmdList, int cameraCBIndex)
-{	
+void GameScene::SetCBV(ID3D12GraphicsCommandList* cmdList, int cameraCBIndex)
+{
 	cmdList->SetGraphicsRootConstantBufferView(0, mCameraCB->GetGPUVirtualAddress(cameraCBIndex));
 	cmdList->SetGraphicsRootConstantBufferView(1, mLightCB->GetGPUVirtualAddress(0));
 	cmdList->SetGraphicsRootConstantBufferView(2, mGameInfoCB->GetGPUVirtualAddress(0));
+}
+
+void GameScene::Draw(ID3D12GraphicsCommandList* cmdList, ID3D12Resource* backBuffer)
+{
+	cmdList->SetGraphicsRootSignature(mRootSignature.Get());
+	RenderPipelines(cmdList, 0);
+
+	mComputePipeline->SetCurrBackBuffer(cmdList, backBuffer);
+	mComputePipeline->Dispatch(cmdList);
+	mComputePipeline->CopyMapToRT(cmdList, backBuffer);
+}
+
+void GameScene::RenderPipelines(ID3D12GraphicsCommandList* cmdList, int cameraCBIndex)
+{	
+	SetCBV(cmdList, cameraCBIndex);
+	mShadowMapRenderer->SetShadowMapSRV(cmdList, 5);
 
 	for (const auto& [layer, pso] : mPipelines) {
 		if (layer == Layer::Reflected)

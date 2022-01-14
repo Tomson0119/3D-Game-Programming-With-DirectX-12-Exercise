@@ -72,6 +72,9 @@
     <ClCompile Include="stdafx.cpp">
       <Filter>소스 파일\Helper</Filter>
     </ClCompile>
+    <ClCompile Include="shadowMapRenderer.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="camera.h">
@@ -134,6 +137,9 @@
     <ClInclude Include="gameTimer.h">
       <Filter>헤더 파일\Helper</Filter>
     </ClInclude>
+    <ClInclude Include="shadowMapRenderer.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\skybox.hlsl">
@@ -158,6 +164,15 @@
       <Filter>리소스 파일</Filter>
     </None>
     <None Include="Shaders\default.hlsl">
+      <Filter>리소스 파일</Filter>
+    </None>
+    <None Include="Shaders\shadow.hlsl">
+      <Filter>리소스 파일</Filter>
+    </None>
+    <None Include="Shaders\shadowDebug.hlsl">
+      <Filter>리소스 파일</Filter>
+    </None>
+    <None Include="Shaders\blur.hlsl">
       <Filter>리소스 파일</Filter>
     </None>
   </ItemGroup>

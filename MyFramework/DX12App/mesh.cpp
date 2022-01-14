@@ -32,7 +32,8 @@ void Mesh::CreateResourceInfo(
 	mVertexBufferView.StrideInBytes = vbStride;
 
 	mVerticesCount = vbCount;
-	
+	mVertexStride = vbStride;
+
 	if (ibCount > 0)
 	{
 		mIndexCount = ibCount;
@@ -51,7 +52,7 @@ void Mesh::CreateResourceInfo(
 	}
 }
 
-void Mesh::Draw(ID3D12GraphicsCommandList* cmdList)
+void Mesh::Draw(ID3D12GraphicsCommandList* cmdList, bool isSO)
 {
 	cmdList->IASetVertexBuffers(mSlot, 1, &mVertexBufferView);	
 	cmdList->IASetPrimitiveTopology(mPrimitiveTopology);
@@ -468,4 +469,144 @@ float HeightMapPatchListMesh::GetHeight(int x, int z, HeightMapImage* context) c
 {
 	float height = context->GetHeight(x * mScale.x, z * mScale.z, mScale);
 	return height;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+ParticleMesh::ParticleMesh(
+	ID3D12Device* device,
+	ID3D12GraphicsCommandList* cmdList,
+	const XMFLOAT3& position,
+	const XMFLOAT2& size,
+	const XMFLOAT3& direction,
+	float lifeTime,
+	float speed,
+	int maxParticle)
+	: mUploadBufferFilledSize(NULL), mMaxParticle(maxParticle), mStart(true)
+{
+	BillboardVertex vertex;
+	vertex.Position = position;
+	vertex.Size = size;
+	vertex.Direction = direction;
+	vertex.Age = XMFLOAT2(0.0f, lifeTime);
+	vertex.Speed = speed;
+	vertex.Type = 0;
+
+	Mesh::CreateResourceInfo(device, cmdList,
+		sizeof(BillboardVertex), 0, D3D_PRIMITIVE_TOPOLOGY_POINTLIST,
+		reinterpret_cast<const void*>(&vertex), 1, nullptr, 0);
+
+	CreateStreamOutputBuffer(device, cmdList);
+}
+
+void ParticleMesh::PrepareBufferViews(ID3D12GraphicsCommandList* cmdList, bool isSO)
+{
+	if (isSO)
+	{
+		*mUploadBufferFilledSize = 0;
+
+		cmdList->ResourceBarrier(1, &Extension::ResourceBarrier(
+			mDefaultBuffer.Get(), D3D12_RESOURCE_STATE_STREAM_OUT, D3D12_RESOURCE_STATE_COPY_DEST));
+
+		cmdList->CopyResource(mDefaultBuffer.Get(), mUploadBuffer.Get());
+
+		cmdList->ResourceBarrier(1, &Extension::ResourceBarrier(
+			mDefaultBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_STREAM_OUT));
+	}
+	else
+	{
+		mVertexBufferView.BufferLocation = mRenderBuffer->GetGPUVirtualAddress();
+		mVertexBufferView.StrideInBytes = mVertexStride;
+		mVertexBufferView.SizeInBytes = mVerticesCount * mVertexStride;
+	}
+}
+
+void ParticleMesh::Draw(ID3D12GraphicsCommandList* cmdList, bool isSO)
+{
+	if (isSO)
+	{
+		D3D12_STREAM_OUTPUT_BUFFER_VIEW soViews[] = { mSOBufferView };
+		cmdList->SOSetTargets(0, 1, soViews);
+
+		cmdList->BeginQuery(mQueryHeap.Get(), D3D12_QUERY_TYPE_SO_STATISTICS_STREAM0, 0);
+		Mesh::Draw(cmdList);
+		cmdList->EndQuery(mQueryHeap.Get(), D3D12_QUERY_TYPE_SO_STATISTICS_STREAM0, 0);
+		
+		cmdList->ResolveQueryData(mQueryHeap.Get(), 
+			D3D12_QUERY_TYPE_SO_STATISTICS_STREAM0,
+			0, 1, mQueryBuffer.Get(), 0);
+
+		CopyToRenderBuffer(cmdList);
+
+		D3D12_RANGE d3dReadRange = { 0, 0 };
+		mQueryBuffer->Map(0, &d3dReadRange, (void**)&mQueryStatistics);
+		UINT64 count = mQueryStatistics->NumPrimitivesWritten;
+		if (count > 0) mVerticesCount = count;
+		mQueryBuffer->Unmap(0, NULL);
+	}
+	else
+	{
+		cmdList->SOSetTargets(0, 0, NULL);
+		Mesh::Draw(cmdList);
+	}
+}
+
+void ParticleMesh::CreateStreamOutputBuffer(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
+{
+	ThrowIfFailed(device->CreateCommittedResource(
+		&Extension::HeapProperties(D3D12_HEAP_TYPE_DEFAULT),
+		D3D12_HEAP_FLAG_NONE,
+		&Extension::BufferResourceDesc(D3D12_RESOURCE_DIMENSION_BUFFER, mMaxParticle * mVertexStride),
+		D3D12_RESOURCE_STATE_STREAM_OUT, NULL, IID_PPV_ARGS(&mStreamOutputBuffer)));
+
+	ThrowIfFailed(device->CreateCommittedResource(
+		&Extension::HeapProperties(D3D12_HEAP_TYPE_DEFAULT),
+		D3D12_HEAP_FLAG_NONE,
+		&Extension::BufferResourceDesc(D3D12_RESOURCE_DIMENSION_BUFFER, mMaxParticle * mVertexStride),
+		D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, NULL, IID_PPV_ARGS(&mRenderBuffer)));
+
+	ThrowIfFailed(device->CreateCommittedResource(
+		&Extension::HeapProperties(D3D12_HEAP_TYPE_DEFAULT),
+		D3D12_HEAP_FLAG_NONE,
+		&Extension::BufferResourceDesc(D3D12_RESOURCE_DIMENSION_BUFFER, sizeof(UINT64)),
+		D3D12_RESOURCE_STATE_STREAM_OUT, NULL, IID_PPV_ARGS(&mDefaultBuffer)));
+	
+	ThrowIfFailed(device->CreateCommittedResource(
+		&Extension::HeapProperties(D3D12_HEAP_TYPE_UPLOAD),
+		D3D12_HEAP_FLAG_NONE,
+		&Extension::BufferResourceDesc(D3D12_RESOURCE_DIMENSION_BUFFER, sizeof(UINT64)),
+		D3D12_RESOURCE_STATE_GENERIC_READ, NULL, IID_PPV_ARGS(&mUploadBuffer)));
+	mUploadBuffer->Map(0, NULL, (void**)&mUploadBufferFilledSize);
+
+	mSOBufferView.BufferLocation = mStreamOutputBuffer->GetGPUVirtualAddress();
+	mSOBufferView.SizeInBytes = mMaxParticle * mVertexStride;
+	mSOBufferView.BufferFilledSizeLocation = mDefaultBuffer->GetGPUVirtualAddress();
+	
+	D3D12_QUERY_HEAP_DESC queryDesc{};
+	queryDesc.Type = D3D12_QUERY_HEAP_TYPE_SO_STATISTICS;
+	queryDesc.Count = 1;
+	queryDesc.NodeMask = 0;
+
+	ThrowIfFailed(device->CreateQueryHeap(&queryDesc, IID_PPV_ARGS(&mQueryHeap)));
+	ThrowIfFailed(device->CreateCommittedResource(
+		&Extension::HeapProperties(D3D12_HEAP_TYPE_READBACK),
+		D3D12_HEAP_FLAG_NONE,
+		&Extension::BufferResourceDesc(D3D12_RESOURCE_DIMENSION_BUFFER, sizeof(D3D12_QUERY_DATA_SO_STATISTICS)),
+		D3D12_RESOURCE_STATE_COPY_DEST, NULL, IID_PPV_ARGS(&mQueryBuffer)));
+}
+
+void ParticleMesh::CopyToRenderBuffer(ID3D12GraphicsCommandList* cmdList)
+{
+	cmdList->ResourceBarrier(1, &Extension::ResourceBarrier(
+		mStreamOutputBuffer.Get(), D3D12_RESOURCE_STATE_STREAM_OUT, D3D12_RESOURCE_STATE_COPY_SOURCE));
+	cmdList->ResourceBarrier(1, &Extension::ResourceBarrier(
+		mRenderBuffer.Get(), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, D3D12_RESOURCE_STATE_COPY_DEST));
+
+	cmdList->CopyResource(mRenderBuffer.Get(), mStreamOutputBuffer.Get());
+
+	cmdList->ResourceBarrier(1, &Extension::ResourceBarrier(
+		mStreamOutputBuffer.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_STREAM_OUT));
+	cmdList->ResourceBarrier(1, &Extension::ResourceBarrier(
+		mRenderBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
 }

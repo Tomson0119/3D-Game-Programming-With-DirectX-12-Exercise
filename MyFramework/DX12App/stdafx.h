@@ -65,12 +65,16 @@ extern UINT gRtvDescriptorSize;
 extern UINT gDsvDescriptorSize;
 extern UINT gCbvSrvUavDescriptorSize;
 
+extern int gFrameWidth;
+extern int gFrameHeight;
+
 extern ComPtr<ID3D12Resource> CreateBufferResource(
 	ID3D12Device* device,
 	ID3D12GraphicsCommandList* cmdList,
 	const void* initData,
 	UINT64 byteSize,
-	ComPtr<ID3D12Resource>& uploadBuffer);
+	ComPtr<ID3D12Resource>& uploadBuffer,
+	D3D12_HEAP_TYPE heapType = D3D12_HEAP_TYPE_DEFAULT);
 
 extern ComPtr<ID3D12Resource> CreateTexture2DResource(
 	ID3D12Device* device,
@@ -104,17 +108,40 @@ inline std::wstring AnsiToWString(const std::string& str)
 //
 #define NUM_LIGHTS 3
 
-struct Light
+#define POINT_LIGHT		  1
+#define SPOT_LIGHT		  2
+#define DIRECTIONAL_LIGHT 3
+
+struct LightInfo
 {
-	XMFLOAT3A Position = XMFLOAT3A(0.0f, 0.0f, 0.0f);
-	XMFLOAT3A Direction = XMFLOAT3A(0.0f, 0.0f, 0.0f);
-	XMFLOAT3A Diffuse = XMFLOAT3A(0.0f, 0.0f, 0.0f);
+	XMFLOAT3 Diffuse = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	float    padding0;
+	XMFLOAT3 Position = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	float	 padding1;
+	XMFLOAT3 Direction = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	float	 padding2;
+	float    Range;
+	int		 Type;
+	
+	void SetInfo(
+		const XMFLOAT3& diffuse,
+		const XMFLOAT3& position,
+		const XMFLOAT3& direction,
+		float range, int type)
+	{
+		Diffuse = diffuse;
+		Position = position;
+		Direction = direction;
+		Range = range;
+		Type = type;
+	}
 };
 
 struct LightConstants
 {
+	XMFLOAT4X4 ShadowTransform;
 	XMFLOAT4 Ambient;
-	Light Lights[NUM_LIGHTS];
+	LightInfo Lights[NUM_LIGHTS];
 };
 
 struct CameraConstants
@@ -141,7 +168,11 @@ struct ObjectConstants
 
 struct GameInfoConstants
 {
+	XMFLOAT4 RandFloat4;
+	XMFLOAT3 PlayerPosition;
 	UINT KeyInput;
+	float CurrentTime;
+	float ElapsedTime;
 };
 
 
@@ -185,6 +216,13 @@ namespace Vector3
 	inline XMFLOAT3 Replicate(float value)
 	{
 		return VectorToFloat3(XMVectorReplicate(value));
+	}
+
+	inline XMFLOAT3 Multiply(float scalar, XMFLOAT3& v)
+	{
+		XMFLOAT3 ret;
+		XMStoreFloat3(&ret, scalar * XMLoadFloat3(&v));
+		return ret;
 	}
 
 	inline XMFLOAT3 MultiplyAdd(float delta, XMFLOAT3& src, XMFLOAT3& dst)

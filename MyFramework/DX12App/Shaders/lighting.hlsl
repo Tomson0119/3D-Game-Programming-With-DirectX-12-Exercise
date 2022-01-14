@@ -1,10 +1,19 @@
 #define NUM_LIGHTS 3
 
+#define POINT_LIGHT       1
+#define SPOT_LIGHT        2
+#define DIRECTIONAL_LIGHT 3
+
 struct Light
 {
-    float3 Position;
-    float3 Direction;
     float3 Diffuse;
+    float  padding0;
+    float3 Position;
+    float  padding1;
+    float3 Direction;
+    float  padding2;
+    float  Range;
+    int    Type;
 };
 
 struct Material
@@ -51,15 +60,22 @@ float3 ComputeDirectLight(Light light, Material mat, float3 normal, float3 view)
     return PhongModelLighting(lightDiffuse, lightVec, normal, view, mat);
 }
 
-float4 ComputeLighting(Light lights[NUM_LIGHTS], Material mat, float3 normal, float3 view)
+float4 ComputeLighting(Light lights[NUM_LIGHTS], Material mat, 
+                       float3 normal, float3 view, float shadowFactor[NUM_LIGHTS])
 {
     float3 result = 0.0f;
     
     int i = 0;
+    
     [unroll]
     for (i = 0; i < NUM_LIGHTS; ++i)
-    {
-        result += ComputeDirectLight(lights[i], mat, normal, view);
+    {        
+        if (lights[i].Type == DIRECTIONAL_LIGHT)
+            result += shadowFactor[i] * ComputeDirectLight(lights[i], mat, normal, view);
+        else if(lights[i].Type == SPOT_LIGHT)
+            ;
+        else
+            ;
     }
     
     return float4(result, 0.0f);

@@ -14,7 +14,7 @@ public:
 		ThrowIfFailed(device->CreateCommittedResource(
 			&Extension::HeapProperties(D3D12_HEAP_TYPE_UPLOAD),
 			D3D12_HEAP_FLAG_NONE,
-			&Extension::BufferResourceDesc(mByteSize * count),
+			&Extension::BufferResourceDesc(D3D12_RESOURCE_DIMENSION_BUFFER, mByteSize * count),
 			D3D12_RESOURCE_STATE_GENERIC_READ,
 			nullptr, IID_PPV_ARGS(&mUploadBuffer)));
 

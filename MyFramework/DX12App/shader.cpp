@@ -44,8 +44,8 @@ DefaultShader::DefaultShader(const std::wstring& path)
 
 void DefaultShader::Compile(const std::wstring& path)
 {
-	VS = Shader::CompileShader(path, "VS", "vs_5_0");
-	PS = Shader::CompileShader(path, "PS", "ps_5_0");
+	VS = Shader::CompileShader(path, "VS", "vs_5_1");
+	PS = Shader::CompileShader(path, "PS", "ps_5_1");
 }
 
 void DefaultShader::BuildInputLayout()
@@ -105,8 +105,8 @@ void TerrainShader::BuildInputLayout()
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 //
-BillboardShader::BillboardShader(const std::wstring& path)
-	: Shader()
+BillboardShader::BillboardShader(const std::wstring& path, bool soActive)
+	: Shader(), mSOActive(soActive)
 {
 	Compile(path);
 	BuildInputLayout();
@@ -114,9 +114,15 @@ BillboardShader::BillboardShader(const std::wstring& path)
 
 void BillboardShader::Compile(const std::wstring& path)
 {
-	VS = Shader::CompileShader(path, "VS", "vs_5_1");
-	GS = Shader::CompileShader(path, "GS", "gs_5_1");
-	PS = Shader::CompileShader(path, "PS", "ps_5_1");
+	if (mSOActive) {
+		VS = Shader::CompileShader(path, "VSStreamOutput", "vs_5_1");
+		GS = Shader::CompileShader(path, "GSStreamOutput", "gs_5_1");
+	}
+	else {
+		VS = Shader::CompileShader(path, "VSRender", "vs_5_1");
+		GS = Shader::CompileShader(path, "GSRender", "gs_5_1");
+		PS = Shader::CompileShader(path, "PSRender", "ps_5_1");
+	}
 }
 
 void BillboardShader::BuildInputLayout()
@@ -127,6 +133,18 @@ void BillboardShader::BuildInputLayout()
 			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 
 		{ "SIZE", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12,
+			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+
+		{ "DIRECTION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 20,
+			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+
+		{ "LIFETIME", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 32,
+			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+
+		{ "SPEED", 0, DXGI_FORMAT_R32_FLOAT, 0, 40,
+			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+
+		{ "TYPE", 0, DXGI_FORMAT_R32_UINT, 0, 44,
 			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
 	};
 }
@@ -157,4 +175,17 @@ void CubeMapShader::BuildInputLayout()
 		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12,
 			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
 	};
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////
+//
+ComputeShader::ComputeShader(const std::wstring& path)
+{
+	Compile(path);
+}
+
+void ComputeShader::Compile(const std::wstring& path)
+{
+	CS = Shader::CompileShader(path, "CS", "cs_5_1");
 }

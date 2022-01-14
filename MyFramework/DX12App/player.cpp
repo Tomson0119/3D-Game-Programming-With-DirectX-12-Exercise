@@ -236,7 +236,7 @@ void TerrainPlayer::OnPlayerUpdate(float elapsedTime)
 
 	float playerHalfHeight = mOOBB.Extents.y * 0.5f;
 	
-	float height = terrain->GetHeight(playerPos.x, playerPos.z) + playerHalfHeight + 0.5f;
+	float height = terrain->GetHeight(playerPos.x, playerPos.z) + playerHalfHeight - 0.5f;
 
 	if (playerPos.y < height)
 	{

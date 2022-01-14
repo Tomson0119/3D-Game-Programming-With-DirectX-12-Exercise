@@ -63,11 +63,14 @@ public:
 class BillboardShader : public Shader
 {
 public:
-	BillboardShader(const std::wstring& path);
+	BillboardShader(const std::wstring& path, bool soActive=false);
 	virtual ~BillboardShader() { }
 
 	virtual void Compile(const std::wstring& path) override;
 	virtual void BuildInputLayout() override;
+
+private:
+	bool mSOActive;
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -80,4 +83,21 @@ public:
 
 	virtual void Compile(const std::wstring& path) override;
 	virtual void BuildInputLayout() override;
+};
+
+///////////////////////////////////////////////////////////////////////////////////////////
+//
+class ComputeShader : public Shader
+{
+public:
+	ComputeShader(const std::wstring& path);
+	virtual ~ComputeShader() { }
+
+	virtual void Compile(const std::wstring& path) override;
+	virtual void BuildInputLayout() override { }
+
+	ID3DBlob* GetCS() const { return CS.Get(); }
+
+private:
+	ComPtr<ID3DBlob> CS;
 };

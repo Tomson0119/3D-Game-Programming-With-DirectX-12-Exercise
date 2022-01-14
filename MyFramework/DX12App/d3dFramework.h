@@ -3,6 +3,7 @@
 #include "basewin.h"
 #include "gameTimer.h"
 #include "dxException.h"
+#include "stdafx.h"
 
 
 class D3DFramework : public BaseWin<D3DFramework>
@@ -17,7 +18,7 @@ public:
 	void Run();
 
 	void SetResolution(int width, int height);
-	float GetAspect() const { return static_cast<float>(mFrameWidth) / mFrameHeight; }
+	float GetAspect() const { return static_cast<float>(gFrameWidth) / gFrameHeight; }
 
 private:
 	bool InitDirect3D();
@@ -96,7 +97,4 @@ protected:
 	DXGI_FORMAT mDepthStencilBufferFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 
 	std::wstring mWndCaption = L"D3D12 App";
-
-	int mFrameWidth  = 0;
-	int mFrameHeight = 0;
 };

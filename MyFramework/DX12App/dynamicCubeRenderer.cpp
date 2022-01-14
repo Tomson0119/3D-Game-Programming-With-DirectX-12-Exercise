@@ -19,7 +19,7 @@ void DynamicCubeRenderer::AppendObject(ID3D12Device* device, const std::shared_p
 	CreateTexture(device, obj);
 }
 
-void DynamicCubeRenderer::PreDraw(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList, GameScene* scene)
+void DynamicCubeRenderer::PreDraw(ID3D12GraphicsCommandList* cmdList, GameScene* scene)
 {
 	for (int i = 0; i < mRenderObjects.size(); i++)
 	{

@@ -5,25 +5,29 @@ UINT gRtvDescriptorSize = 0;
 UINT gDsvDescriptorSize = 0;
 UINT gCbvSrvUavDescriptorSize = 0;
 
+extern int gFrameWidth = 0;
+extern int gFrameHeight = 0;
+
 ComPtr<ID3D12Resource> CreateBufferResource(
     ID3D12Device* device, 
     ID3D12GraphicsCommandList* cmdList,
     const void* initData, UINT64 byteSize,
-    ComPtr<ID3D12Resource>& uploadBuffer)
+    ComPtr<ID3D12Resource>& uploadBuffer,
+	D3D12_HEAP_TYPE heapType)
 {
     ComPtr<ID3D12Resource> defaultResource;
 
     ThrowIfFailed(device->CreateCommittedResource(
-        &Extension::HeapProperties(D3D12_HEAP_TYPE_DEFAULT),
+        &Extension::HeapProperties(heapType),
         D3D12_HEAP_FLAG_NONE,
-        &Extension::BufferResourceDesc(byteSize),
+        &Extension::BufferResourceDesc(D3D12_RESOURCE_DIMENSION_BUFFER, byteSize),
 		D3D12_RESOURCE_STATE_COPY_DEST, 
 		nullptr, IID_PPV_ARGS(defaultResource.GetAddressOf())));
 
 	ThrowIfFailed(device->CreateCommittedResource(
 		&Extension::HeapProperties(D3D12_HEAP_TYPE_UPLOAD),
 		D3D12_HEAP_FLAG_NONE,
-		&Extension::BufferResourceDesc(byteSize),
+		&Extension::BufferResourceDesc(D3D12_RESOURCE_DIMENSION_BUFFER, byteSize),
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr, IID_PPV_ARGS(uploadBuffer.GetAddressOf())));
 
@@ -51,22 +55,13 @@ ComPtr<ID3D12Resource> CreateTexture2DResource(
 {
 	ComPtr<ID3D12Resource> textureResource;
 
-	D3D12_RESOURCE_DESC resourceDesc{};
-	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-	resourceDesc.Alignment = 0;
-	resourceDesc.Width = width;
-	resourceDesc.Height = height;
-	resourceDesc.DepthOrArraySize = elements;
-	resourceDesc.MipLevels = miplevels;
-	resourceDesc.Format = format;
-	resourceDesc.SampleDesc.Count = 1;
-	resourceDesc.SampleDesc.Quality = 0;
-	resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-	resourceDesc.Flags = resourceFlags;
-
 	ThrowIfFailed(device->CreateCommittedResource(
 		&Extension::HeapProperties(D3D12_HEAP_TYPE_DEFAULT),
-		D3D12_HEAP_FLAG_NONE, &resourceDesc,
+		D3D12_HEAP_FLAG_NONE,
+		&Extension::BufferResourceDesc(
+			D3D12_RESOURCE_DIMENSION_TEXTURE2D,
+			width, height, elements, miplevels,
+			format, D3D12_TEXTURE_LAYOUT_UNKNOWN, resourceFlags),
 		resourceStates, clearValue, IID_PPV_ARGS(&textureResource)));
 
 	return textureResource;

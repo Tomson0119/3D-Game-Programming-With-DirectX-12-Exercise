@@ -14,6 +14,7 @@ public:
 	virtual ~GameObject();
 
 	virtual void Update(float elapsedTime, XMFLOAT4X4* parent);
+	virtual void ExecuteSO(ID3D12GraphicsCommandList* cmdList);
 	virtual void Draw(ID3D12GraphicsCommandList* cmdList);
 	virtual void UpdateTransform(XMFLOAT4X4* parent);
 
@@ -23,7 +24,7 @@ public:
 public:
 	virtual void SetChild(GameObject* child);
 	virtual void SetPosition(float x, float y, float z);
-	virtual void SetPosition(XMFLOAT3& pos);
+	virtual void SetPosition(const XMFLOAT3& pos);
 	virtual void SetMaterial(XMFLOAT4 color, XMFLOAT3 frenel, float roughness);
 
 	void SetSRVIndex(UINT idx) { mSrvIndex = idx; }
@@ -148,13 +149,6 @@ private:
 //
 class Billboard : public GameObject
 {
-public:
-	struct BillboardVertex
-	{
-		XMFLOAT3 Position;
-		XMFLOAT2 Size;
-	};
-
 public:
 	Billboard(float width, float height);
 	virtual ~Billboard();

@@ -14,7 +14,7 @@ D3DFramework::~D3DFramework()
 
 bool D3DFramework::InitFramework()
 {
-	if(!InitWindow(mWndCaption.c_str(), mFrameWidth, mFrameHeight))
+	if(!InitWindow(mWndCaption.c_str(), gFrameWidth, gFrameHeight))
 		return false;
 
 	if (!InitDirect3D())
@@ -55,8 +55,8 @@ void D3DFramework::Run()
 
 void D3DFramework::SetResolution(int width, int height)
 {
-	mFrameWidth = width;
-	mFrameHeight = height;
+	gFrameWidth = width;
+	gFrameHeight = height;
 }
 
 bool D3DFramework::InitDirect3D()
@@ -163,8 +163,8 @@ void D3DFramework::CreateSwapChain()
 	mSwapChain.Reset();
 
 	DXGI_SWAP_CHAIN_DESC swapChainDesc;	
-	swapChainDesc.BufferDesc.Width = mFrameWidth;
-	swapChainDesc.BufferDesc.Height = mFrameHeight;
+	swapChainDesc.BufferDesc.Width = gFrameWidth;
+	swapChainDesc.BufferDesc.Height = gFrameHeight;
 	swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	swapChainDesc.BufferDesc.RefreshRate.Numerator = 60;
 	swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
@@ -229,7 +229,7 @@ void D3DFramework::OnResize()
 	
 	ThrowIfFailed(mSwapChain->ResizeBuffers(
 		mSwapChainBufferCount,
-		mFrameWidth, mFrameHeight,
+		gFrameWidth, gFrameHeight,
 		mSwapChainBufferFormat,
 		DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH));
 
@@ -244,14 +244,14 @@ void D3DFramework::OnResize()
 
 	WaitUntilGPUComplete();
 
-	mViewPort.Width = (float)mFrameWidth;
-	mViewPort.Height = (float)mFrameHeight;
+	mViewPort.Width = (float)gFrameWidth;
+	mViewPort.Height = (float)gFrameHeight;
 	mViewPort.TopLeftX = 0.0f;
 	mViewPort.TopLeftY = 0.0f;
 	mViewPort.MaxDepth = 1.0f;
 	mViewPort.MinDepth = 0.0f;
 
-	mScissorRect = { 0, 0, mFrameWidth, mFrameHeight };
+	mScissorRect = { 0, 0, gFrameWidth, gFrameHeight };
 }
 
 void D3DFramework::CreateRenderTargetViews()
@@ -270,8 +270,8 @@ void D3DFramework::CreateDepthStencilView()
 	D3D12_RESOURCE_DESC resourceDesc;
 	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 	resourceDesc.Alignment = 0;
-	resourceDesc.Width = mFrameWidth;
-	resourceDesc.Height = mFrameHeight;
+	resourceDesc.Width = gFrameWidth;
+	resourceDesc.Height = gFrameHeight;
 	resourceDesc.DepthOrArraySize = 1;
 	resourceDesc.MipLevels = 1;
 
@@ -366,8 +366,8 @@ LRESULT D3DFramework::OnProcessMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 		break;
 		
 	case WM_SIZE:  // 윈도우 창의 크기를 변경했을 때
-		mFrameWidth = LOWORD(lParam);
-		mFrameHeight = HIWORD(lParam);
+		gFrameWidth = LOWORD(lParam);
+		gFrameHeight = HIWORD(lParam);
 		if (wParam == SIZE_MINIMIZED)
 		{
 			mPaused = true;
@@ -465,8 +465,8 @@ void D3DFramework::ChangeFullScreenState()
 	RECT rect{ };
 
 	GetWindowRect(display, &rect);
-	mFrameWidth = rect.right - rect.left;
-	mFrameHeight = rect.bottom - rect.top;
+	gFrameWidth = rect.right - rect.left;
+	gFrameHeight = rect.bottom - rect.top;
 
 	OnResize();
 

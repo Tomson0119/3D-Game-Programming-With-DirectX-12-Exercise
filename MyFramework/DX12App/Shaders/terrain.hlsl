@@ -16,7 +16,7 @@ struct VertexIn
 
 struct VertexOut
 {
-    float3 PosL      : POSITION;
+    float3 PosL      : POSITION0;
     float3 PosW      : POSITION1;
     float3 NormalL   : NORMAL;
     float2 TexCoord0 : TEXCOORD0;
@@ -40,20 +40,12 @@ struct HsOut
 struct DsOut
 {
     float4 PosH         : SV_POSITION;
+    float3 PosW         : POSITION0;
+    float4 PosS         : POSITION1;
     float3 NormalW      : NORMAL;
     float2 TexCoord0    : TEXCOORD0;
     float2 TexCoord1    : TEXCOORD1;
     float4 Tessellation : TEXCOORD2;
-};
-
-struct GeoOut
-{
-    float4 PosH : SV_POSITION;
-    float3 PosW : POSITION;
-    float3 NormalW : NORMAL;
-    float3 TangentW : TANGENT;
-    float2 TexCoord0 : TEXCOORD0;
-    float2 TexCoord1 : TEXCOORD1;
 };
 
 VertexOut VS(VertexIn vin)
@@ -123,7 +115,7 @@ void BernsteinCoeffcient5x5(float t, out float bernstein[5])
     bernstein[4] = t * t * t * t;
 }
 
-float3 CubicBezierSum5x5(OutputPatch<HsOut, 25> patch, float uB[5], float vB[5])
+float3 CubicBezierSum5x5(OutputPatch<HsOut, 25> patch, float uB[5], float vB[5], bool normal)
 {
     float3 sum = float3(0.0f, 0.0f, 0.0f);
     
@@ -136,7 +128,10 @@ float3 CubicBezierSum5x5(OutputPatch<HsOut, 25> patch, float uB[5], float vB[5])
         [unroll]
         for (j = 0; j < 5; j++)
         {
-            bu += uB[j] * patch[5 * i + j].PosL;
+            if(normal == false) 
+                bu += uB[j] * patch[5 * i + j].PosL;
+            else
+                bu += uB[j] * patch[5 * i + j].NormalL;
         }
         sum += vB[i] * bu;
     }
@@ -152,8 +147,13 @@ DsOut DS(HsConstant hconst, float2 uv : SV_DomainLocation, OutputPatch<HsOut, 25
     BernsteinCoeffcient5x5(uv.x, uB);
     BernsteinCoeffcient5x5(uv.y, vB);
     
-    float3 pos = CubicBezierSum5x5(patch, uB, vB);
+    float3 pos = CubicBezierSum5x5(patch, uB, vB, false);
+    float4 posW = mul(float4(pos, 1.0f), gWorld);
+    
     dout.PosH = mul(mul(float4(pos, 1.0f), gWorld), gViewProj);
+    float3 normalL = CubicBezierSum5x5(patch, uB, vB, true);
+    float4x4 tWorld = transpose(gWorld);
+    dout.NormalW = mul((float3x3) tWorld, normalize(normalL));
     dout.TexCoord0 = lerp(lerp(patch[0].TexCoord0, patch[4].TexCoord0, uv.x), lerp(patch[20].TexCoord0, patch[24].TexCoord0, uv.x), uv.y);
     dout.TexCoord1 = lerp(lerp(patch[0].TexCoord1, patch[4].TexCoord1, uv.x), lerp(patch[20].TexCoord1, patch[24].TexCoord1, uv.x), uv.y);
     dout.Tessellation = float4(hconst.TessEdges[0], hconst.TessEdges[1], hconst.TessEdges[2], hconst.TessEdges[3]);
@@ -163,41 +163,56 @@ DsOut DS(HsConstant hconst, float2 uv : SV_DomainLocation, OutputPatch<HsOut, 25
 
 float4 PS(DsOut din) : SV_Target
 {
-    float4 finalDiffuse = 0.0f;
+    float4 result = 0.0f;
     
     if(gKeyInput)
     {
         if (din.Tessellation.w <= 5.0f) 
-            finalDiffuse = float4(1.0f, 0.0f, 0.0f, 1.0f);
+            result = float4(1.0f, 0.0f, 0.0f, 1.0f);
         else if (din.Tessellation.w <= 10.0f) 
-            finalDiffuse = float4(0.0f, 1.0f, 0.0f, 1.0f);
+            result = float4(0.0f, 1.0f, 0.0f, 1.0f);
         else if (din.Tessellation.w <= 20.0f)
-            finalDiffuse = float4(0.0f, 0.0f, 1.0f, 1.0f);
+            result = float4(0.0f, 0.0f, 1.0f, 1.0f);
         else if (din.Tessellation.w <= 30.0f)
-            finalDiffuse = float4(1.0f, 1.0f, 0.0f, 1.0f);
+            result = float4(1.0f, 1.0f, 0.0f, 1.0f);
         else if (din.Tessellation.w <= 40.0f)
-            finalDiffuse = float4(1.0f, 0.0f, 1.0f, 1.0f);
+            result = float4(1.0f, 0.0f, 1.0f, 1.0f);
         else if (din.Tessellation.w <= 50.0f)
-            finalDiffuse = float4(0.0f, 1.0f, 1.0f, 1.0f);
+            result = float4(0.0f, 1.0f, 1.0f, 1.0f);
         else if (din.Tessellation.w <= 60.0f)
-            finalDiffuse = float4(1.0f, 1.0f, 1.0f, 1.0f);
+            result = float4(1.0f, 1.0f, 1.0f, 1.0f);
         else
-            finalDiffuse = float4(1.0f, 0.5f, 0.5f, 1.0f);
+            result = float4(1.0f, 0.5f, 0.5f, 1.0f);
     }
     else
     {
+        float4 diffuse = 0.0f;
+        
         float4 baseTexDiffuse = gBaseTexture.Sample(gAnisotropicWrap, din.TexCoord0) * gMat.Diffuse;
         float4 detailedTexDiffuse = gDetailedTexture.Sample(gAnisotropicWrap, din.TexCoord1) * gMat.Diffuse;
         float4 roadTexDiffuse = gRoadTexture.Sample(gAnisotropicWrap, din.TexCoord0) * gMat.Diffuse;
     
         if (roadTexDiffuse.a < 0.4f)
         {
-            finalDiffuse = saturate(baseTexDiffuse * 0.6f + detailedTexDiffuse * 0.4f);
+            diffuse = saturate(baseTexDiffuse * 0.6f + detailedTexDiffuse * 0.4f);
         }
         else
         {
-            finalDiffuse = roadTexDiffuse;
+            diffuse = roadTexDiffuse;
         }
-    }    
-    return finalDiffuse;
+        
+        float3 view = normalize(gCameraPos - din.PosW);
+        float4 ambient = gAmbient * diffuse;
+        
+        float shadowFactor[3] = { 1.0f, 1.0f, 1.0f };
+        for (int i = 0; i < 1;i++)
+            shadowFactor[i] = CalcShadowFactor(din.PosS);
+        
+        Material mat = { diffuse, gMat.Fresnel, gMat.Roughness };
+        float4 directLight = ComputeLighting(gLights, mat, normalize(din.NormalW), view, shadowFactor);
+    
+        result = ambient + directLight;
+        result.a = diffuse.a;
+    }
+    return result;
 }

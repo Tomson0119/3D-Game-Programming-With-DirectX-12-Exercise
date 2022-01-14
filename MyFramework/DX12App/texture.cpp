@@ -18,14 +18,12 @@ void Texture::LoadTextureFromDDS(
 		D3D12_RESOURCE_FLAG_NONE, DDS_LOADER_DEFAULT,
 		mTexResource.GetAddressOf(), ddsData, subresources, &alphaMode, &isCubeMap));
 
-	D3D12_HEAP_PROPERTIES heapProperties = Extension::HeapProperties(D3D12_HEAP_TYPE_UPLOAD);
-
 	const UINT subresourcesCount = (UINT)subresources.size();
 	UINT64 bytes = GetRequiredIntermediateSize(mTexResource.Get(), 0, subresourcesCount);
 
-	D3D12_RESOURCE_DESC resourceDesc = Extension::BufferResourceDesc(bytes);
 	ThrowIfFailed(device->CreateCommittedResource(
-		&heapProperties, D3D12_HEAP_FLAG_NONE, &resourceDesc,
+		&Extension::HeapProperties(D3D12_HEAP_TYPE_UPLOAD), D3D12_HEAP_FLAG_NONE,
+		&Extension::BufferResourceDesc(D3D12_RESOURCE_DIMENSION_BUFFER, bytes),
 		D3D12_RESOURCE_STATE_GENERIC_READ, NULL,
 		IID_PPV_ARGS(mUploadBuffer.GetAddressOf())));
 

@@ -10,12 +10,12 @@ class DynamicCubeRenderer : public Pipeline
 {
 public :
 	DynamicCubeRenderer();
-	~DynamicCubeRenderer();
+	virtual ~DynamicCubeRenderer();
 
 	virtual void BuildDescriptorHeap(ID3D12Device* device, UINT cbvIndex, UINT srvIndex);
 
 	void AppendObject(ID3D12Device* device, const std::shared_ptr<DynamicCubeMapObject> obj);
-	void PreDraw(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList, GameScene* scene);
+	void PreDraw(ID3D12GraphicsCommandList* cmdList, GameScene* scene);
 
 private:
 	void CreateTexture(ID3D12Device* device, const std::shared_ptr<DynamicCubeMapObject> obj);

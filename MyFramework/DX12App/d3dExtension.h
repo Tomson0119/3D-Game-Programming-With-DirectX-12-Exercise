@@ -28,20 +28,26 @@ namespace Extension
 		return heapProperties;
 	}
 
-	inline D3D12_RESOURCE_DESC BufferResourceDesc(UINT64 bytes)
+	inline D3D12_RESOURCE_DESC BufferResourceDesc(
+		D3D12_RESOURCE_DIMENSION dimension,
+		UINT64 bytes,
+		UINT height=1, UINT depthOrArraySize=1, UINT mipLevels=1, 
+		DXGI_FORMAT format=DXGI_FORMAT_UNKNOWN,
+		D3D12_TEXTURE_LAYOUT layout=D3D12_TEXTURE_LAYOUT_ROW_MAJOR,
+		D3D12_RESOURCE_FLAGS flag=D3D12_RESOURCE_FLAG_NONE)
 	{
 		D3D12_RESOURCE_DESC resourceDesc{};
-		resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-		resourceDesc.Alignment = 0;
+		resourceDesc.Dimension = dimension;
+		resourceDesc.Alignment = (dimension == D3D12_RESOURCE_DIMENSION_BUFFER) ? D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT : 0;
 		resourceDesc.Width = bytes;
-		resourceDesc.Height = 1;
-		resourceDesc.DepthOrArraySize = 1;
-		resourceDesc.MipLevels = 1;
-		resourceDesc.Format = DXGI_FORMAT_UNKNOWN;
+		resourceDesc.Height = height;
+		resourceDesc.DepthOrArraySize = depthOrArraySize;
+		resourceDesc.MipLevels = mipLevels;
+		resourceDesc.Format = format;
 		resourceDesc.SampleDesc.Count = 1;
 		resourceDesc.SampleDesc.Quality = 0;
-		resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-		resourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+		resourceDesc.Layout = layout;
+		resourceDesc.Flags = flag;
 		return resourceDesc;
 	}
 
@@ -91,6 +97,8 @@ namespace Extension
 		UINT shaderRegister,
 		D3D12_FILTER filter,
 		D3D12_TEXTURE_ADDRESS_MODE addressMode,
+		D3D12_COMPARISON_FUNC comparisonFunc=D3D12_COMPARISON_FUNC_ALWAYS,
+		D3D12_STATIC_BORDER_COLOR borderColor=D3D12_STATIC_BORDER_COLOR_OPAQUE_WHITE,
 		D3D12_SHADER_VISIBILITY shaderVisibility=D3D12_SHADER_VISIBILITY_PIXEL)
 	{
 		D3D12_STATIC_SAMPLER_DESC samplerDesc{};
@@ -100,8 +108,8 @@ namespace Extension
 		samplerDesc.AddressW = addressMode;
 		samplerDesc.MipLODBias = 0;
 		samplerDesc.MaxAnisotropy = 16;
-		samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
-		samplerDesc.BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_WHITE;
+		samplerDesc.ComparisonFunc = comparisonFunc;
+		samplerDesc.BorderColor = borderColor;
 		samplerDesc.MinLOD = 0;
 		samplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
 		samplerDesc.ShaderRegister = shaderRegister;

@@ -21,12 +21,16 @@ public:
 	void SetOffset(float x, float y, float z) { mOffset = { x,y,z }; }
 	void SetOffset(const XMFLOAT3& offset) { mOffset = offset; }
 
+	void SetLook(const XMFLOAT3& look);
+	void SetUp(const XMFLOAT3& up);
+
 	void SetPlayer(class Player* player) { mPlayer = player; }
 	void SetMode(int mode) { mMode = (CameraMode)mode; }
 	void SetTimeLag(float lag) { mTimeLag = lag; }
 
 	void SetLens(float aspect);
 	void SetLens(float fovY, float aspect, float zn, float zf);
+	void SetOrthographicLens(XMFLOAT3& center, float range);
 	
 	void LookAt(XMFLOAT3& pos, XMFLOAT3& target, XMFLOAT3& up);
 	void LookAt(XMFLOAT3& target);
@@ -69,7 +73,6 @@ public:
 	CameraConstants GetConstants() const;
 
 	CameraMode GetMode() const { return mMode; }
-
 
 protected:
 	bool mViewDirty = false;

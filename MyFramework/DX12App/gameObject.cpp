@@ -27,10 +27,20 @@ void GameObject::Update(float elapsedTime, XMFLOAT4X4* parent)
 	if (mSibling) mSibling->Update(elapsedTime, parent);
 }
 
+void GameObject::ExecuteSO(ID3D12GraphicsCommandList* cmdList)
+{
+	for (const auto& mesh : mMeshes) {
+		mesh->PrepareBufferViews(cmdList, true);
+		mesh->Draw(cmdList, true);
+	}
+}
+
 void GameObject::Draw(ID3D12GraphicsCommandList* cmdList)
 {
-	for (const auto& mesh : mMeshes)
+	for (const auto& mesh : mMeshes) {
+		mesh->PrepareBufferViews(cmdList, false);
 		mesh->Draw(cmdList);
+	}
 }
 
 void GameObject::UpdateTransform(XMFLOAT4X4* parent)
@@ -90,7 +100,7 @@ void GameObject::SetPosition(float x, float y, float z)
 	mPosition = { x,y,z };
 }
 
-void GameObject::SetPosition(XMFLOAT3& pos)
+void GameObject::SetPosition(const XMFLOAT3& pos)
 {
 	SetPosition(pos.x, pos.y, pos.z);
 }
@@ -236,7 +246,7 @@ ObjectConstants GameObject::GetObjectConstants()
 TerrainObject::TerrainObject(int width, int depth, const XMFLOAT3& scale)
 	: GameObject(), mWidth(width), mDepth(depth), mTerrainScale(scale)
 {
-	mMaterial = { XMFLOAT4(0.7f,0.7f,0.7f,1.0f),XMFLOAT3(0.01f,0.01f,0.01f),0.8f };
+	mMaterial = { XMFLOAT4(0.7f,0.7f,0.7f,1.0f),XMFLOAT3(0.1f,0.1f,0.1f),0.25f };
 }
 
 TerrainObject::~TerrainObject()
@@ -430,7 +440,7 @@ void DynamicCubeMapObject::PreDraw(ID3D12GraphicsCommandList* cmdList, ID3D12Res
 		cmdList->OMSetRenderTargets(1, &mRtvCPUDescriptorHandles[i], TRUE, &mDsvCPUDescriptorHandle);
 
 		scene->UpdateCameraConstant(i + 1, mCameras[i].get());
-		scene->Draw(cmdList, i + 1);
+		scene->RenderPipelines(cmdList, i + 1);
 	}
 
 	// resource barrier

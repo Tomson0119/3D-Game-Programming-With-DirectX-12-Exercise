@@ -96,7 +96,6 @@ void GameFramework::Update()
 
 	//mCamera->Update(mTimer.ElapsedTime());
 	mScenes.top()->Update(mD3dDevice.Get(), mTimer);
-	mScenes.top()->UpdateConstants();
 }
 
 void GameFramework::Draw()
@@ -109,7 +108,7 @@ void GameFramework::Draw()
 
 	mCommandList->SetGraphicsRootSignature(mScenes.top()->GetRootSignature());
 
-	mScenes.top()->PrepareCubeMap(mD3dDevice.Get(), mCommandList.Get());
+	mScenes.top()->PreRender(mCommandList.Get());
 
 	mCommandList->RSSetViewports(1, &mViewPort);
 	mCommandList->RSSetScissorRects(1, &mScissorRect);
@@ -127,7 +126,7 @@ void GameFramework::Draw()
 	// 렌더링할 버퍼를 구체적으로 설정한다.
 	mCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), TRUE, &DepthStencilView());
 
-	mScenes.top()->Draw(mCommandList.Get());
+	mScenes.top()->Draw(mCommandList.Get(), CurrentBackBuffer());
 
 	// 화면 버퍼의 상태를 다시 PRESENT 상태로 전이한다.
 	mCommandList->ResourceBarrier(1, &Extension::ResourceBarrier(

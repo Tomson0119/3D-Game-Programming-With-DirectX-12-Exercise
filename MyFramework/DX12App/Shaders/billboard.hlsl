@@ -1,43 +1,84 @@
 #include "common.hlsl"
 
+#define PARTICLE_TYPE_EMMITER 0
+#define PARTICLE_TYPE_FLARE 1
+
 Texture2DArray gTexture : register(t0);
 
 struct VertexIn
 {
-	float3 PosL  : POSITION;
-    float2 Size  : SIZE;
+	float3 PosL      : POSITION;
+    float2 Size      : SIZE;
+    float3 Direction : DIRECTION;
+    float2 Age       : LIFETIME;
+    float  Speed     : SPEED;
+    uint   Type      : TYPE;
 };
 
-struct GeoIn
-{
-    float3 PosW : POSITION;
-    float2 Size : SIZE;
-};
-
-struct VertexOut
+struct GeoOut
 {
     float4 PosH     : SV_POSITION;
+    uint   PrimID   : SV_PrimitiveID;
     float3 PosW     : POSITION;
     float3 NormalW  : NORMAL;
     float2 TexCoord : TEXCOORD;
-    uint PrimID     : SV_PrimitiveID;
+    float2 Age      : LIFETIME;
+    uint   Type     : TYPE;
 };
 
-GeoIn VS(VertexIn vin)
+VertexIn VSStreamOutput(VertexIn vin)
 {
-    GeoIn gout;
-    gout.PosW = mul(float4(vin.PosL, 1.0f), gWorld).xyz;
-    gout.Size = vin.Size;
-    return gout;
+    return (vin);
+}
+
+[maxvertexcount(2)]
+void GSStreamOutput(point VertexIn gin[1],
+                    inout PointStream<VertexIn> pointStream)
+{
+    VertexIn particle = gin[0];
+    
+    particle.Age.x += gElapsedTime;
+    
+    if (particle.Age.x <= particle.Age.y)
+    {
+        if (particle.Type == PARTICLE_TYPE_EMMITER)
+        {
+            particle.Age.x = 0.0f;
+            particle.PosL = gPlayerPos;
+            pointStream.Append(particle);
+            
+            VertexIn vertex = (VertexIn)0;            
+            vertex.PosL = particle.PosL;
+            vertex.Size = particle.Size;
+            vertex.Direction = gRandFloat4.xyz;
+            vertex.Speed = particle.Speed * gRandFloat4.w;               
+            vertex.Type = PARTICLE_TYPE_FLARE;
+            vertex.Age.x = 0.0f;
+            vertex.Age.y = 10.0f;
+            pointStream.Append(vertex);
+        }
+        else
+        {
+            particle.PosL += particle.Direction * gElapsedTime * particle.Speed;
+            pointStream.Append(particle);
+        }        
+    }
+}
+
+VertexIn VSRender(VertexIn vin)
+{
+    return (vin);
 }
 
 [maxvertexcount(4)]
-void GS(point GeoIn gin[1],
+void GSRender(point VertexIn gin[1],
         uint primID : SV_PrimitiveID,
-        inout TriangleStream<VertexOut> triStream)
+        inout TriangleStream<GeoOut> triStream)
 {
+    float3 posW = mul(float4(gin[0].PosL, 1.0f), gWorld).xyz;
+    
     float3 up = float3(0.0f, 1.0f, 0.0f);
-    float3 look = gCameraPos - gin[0].PosW;
+    float3 look = gCameraPos - posW;
     
     look.y = 0.0f;
     look = normalize(look);
@@ -48,10 +89,10 @@ void GS(point GeoIn gin[1],
     float hh = gin[0].Size.y * 0.5f;
     
     float4 v[4];
-    v[0] = float4(gin[0].PosW + hw * right - hh * up, 1.0f);
-    v[1] = float4(gin[0].PosW + hw * right + hh * up, 1.0f);
-    v[2] = float4(gin[0].PosW - hw * right - hh * up, 1.0f);
-    v[3] = float4(gin[0].PosW - hw * right + hh * up, 1.0f);
+    v[0] = float4(posW + hw * right - hh * up, 1.0f);
+    v[1] = float4(posW + hw * right + hh * up, 1.0f);
+    v[2] = float4(posW - hw * right - hh * up, 1.0f);
+    v[3] = float4(posW - hw * right + hh * up, 1.0f);
     
     float2 TexCoord[4] =
     {
@@ -61,36 +102,28 @@ void GS(point GeoIn gin[1],
         float2(1.0f, 0.0f)
     };
 
-    VertexOut vout;
+    GeoOut gout;
     [unroll]
     for (int i = 0; i < 4;i++)
     {
-        vout.PosH = mul(v[i], gViewProj);
-        vout.PosW = v[i].xyz;
-        vout.NormalW = look;
-        vout.TexCoord = TexCoord[i];
-        vout.PrimID = primID;
-        triStream.Append(vout);
+        gout.PosH = mul(v[i], gViewProj);
+        gout.PosW = v[i].xyz;
+        gout.NormalW = look;
+        gout.TexCoord = TexCoord[i];
+        gout.PrimID = primID;
+        gout.Type = gin[0].Type;
+        gout.Age = gin[0].Age;
+        
+        triStream.Append(gout);
     }
 }
 
-float4 PS(VertexOut pin) : SV_Target
+float4 PSRender(GeoOut pin) : SV_Target
 {
     float3 uvw = float3(pin.TexCoord, pin.PrimID % 4);
     float4 diffuse = gTexture.Sample(gAnisotropicWrap, uvw) * gMat.Diffuse;
     
     clip(diffuse.a - 0.1f);
     
-    pin.NormalW = normalize(pin.NormalW);
-    
-    float3 view = normalize(gCameraPos - pin.PosW);
-    float4 ambient = gAmbient * diffuse;
-    
-    Material mat = { diffuse, gMat.Fresnel, gMat.Roughness };
-    float4 directLight = ComputeLighting(gLights, mat, pin.NormalW, view);
-    
-    float4 result = ambient + directLight;
-    result.a = diffuse.a;
-    
-    return result;
+    return diffuse;
 }
